@@ -4,7 +4,7 @@ services:
     container_name: lexor-db
     environment:
       ACCEPT_EULA: Y
-      SA_PASSWORD: qweasd123!
+      SA_PASSWORD: ${DB_SA_PASSWORD}
     ports:
       - "1435:1433"
     expose:

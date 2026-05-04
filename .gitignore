@@ -132,3 +132,9 @@ yarn-error.log*
 *.bak
 *.tmp
 *.swp
+
+# Environment files 
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
