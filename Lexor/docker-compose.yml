@@ -1,0 +1,16 @@
+services:
+  lexor-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: lexor-db
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: qweasd123!
+    ports:
+      - "1435:1433"
+    expose:
+      - "1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+volumes:
+  sqlserver_data:
