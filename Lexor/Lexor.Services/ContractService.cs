@@ -10,8 +10,8 @@ namespace Lexor.Services
 {
     public class ContractService : BaseCRUDService<Contract, ContractResponse, ContractSearchObject, ContractInsertRequest, ContractUpdateRequest>, IContractService
     {
-        public ContractService(LexorDbContext dbContext, IMapper mapper, IValidator<ContractInsertRequest> insertValidator, IValidator<ContractUpdateRequest> updateValidator)
-            : base(dbContext, mapper, insertValidator, updateValidator)
+        public ContractService(LexorDbContext dbContext, IMapper mapper, IValidator<ContractInsertRequest> insertValidator, IValidator<ContractUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor)
+            : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
         }
 

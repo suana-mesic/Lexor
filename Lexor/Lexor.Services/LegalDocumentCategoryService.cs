@@ -9,7 +9,7 @@ namespace Lexor.Services
 {
     public class LegalDocumentCategoryService : BaseCRUDService<LegalDocumentCategory, LegalDocumentCategoryResponse, LegalDocumentCategorySearchObject, LegalDocumentCategoryInsertRequest, LegalDocumentCategoryUpdateRequest>, ILegalDocumentCategoryService
     {
-        public LegalDocumentCategoryService(LexorDbContext dbContext, IMapper mapper, IValidator<LegalDocumentCategoryInsertRequest> insertValidator, IValidator<LegalDocumentCategoryUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public LegalDocumentCategoryService(LexorDbContext dbContext, IMapper mapper, IValidator<LegalDocumentCategoryInsertRequest> insertValidator, IValidator<LegalDocumentCategoryUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
         }
 

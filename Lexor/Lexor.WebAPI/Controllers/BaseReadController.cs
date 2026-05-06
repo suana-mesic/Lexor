@@ -21,14 +21,14 @@ namespace Lexor.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<PageResult<TResponse>> GetAllAsync([FromQuery] TSearch? search = default)
+        public virtual async Task<PageResult<TResponse>> GetAllAsync([FromQuery] TSearch? search = default)
         {
             var result = await _service.GetAllAsync(search);
             return result;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<TResponse>> GetByIdAsync(int id)
+        public virtual async Task<ActionResult<TResponse>> GetByIdAsync(int id)
         {
             try
             {

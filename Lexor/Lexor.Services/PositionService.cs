@@ -9,7 +9,7 @@ namespace Lexor.Services
 {
     public class PositionService : BaseCRUDService<Position, PositionResponse, PositionSearchObject, PositionInsertRequest, PositionUpdateRequest>, IPositionService
     {
-        public PositionService(LexorDbContext dbContext, IMapper mapper, IValidator<PositionInsertRequest> insertValidator, IValidator<PositionUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public PositionService(LexorDbContext dbContext, IMapper mapper, IValidator<PositionInsertRequest> insertValidator, IValidator<PositionUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
             
         }

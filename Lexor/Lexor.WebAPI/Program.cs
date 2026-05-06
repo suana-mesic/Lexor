@@ -1,13 +1,19 @@
-using Lexor.Services.Database;
-using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
-using Scalar.AspNetCore;
-using Lexor.Services;
-using Mapster;
 using FluentValidation;
 using Lexor.Model.Requests;
-using Lexor.Services.Validators;
 using Lexor.Model.Responses;
+using Lexor.Services;
+using Lexor.Services.Access;
+using Lexor.Services.Database;
+using Lexor.Services.Helpers;
+using Lexor.Services.Validators;
+using Lexor.WebAPI;
+using Mapster;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
+using System.Text;
 
 Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +25,13 @@ builder.Services.AddDbContext<LexorDbContext>(options => options.UseSqlServer(bu
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 builder.Services.AddMapster();
+
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ICryptoService, CryptoService>();
+builder.Services.AddScoped<IAccessManager, AccessManager>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuthenticatedUserAccessor, AuthenticatedUserAccessor>();
+
 
 TypeAdapterConfig<RoleUpdateRequest, Role>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<CityUpdateRequest, City>.NewConfig().IgnoreNullValues(true);
@@ -48,6 +61,7 @@ builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 
+builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 
 builder.Services.AddScoped<IValidator<CountryInsertRequest>, CountriesInsertValidator>();
 builder.Services.AddScoped<IValidator<CityInsertRequest>, CityInsertValidator>();
@@ -72,8 +86,33 @@ builder.Services.AddScoped<IValidator<LeaveTypeUpdateRequest>, LeaveTypeUpdateVa
 builder.Services.AddScoped<IValidator<EmployeeUpdateRequest>, EmployeeUpdateValidator>();
 builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateValidator>();
 
+//adds Bearer in Scalar
+//adds requirement on each endpoint (Scalar shows it as padlock icon)
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+});
 
-builder.Services.AddOpenApi();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = builder.Configuration["JwtToken:Issuer"],
+        ValidAudience = builder.Configuration["JwtToken:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JwtToken:SecretKey"] ?? string.Empty)),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
 var app = builder.Build();
 
@@ -81,10 +120,19 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithPreferredScheme("Bearer")
+               .WithHttpBearerAuthentication(bearer =>
+               {
+                   bearer.Token = "";
+               });
+    });
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

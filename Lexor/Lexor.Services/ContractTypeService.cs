@@ -9,7 +9,7 @@ namespace Lexor.Services
 {
     public class ContractTypeService : BaseCRUDService<ContractType, ContractTypeResponse, ContractTypeSearchObject, ContractTypeInsertRequest, ContractTypeUpdateRequest>, IContractTypeService
     {
-        public ContractTypeService(LexorDbContext dbContext, IMapper mapper, IValidator<ContractTypeInsertRequest> insertValidator, IValidator<ContractTypeUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public ContractTypeService(LexorDbContext dbContext, IMapper mapper, IValidator<ContractTypeInsertRequest> insertValidator, IValidator<ContractTypeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
         }
 

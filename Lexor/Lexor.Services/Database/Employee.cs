@@ -42,7 +42,7 @@ namespace Lexor.Services.Database
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        public int? UpdatedAtByUserId { get; set; }
+        public int? UpdatedByUserId { get; set; }
 
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 

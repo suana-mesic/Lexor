@@ -8,7 +8,7 @@ namespace Lexor.Services
 {
     public class RoleService : BaseCRUDService<Role, RoleResponse, RoleSearchObject, RoleInsertRequest, RoleUpdateRequest>, IRoleService
     {
-        public RoleService(LexorDbContext dbContext, IMapper mapper, IValidator<RoleInsertRequest> insertValidator, IValidator<RoleUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public RoleService(LexorDbContext dbContext, IMapper mapper, IValidator<RoleInsertRequest> insertValidator, IValidator<RoleUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
 
         }

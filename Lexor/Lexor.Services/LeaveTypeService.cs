@@ -9,7 +9,7 @@ namespace Lexor.Services
 {
     public class LeaveTypeService : BaseCRUDService<LeaveType, LeaveTypeResponse, LeaveTypeSearchObject, LeaveTypeInsertRequest, LeaveTypeUpdateRequest>, ILeaveTypeService
     {
-        public LeaveTypeService(LexorDbContext dbContext, IMapper mapper, IValidator<LeaveTypeInsertRequest> insertValidator, IValidator<LeaveTypeUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public LeaveTypeService(LexorDbContext dbContext, IMapper mapper, IValidator<LeaveTypeInsertRequest> insertValidator, IValidator<LeaveTypeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
 
         }

@@ -1,5 +1,6 @@
-using System;
+using Lexor.Model.Constants;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Lexor.Services.Database
 {
@@ -11,8 +12,8 @@ namespace Lexor.Services.Database
 
             // ===== Roles =====
             modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, Name = "Administrator", Description = "Puni pristup admin panelu", CreatedAt = seedDate, IsActive = true },
-                new Role { Id = 2, Name = "Employee", Description = "Pristup mobilnoj aplikaciji", CreatedAt = seedDate, IsActive = true }
+                new Role { Id = 1, Name = RoleNames.Administrator, Description = "Puni pristup admin panelu", CreatedAt = seedDate, IsActive = true },
+                new Role { Id = 2, Name = RoleNames.Employee, Description = "Pristup mobilnoj aplikaciji", CreatedAt = seedDate, IsActive = true }
             );
 
             // ===== Country =====

@@ -3,7 +3,7 @@ using FluentValidation.Results;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Lexor.Services
 {
@@ -15,11 +15,13 @@ namespace Lexor.Services
     {
         protected readonly IValidator<TInsertRequest> _insertValidator;
         protected readonly IValidator<TUpdateRequest> _updateValidator;
+        protected readonly IAuthenticatedUserAccessor _userAccessor;
 
-        protected BaseCRUDService(LexorDbContext dbContext, IMapper mapper, IValidator<TInsertRequest> insertValidator, IValidator<TUpdateRequest> updateValidator) : base(dbContext, mapper)
+        protected BaseCRUDService(LexorDbContext dbContext, IMapper mapper, IValidator<TInsertRequest> insertValidator, IValidator<TUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper)
         {
             _insertValidator = insertValidator;
             _updateValidator = updateValidator;
+            _userAccessor = userAccessor;
         }
 
         protected virtual TEntity MapInsertRequestToEntity(TInsertRequest request)
@@ -44,12 +46,8 @@ namespace Lexor.Services
 
             var entity = MapInsertRequestToEntity(request);
 
-            // Set CreatedAt if exists
-            var createdAtProperty = entity.GetType().GetProperty("CreatedAt");
-            if (createdAtProperty?.CanWrite == true)
-            {
-                createdAtProperty.SetValue(entity, DateTime.UtcNow);
-            }
+            // Set CreatedAt & CreatedByUserId fields if they exist on this entity
+            ApplyCreateAuditFields(entity);
 
             _dbContext.Set<TEntity>().Add(entity);
             await _dbContext.SaveChangesAsync();
@@ -63,8 +61,8 @@ namespace Lexor.Services
             var validationResult = await _updateValidator.ValidateAsync(request);
             if (validationResult.IsValid == false)
             {
-                var error = validationResult.Errors.Select(e => _mapper.Map<ValidationFailure>(e));
-                throw new ValidationException(error);
+                var errors = validationResult.Errors.Select(e => _mapper.Map<ValidationFailure>(e));
+                throw new ValidationException(errors);
             }
 
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
@@ -74,11 +72,8 @@ namespace Lexor.Services
 
             MapUpdateRequestToEntity(request, entity);
 
-            var updatedAtProperty = entity.GetType().GetProperty("UpdatedAt");
-            if (updatedAtProperty?.CanWrite == true)
-            {
-                updatedAtProperty.SetValue(entity, DateTime.UtcNow);
-            }
+            // Set UpdatedAt & UpdatedByUserId fields if they exist on this entity
+            ApplyUpdateAuditFields(entity);
 
             await _dbContext.SaveChangesAsync();
             return await GetByIdAsync(id);
@@ -93,6 +88,28 @@ namespace Lexor.Services
 
             _dbContext.Set<TEntity>().Remove(entity);
             await _dbContext.SaveChangesAsync();
+        }
+
+        protected void ApplyCreateAuditFields(object entity)
+        {
+            var createdAt = entity.GetType().GetProperty("CreatedAt");
+            if (createdAt?.CanWrite == true)
+                createdAt.SetValue(entity, DateTime.UtcNow);
+
+            var createdBy = entity.GetType().GetProperty("CreatedByUserId");
+            if (createdBy?.CanWrite == true)
+                createdBy.SetValue(entity, _userAccessor.GetUserId() ?? 0);
+        }
+
+        protected void ApplyUpdateAuditFields(object entity)
+        {
+            var createdAt = entity.GetType().GetProperty("UpdatedAt");
+            if (createdAt?.CanWrite == true)
+                createdAt.SetValue(entity, DateTime.UtcNow);
+
+            var createdBy = entity.GetType().GetProperty("UpdatedByUserId");
+            if (createdBy?.CanWrite == true)
+                createdBy.SetValue(entity, _userAccessor.GetUserId() ?? 0);
         }
     }
 }

@@ -11,8 +11,10 @@ namespace Lexor.Services
 {
     public class EmployeeService : BaseCRUDService<Employee, EmployeeResponse, EmployeeSearchObject, EmployeeInsertRequest, EmployeeUpdateRequest>, IEmployeeService
     {
-        public EmployeeService(LexorDbContext dbContext, IMapper mapper, IValidator<EmployeeInsertRequest> insertValidator, IValidator<EmployeeUpdateRequest> updateValidator)
-            : base(dbContext, mapper, insertValidator, updateValidator)
+        const string chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ23456789"; // without similar (0/O, 1/I/L)
+
+        public EmployeeService(LexorDbContext dbContext, IMapper mapper, IValidator<EmployeeInsertRequest> insertValidator, IValidator<EmployeeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor)
+            : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
         }
 
@@ -68,6 +70,7 @@ namespace Lexor.Services
                 var employee = _mapper.Map<Employee>(request);
                 employee.UserId = user.Id;
                 _dbContext.Employees.Add(employee);
+                ApplyCreateAuditFields(employee);
                 await _dbContext.SaveChangesAsync();
 
                 await tx.CommitAsync();
@@ -102,6 +105,7 @@ namespace Lexor.Services
             }
 
             _mapper.Map(request, employee);
+            ApplyUpdateAuditFields(employee);
 
             await _dbContext.SaveChangesAsync();
 
@@ -110,7 +114,6 @@ namespace Lexor.Services
 
         private static string GenerateInvitationCode(int length = 8)
         {
-            const string chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ23456789"; // without similar (0/O, 1/I/L)
             var bytes = RandomNumberGenerator.GetBytes(length);
             return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
         }

@@ -9,7 +9,7 @@ namespace Lexor.Services
 {
     public class DepartmentService : BaseCRUDService<Department, DepartmentResponse, DepartmentSearchObject, DepartmentInsertRequest, DepartmentUpdateRequest>, IDepartmentService
     {
-        public DepartmentService(LexorDbContext dbContext, IMapper mapper, IValidator<DepartmentInsertRequest> insertValidator, IValidator<DepartmentUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public DepartmentService(LexorDbContext dbContext, IMapper mapper, IValidator<DepartmentInsertRequest> insertValidator, IValidator<DepartmentUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
             
         }

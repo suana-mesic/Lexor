@@ -9,7 +9,7 @@ namespace Lexor.Services
 {
     public class CountryService : BaseCRUDService<Country, CountryResponse, CountrySearchObject, CountryInsertRequest, CountryUpdateRequest>, ICountryService
     {
-        public CountryService(LexorDbContext dbContext, IMapper mapper, IValidator<CountryInsertRequest> insertValidator, IValidator<CountryUpdateRequest> updateValidator) : base(dbContext, mapper, insertValidator, updateValidator)
+        public CountryService(LexorDbContext dbContext, IMapper mapper, IValidator<CountryInsertRequest> insertValidator, IValidator<CountryUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
             
         }
