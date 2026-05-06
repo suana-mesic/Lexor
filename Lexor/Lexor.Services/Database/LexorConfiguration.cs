@@ -15,6 +15,11 @@ namespace Lexor.Services.Database
                 .HasIndex(u => u.Username)
                 .IsUnique();
 
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Username)
+                .IsUnique()
+                .HasFilter("[Username] <> ''");   // unique when != ''
+
             // ===== UserRole (M2M User <-> Role) =====
             modelBuilder.Entity<UserRole>()
                 .HasOne(ur => ur.User)

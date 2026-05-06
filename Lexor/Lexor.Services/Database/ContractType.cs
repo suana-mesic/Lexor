@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Lexor.Services.Database
@@ -11,6 +10,8 @@ namespace Lexor.Services.Database
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
+
+        public bool EndDateRequired { get; set; }
 
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
     }

@@ -50,9 +50,9 @@ namespace Lexor.Services.Database
 
             // ===== ContractTypes =====
             modelBuilder.Entity<ContractType>().HasData(
-                new ContractType { Id = 1, Name = "Neodređeno" },
-                new ContractType { Id = 2, Name = "Određeno" },
-                new ContractType { Id = 3, Name = "Stručna praksa" }
+                new ContractType { Id = 1, Name = "Neodređeno" , EndDateRequired = false},
+                new ContractType { Id = 2, Name = "Određeno", EndDateRequired = true },
+                new ContractType { Id = 3, Name = "Stručna praksa", EndDateRequired = true }
             );
 
             // ===== LeaveTypes =====

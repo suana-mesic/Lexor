@@ -4,6 +4,7 @@ using Lexor.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lexor.Services.Migrations
 {
     [DbContext(typeof(LexorDbContext))]
-    partial class LexorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506122618_EmployeeAndUserModifications")]
+    partial class EmployeeAndUserModifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -250,14 +253,14 @@ namespace Lexor.Services.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("UpdatedAtByUserId")
-                        .HasColumnType("int");
 
                     b.Property<int>("WorkHoursPerDay")
                         .HasColumnType("int");
@@ -279,9 +282,6 @@ namespace Lexor.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("EndDateRequired")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -295,19 +295,16 @@ namespace Lexor.Services.Migrations
                         new
                         {
                             Id = 1,
-                            EndDateRequired = false,
                             Name = "Neodređeno"
                         },
                         new
                         {
                             Id = 2,
-                            EndDateRequired = true,
                             Name = "Određeno"
                         },
                         new
                         {
                             Id = 3,
-                            EndDateRequired = true,
                             Name = "Stručna praksa"
                         });
                 });
@@ -416,13 +413,13 @@ namespace Lexor.Services.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<int>("PositionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("UpdatedAtByUserId")
+                    b.Property<int?>("ModifiedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PositionId")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")

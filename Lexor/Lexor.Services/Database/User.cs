@@ -22,7 +22,6 @@ namespace Lexor.Services.Database
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
         [MaxLength(100)]
         public string Username { get; set; } = string.Empty;
 
@@ -37,6 +36,11 @@ namespace Lexor.Services.Database
         public string? ProfileImageBase64 { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        [MaxLength(20)]
+        public string? InvitationCode { get; set; }
+
+        public bool IsCodeActivated { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

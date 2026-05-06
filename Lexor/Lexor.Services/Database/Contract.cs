@@ -25,9 +25,11 @@ namespace Lexor.Services.Database
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal BrutoSalary { get; set; }
-
         public int WorkHoursPerDay { get; set; } = 8;
-
         public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int CreatedByUserId { get; set; }
+        public DateTime? UpdatedAt{ get; set; }
+        public int? UpdatedAtByUserId { get; set; }
     }
 }

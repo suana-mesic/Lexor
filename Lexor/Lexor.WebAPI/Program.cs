@@ -28,6 +28,12 @@ TypeAdapterConfig<PositionUpdateRequest, Position>.NewConfig().IgnoreNullValues(
 TypeAdapterConfig<ContractTypeUpdateRequest, ContractType>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LegalDocumentCategoryUpdateRequest, LegalDocumentCategory>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LeaveTypeUpdateRequest, LeaveType>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<EmployeeUpdateRequest, Employee>.NewConfig().IgnoreNullValues(true).Ignore(dest => dest.User).Ignore(dest => dest.Contracts);
+TypeAdapterConfig<EmployeeInsertRequest, Employee>.NewConfig().IgnoreNullValues(true).Ignore(dest => dest.User).Ignore(dest => dest.Contracts);
+TypeAdapterConfig<EmployeeUserUpdateRequest, User>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<ContractUpdateRequest, Contract>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<Contract, ContractResponse>.NewConfig().Map(dest => dest.ContractTypeName, src => src.ContractType != null ? src.ContractType.Name : null);
+
 
 TypeAdapterConfig<City, CityResponse>.NewConfig().Map(dest => dest.CountryName, src => src.Country != null ? src.Country.Name : null);
 
@@ -39,6 +45,9 @@ builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IContractTypeService, ContractTypeService>();
 builder.Services.AddScoped<ILegalDocumentCategoryService, LegalDocumentCategoryService>();
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IContractService, ContractService>();
+
 
 builder.Services.AddScoped<IValidator<CountryInsertRequest>, CountriesInsertValidator>();
 builder.Services.AddScoped<IValidator<CityInsertRequest>, CityInsertValidator>();
@@ -48,6 +57,9 @@ builder.Services.AddScoped<IValidator<PositionInsertRequest>, PositionInsertVali
 builder.Services.AddScoped<IValidator<ContractTypeInsertRequest>, ContractTypeInsertValidator>();
 builder.Services.AddScoped<IValidator<LegalDocumentCategoryInsertRequest>, LegalDocumentCategoryInsertValidator>();
 builder.Services.AddScoped<IValidator<LeaveTypeInsertRequest>, LeaveTypeInsertValidator>();
+builder.Services.AddScoped<IValidator<EmployeeInsertRequest>, EmployeeInsertValidator>();
+builder.Services.AddScoped<IValidator<ContractInsertRequest>, ContractInsertValidator>();
+
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
 builder.Services.AddScoped<IValidator<CityUpdateRequest>, CityUpdateValidator>();
@@ -57,6 +69,8 @@ builder.Services.AddScoped<IValidator<PositionUpdateRequest>, PositionUpdateVali
 builder.Services.AddScoped<IValidator<ContractTypeUpdateRequest>, ContractTypeUpdateValidator>();
 builder.Services.AddScoped<IValidator<LegalDocumentCategoryUpdateRequest>, LegalDocumentCategoryUpdateValidator>();
 builder.Services.AddScoped<IValidator<LeaveTypeUpdateRequest>, LeaveTypeUpdateValidator>();
+builder.Services.AddScoped<IValidator<EmployeeUpdateRequest>, EmployeeUpdateValidator>();
+builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateValidator>();
 
 
 builder.Services.AddOpenApi();
