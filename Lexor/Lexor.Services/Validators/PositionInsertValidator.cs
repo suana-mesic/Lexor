@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Lexor.Model.Requests;
 
 namespace Lexor.Services.Validators
@@ -8,8 +8,8 @@ namespace Lexor.Services.Validators
         public PositionInsertValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Name is required")
-                .MaximumLength(100).WithMessage("Name cannot exceed 100 characters.");
+                .NotEmpty().WithMessage("Naziv pozicije je obavezan.")
+                .MaximumLength(100).WithMessage("Naziv pozicije ne može imati više od 100 karaktera.");
         }
     }
 }

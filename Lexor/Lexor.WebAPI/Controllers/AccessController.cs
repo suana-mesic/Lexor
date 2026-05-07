@@ -22,7 +22,7 @@ namespace Lexor.WebAPI.Controllers
         {
             var result = await _accessManager.Login(request);
             if (result == null)
-                return Unauthorized("Wrong credentials.");
+                return Unauthorized("Pogrešni kredencijali.");
             return Ok(result);
         }
 
@@ -32,7 +32,7 @@ namespace Lexor.WebAPI.Controllers
         {
             var result = await _accessManager.Refresh(request);
             if (result == null)
-                return Unauthorized("Invalid or expired refresh token.");
+                return Unauthorized("Nevažeći ili istekao refresh token.");
             return Ok(result);
         }
 

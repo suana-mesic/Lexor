@@ -1,4 +1,5 @@
 using FluentValidation;
+using Lexor.Model.Enums;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
@@ -27,10 +28,16 @@ namespace Lexor.Services
                 {
                     query = query.Where(c => c.ContractTypeId == search.ContractTypeId);
                 }
-                if (search.OnlyActive == true)
+
+                query = search.ActivityStatus switch
                 {
-                    query = query.Where(c => c.IsActive);
-                }
+                    ActivityStatus.Active => query.Where(c => c.IsActive),
+                    ActivityStatus.Inactive => query.Where(c => !c.IsActive),
+                    ActivityStatus.All => query,
+                    null => query,
+                    _ => throw new ValidationException(
+                        $"Nevažeća vrijednost ActivityStatus: {(int)search.ActivityStatus.Value}.")
+                };
             }
             return query;
         }
@@ -48,23 +55,23 @@ namespace Lexor.Services
 
             var employeeExists = await _dbContext.Employees.AnyAsync(e => e.Id == request.EmployeeId);
             if (!employeeExists)
-                throw new KeyNotFoundException($"Employee with id {request.EmployeeId} not found.");
+                throw new KeyNotFoundException($"Zaposlenik sa Id-em {request.EmployeeId} nije pronađen.");
 
             var contractType = await _dbContext.Set<ContractType>()
                 .FirstOrDefaultAsync(ct => ct.Id == request.ContractTypeId);
 
             if (contractType == null)
-                throw new KeyNotFoundException($"ContractType with id {request.ContractTypeId} not found.");
+                throw new KeyNotFoundException($"Tip ugovora sa Id-em {request.ContractTypeId} nije pronađen.");
 
             if (contractType.EndDateRequired && !request.EndDate.HasValue)
-                throw new ValidationException("End date is required for this contract type.");
+                throw new ValidationException("Datum završetka je obavezan za ovaj tip ugovora.");
 
             if (request.IsActive)
             {
                 var hasActive = await _dbContext.Contracts
                     .AnyAsync(c => c.EmployeeId == request.EmployeeId && c.IsActive);
                 if (hasActive)
-                    throw new ValidationException("Employee already has an active contract. Deactivate it before adding a new one.");
+                    throw new ValidationException("Zaposlenik već ima aktivan ugovor. Deaktivirajte postojeći prije nego što dodate novi.");
             }
 
             var entity = _mapper.Map<Contract>(request);
@@ -82,10 +89,10 @@ namespace Lexor.Services
 
             var contract = await _dbContext.Contracts.FirstOrDefaultAsync(c => c.Id == id);
             if (contract == null)
-                throw new KeyNotFoundException($"Contract with id {id} not found.");
+                throw new KeyNotFoundException($"Ugovor sa Id-em {id} nije pronađen.");
 
             if (!contract.IsActive)
-                throw new ValidationException($"Cannot edit inactive contract {contract.Id}. History is read-only.");
+                throw new ValidationException($"Nije moguće uređivati neaktivan ugovor {contract.Id}. Istorija je samo za čitanje.");
 
             _mapper.Map(request, contract);
             await _dbContext.SaveChangesAsync();

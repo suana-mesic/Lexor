@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Lexor.Model.Requests;
 
 namespace Lexor.Services.Validators
@@ -8,7 +8,7 @@ namespace Lexor.Services.Validators
         public PositionUpdateValidator()
         {
             RuleFor(x => x.Name)
-              .MaximumLength(100).WithMessage("Name cannot exceed 100 characters.");
+                .MaximumLength(100).WithMessage("Naziv pozicije ne može imati više od 100 karaktera.");
         }
     }
 }

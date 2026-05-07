@@ -8,8 +8,8 @@ namespace Lexor.Services.Validators
         public LeaveTypeInsertValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Name is required")
-                .MaximumLength(100).WithMessage("Name cannot exceed 100 characters.");
+                .NotEmpty().WithMessage("Naziv tipa odsustva je obavezan.")
+                .MaximumLength(100).WithMessage("Naziv tipa odsustva ne može imati više od 100 karaktera.");
         }
     }
 }

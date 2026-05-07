@@ -68,7 +68,7 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
 
             if(entity == null)
-                throw new KeyNotFoundException($"{typeof(TEntity).Name} with id {id} not found.");
+                throw new KeyNotFoundException($"{typeof(TEntity).Name} sa Id-em {id} nije pronađen.");
 
             MapUpdateRequestToEntity(request, entity);
 
@@ -84,7 +84,7 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
 
             if (entity == null)
-                throw new KeyNotFoundException($"{typeof(TEntity).Name} with id {id} not found");
+                throw new KeyNotFoundException($"{typeof(TEntity).Name} sa Id-em {id} nije pronađen.");
 
             _dbContext.Set<TEntity>().Remove(entity);
             await _dbContext.SaveChangesAsync();
@@ -92,7 +92,8 @@ namespace Lexor.Services
 
         protected void ApplyCreateAuditFields(object entity)
         {
-            var createdAt = entity.GetType().GetProperty("CreatedAt");
+            var createdAt = entity.GetType().GetProperty("CreatedAt")
+               ?? entity.GetType().GetProperty("AssignedAt");
             if (createdAt?.CanWrite == true)
                 createdAt.SetValue(entity, DateTime.UtcNow);
 

@@ -8,7 +8,7 @@ namespace Lexor.Services.Validators
         public ContractUpdateValidator()
         {
             RuleFor(x => x.EndDate)
-                .GreaterThan(x => x.StartDate).WithMessage("End date must be after start date")
+                .GreaterThan(x => x.StartDate).WithMessage("Datum završetka mora biti nakon datuma početka.")
                 .When(x => x.EndDate.HasValue && x.StartDate.HasValue);
         }
     }

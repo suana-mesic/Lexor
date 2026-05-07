@@ -1,6 +1,5 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Lexor.Model.Requests;
-using System.Data;
 
 namespace Lexor.Services.Validators
 {
@@ -9,8 +8,8 @@ namespace Lexor.Services.Validators
         public DepartmentInsertValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Name is required")
-                .MaximumLength(100).WithMessage("Name cannot exceed 100 characters.");
+                .NotEmpty().WithMessage("Naziv odjela je obavezan.")
+                .MaximumLength(100).WithMessage("Naziv odjela ne može imati više od 100 karaktera.");
         }
     }
 }

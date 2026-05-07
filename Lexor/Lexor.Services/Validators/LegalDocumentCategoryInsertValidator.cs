@@ -8,8 +8,8 @@ namespace Lexor.Services.Validators
         public LegalDocumentCategoryInsertValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Name is required")
-                .MaximumLength(150).WithMessage("Name cannot exceed 150 characters.");
+                .NotEmpty().WithMessage("Naziv kategorije pravnog dokumenta je obavezan.")
+                .MaximumLength(150).WithMessage("Naziv kategorije pravnog dokumenta ne može imati više od 150 karaktera.");
         }
     }
 }

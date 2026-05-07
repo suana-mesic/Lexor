@@ -1,11 +1,10 @@
-using Lexor.Model.Enums;
+﻿using Lexor.Model.Enums;
 
 namespace Lexor.Model.SearchObjects
 {
-    public class ContractSearchObject : BaseSearchObject
+    public class RFIDSearchObject : BaseSearchObject
     {
         public int? EmployeeId { get; set; }
-        public int? ContractTypeId { get; set; }
         public ActivityStatus? ActivityStatus { get; set; }
     }
 }

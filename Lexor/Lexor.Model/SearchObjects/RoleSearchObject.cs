@@ -1,8 +1,10 @@
-﻿namespace Lexor.Model.SearchObjects
+﻿using Lexor.Model.Enums;
+
+namespace Lexor.Model.SearchObjects
 {
-    public class RoleSearchObject:BaseSearchObject
+    public class RoleSearchObject : BaseSearchObject
     {
         public string? Name { get; set; }
-        public bool? OnlyActive { get; set; } //if true then show only active roles
+        public ActivityStatus? ActivityStatus { get; set; }
     }
 }

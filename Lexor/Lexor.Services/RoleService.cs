@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Lexor.Model.Enums;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
@@ -20,10 +21,16 @@ namespace Lexor.Services
                 {
                     query = query.Where(c => c.Name.ToLower().Contains(search.Name.ToLower()));
                 }
-                if (search.OnlyActive.HasValue && search.OnlyActive == true)
+
+                query = search.ActivityStatus switch
                 {
-                    query = query.Where(c => c.IsActive);
-                }
+                    ActivityStatus.Active => query.Where(c => c.IsActive),
+                    ActivityStatus.Inactive => query.Where(c => !c.IsActive),
+                    ActivityStatus.All => query,
+                    null => query,
+                    _ => throw new ValidationException(
+                        $"Nevažeća vrijednost ActivityStatus: {(int)search.ActivityStatus.Value}.")
+                };
             }
             return query;
         }

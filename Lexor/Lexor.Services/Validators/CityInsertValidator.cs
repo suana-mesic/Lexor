@@ -1,6 +1,5 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Lexor.Model.Requests;
-using System.Data;
 
 namespace Lexor.Services.Validators
 {
@@ -9,11 +8,11 @@ namespace Lexor.Services.Validators
         public CityInsertValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Name is required")
-                .MaximumLength(100).WithMessage("Name cannot exceed 100 characters.");
+                .NotEmpty().WithMessage("Naziv grada je obavezan.")
+                .MaximumLength(100).WithMessage("Naziv grada ne može imati više od 100 karaktera.");
+
             RuleFor(x => x.CountryId)
-                .GreaterThan(0)
-                .WithMessage("CountryId must be greather than 0");
+                .GreaterThan(0).WithMessage("CountryId mora biti veći od 0.");
         }
     }
 }

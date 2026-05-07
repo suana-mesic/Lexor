@@ -59,7 +59,7 @@ namespace Lexor.Services
             var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
 
             if (entity == null)
-                throw new KeyNotFoundException($"{typeof(TEntity).Name} with id {id} not found");
+                throw new KeyNotFoundException($"{typeof(TEntity).Name} sa Id-em {id} nije pronađen.");
 
             return _mapper.Map<TResponse>(entity);
         }

@@ -2,6 +2,7 @@ using DotNetEnv;
 using FluentValidation;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
+using Lexor.Model.SearchObjects;
 using Lexor.Services;
 using Lexor.Services.Access;
 using Lexor.Services.Database;
@@ -46,6 +47,8 @@ TypeAdapterConfig<EmployeeInsertRequest, Employee>.NewConfig().IgnoreNullValues(
 TypeAdapterConfig<EmployeeUserUpdateRequest, User>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<ContractUpdateRequest, Contract>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<Contract, ContractResponse>.NewConfig().Map(dest => dest.ContractTypeName, src => src.ContractType != null ? src.ContractType.Name : null);
+TypeAdapterConfig<RFIDUpdateRequest, RfidCard>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<PayrollSettingsUpdateRequest, PayrollSettings>.NewConfig().IgnoreNullValues(true);
 
 
 TypeAdapterConfig<City, CityResponse>.NewConfig().Map(dest => dest.CountryName, src => src.Country != null ? src.Country.Name : null);
@@ -60,6 +63,8 @@ builder.Services.AddScoped<ILegalDocumentCategoryService, LegalDocumentCategoryS
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<IRFIDService, RFIDService>();
+builder.Services.AddScoped<IPayrollSettingsService, PayrollSettingsService>();
 
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 
@@ -73,6 +78,9 @@ builder.Services.AddScoped<IValidator<LegalDocumentCategoryInsertRequest>, Legal
 builder.Services.AddScoped<IValidator<LeaveTypeInsertRequest>, LeaveTypeInsertValidator>();
 builder.Services.AddScoped<IValidator<EmployeeInsertRequest>, EmployeeInsertValidator>();
 builder.Services.AddScoped<IValidator<ContractInsertRequest>, ContractInsertValidator>();
+builder.Services.AddScoped<IValidator<RFIDInsertRequest>, RFIDInsertValidator>();
+builder.Services.AddScoped<IValidator<PayrollSettingsInsertRequest>, PayrollSettingsInsertValidator>();
+
 
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
@@ -85,6 +93,9 @@ builder.Services.AddScoped<IValidator<LegalDocumentCategoryUpdateRequest>, Legal
 builder.Services.AddScoped<IValidator<LeaveTypeUpdateRequest>, LeaveTypeUpdateValidator>();
 builder.Services.AddScoped<IValidator<EmployeeUpdateRequest>, EmployeeUpdateValidator>();
 builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateValidator>();
+builder.Services.AddScoped<IValidator<RFIDUpdateRequest>, RFIDUpdateValidator>();
+builder.Services.AddScoped<IValidator<PayrollSettingsUpdateRequest>, PayrollSettingsUpdateValidator>();
+
 
 //adds Bearer in Scalar
 //adds requirement on each endpoint (Scalar shows it as padlock icon)

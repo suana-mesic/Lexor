@@ -8,28 +8,28 @@ namespace Lexor.Services.Validators
         public EmployeeInsertValidator()
         {
             RuleFor(x => x.User)
-                .NotNull().WithMessage("User data is required")
+                .NotNull().WithMessage("Podaci o korisniku su obavezni.")
                 .SetValidator(new EmployeeUserInsertValidator());
 
             RuleFor(x => x.DateOfBirth)
-                .NotEmpty().WithMessage("Date of birth is required")
-                .LessThan(DateTime.UtcNow).WithMessage("Date of birth must be in the past");
+                .NotEmpty().WithMessage("Datum rođenja je obavezan.")
+                .LessThan(DateTime.UtcNow).WithMessage("Datum rođenja mora biti u prošlosti.");
 
             RuleFor(x => x.Address)
-                .NotEmpty().WithMessage("Address is required")
-                .MaximumLength(200).WithMessage("Address cannot exceed 200 characters");
+                .NotEmpty().WithMessage("Adresa je obavezna.")
+                .MaximumLength(200).WithMessage("Adresa ne može imati više od 200 karaktera.");
 
             RuleFor(x => x.CityId)
-                .GreaterThan(0).WithMessage("CityId must be greater than 0");
+                .GreaterThan(0).WithMessage("CityId mora biti veći od 0.");
 
             RuleFor(x => x.DepartmentId)
-                .GreaterThan(0).WithMessage("DepartmentId must be greater than 0");
+                .GreaterThan(0).WithMessage("DepartmentId mora biti veći od 0.");
 
             RuleFor(x => x.PositionId)
-                .GreaterThan(0).WithMessage("PositionId must be greater than 0");
+                .GreaterThan(0).WithMessage("PositionId mora biti veći od 0.");
 
             RuleFor(x => x.HireDate)
-                .NotEmpty().WithMessage("Hire date is required");
+                .NotEmpty().WithMessage("Datum zaposlenja je obavezan.");
         }
     }
 
@@ -38,22 +38,21 @@ namespace Lexor.Services.Validators
         public EmployeeUserInsertValidator()
         {
             RuleFor(x => x.FirstName)
-                .NotEmpty().WithMessage("First name is required")
-                .MaximumLength(50).WithMessage("First name cannot exceed 50 characters");
+                .NotEmpty().WithMessage("Ime je obavezno.")
+                .MaximumLength(50).WithMessage("Ime ne može imati više od 50 karaktera.");
 
             RuleFor(x => x.LastName)
-                .NotEmpty().WithMessage("Last name is required")
-                .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters");
+                .NotEmpty().WithMessage("Prezime je obavezno.")
+                .MaximumLength(50).WithMessage("Prezime ne može imati više od 50 karaktera.");
 
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email is required")
-                .EmailAddress().WithMessage("Email must be a valid email address")
-                .MaximumLength(100).WithMessage("Email cannot exceed 100 characters");
+                .NotEmpty().WithMessage("Email je obavezan.")
+                .EmailAddress().WithMessage("Email mora biti validna email adresa.")
+                .MaximumLength(100).WithMessage("Email ne može imati više od 100 karaktera.");
 
             RuleFor(x => x.PhoneNumber)
-                .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters")
+                .MaximumLength(20).WithMessage("Broj telefona ne može imati više od 20 karaktera.")
                 .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
         }
     }
-
 }

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Lexor.Model.Enums;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
@@ -31,10 +32,16 @@ namespace Lexor.Services
                 {
                     query = query.Where(e => e.DepartmentId == search.DepartmentId);
                 }
-                if (search.OnlyActive.HasValue && search.OnlyActive == true)
+
+                query = search.ActivityStatus switch
                 {
-                    query = query.Where(e => e.IsActive);
-                }
+                    ActivityStatus.Active => query.Where(e => e.IsActive),
+                    ActivityStatus.Inactive => query.Where(e => !e.IsActive),
+                    ActivityStatus.All => query,
+                    null => query,
+                    _ => throw new ValidationException(
+                        $"Nevažeća vrijednost ActivityStatus: {(int)search.ActivityStatus.Value}.")
+                };
             }
             return query;
         }
@@ -97,7 +104,7 @@ namespace Lexor.Services
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (employee == null)
-                throw new KeyNotFoundException($"Employee with id {id} not found.");
+                throw new KeyNotFoundException($"Zaposlenik sa Id-em {id} nije pronađen.");
 
             if (request.User != null)
             {
