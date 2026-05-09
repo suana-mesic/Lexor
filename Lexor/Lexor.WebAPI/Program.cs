@@ -44,11 +44,11 @@ TypeAdapterConfig<LegalDocumentCategoryUpdateRequest, LegalDocumentCategory>.New
 TypeAdapterConfig<LeaveTypeUpdateRequest, LeaveType>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<EmployeeUpdateRequest, Employee>.NewConfig().IgnoreNullValues(true).Ignore(dest => dest.User).Ignore(dest => dest.Contracts);
 TypeAdapterConfig<EmployeeInsertRequest, Employee>.NewConfig().IgnoreNullValues(true).Ignore(dest => dest.User).Ignore(dest => dest.Contracts);
-TypeAdapterConfig<EmployeeUserUpdateRequest, User>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<EmployeeUpdateRequest.UserUpdateRequest, User>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<ContractUpdateRequest, Contract>.NewConfig().IgnoreNullValues(true);
-TypeAdapterConfig<Contract, ContractResponse>.NewConfig().Map(dest => dest.ContractTypeName, src => src.ContractType != null ? src.ContractType.Name : null);
 TypeAdapterConfig<RFIDUpdateRequest, RfidCard>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<PayrollSettingsUpdateRequest, PayrollSettings>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<AttendanceUpdateRequest, Attendance>.NewConfig().IgnoreNullValues(true);
 
 
 TypeAdapterConfig<City, CityResponse>.NewConfig().Map(dest => dest.CountryName, src => src.Country != null ? src.Country.Name : null);
@@ -65,6 +65,8 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IRFIDService, RFIDService>();
 builder.Services.AddScoped<IPayrollSettingsService, PayrollSettingsService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+
 
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 
@@ -80,6 +82,8 @@ builder.Services.AddScoped<IValidator<EmployeeInsertRequest>, EmployeeInsertVali
 builder.Services.AddScoped<IValidator<ContractInsertRequest>, ContractInsertValidator>();
 builder.Services.AddScoped<IValidator<RFIDInsertRequest>, RFIDInsertValidator>();
 builder.Services.AddScoped<IValidator<PayrollSettingsInsertRequest>, PayrollSettingsInsertValidator>();
+builder.Services.AddScoped<IValidator<AttendanceInsertRequest>, AttendanceInsertValidator>();
+
 
 
 
@@ -95,6 +99,8 @@ builder.Services.AddScoped<IValidator<EmployeeUpdateRequest>, EmployeeUpdateVali
 builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateValidator>();
 builder.Services.AddScoped<IValidator<RFIDUpdateRequest>, RFIDUpdateValidator>();
 builder.Services.AddScoped<IValidator<PayrollSettingsUpdateRequest>, PayrollSettingsUpdateValidator>();
+builder.Services.AddScoped<IValidator<AttendanceUpdateRequest>, AttendanceUpdateValidator>();
+
 
 
 //adds Bearer in Scalar
@@ -141,7 +147,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 

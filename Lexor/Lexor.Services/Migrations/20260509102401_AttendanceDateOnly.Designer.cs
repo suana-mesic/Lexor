@@ -4,6 +4,7 @@ using Lexor.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lexor.Services.Migrations
 {
     [DbContext(typeof(LexorDbContext))]
-    partial class LexorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260509102401_AttendanceDateOnly")]
+    partial class AttendanceDateOnly
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,17 +58,14 @@ namespace Lexor.Services.Migrations
                     b.Property<int>("RfidCardId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UpdatedByUserId")
-                        .HasColumnType("int");
-
                     b.Property<decimal?>("WorkedHours")
                         .HasColumnType("decimal(5,2)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RfidCardId");
+                    b.HasIndex("CorrectedByAdminId");
 
-                    b.HasIndex("UpdatedByUserId");
+                    b.HasIndex("RfidCardId");
 
                     b.HasIndex("EmployeeId", "Date")
                         .IsUnique();
@@ -1126,6 +1126,11 @@ namespace Lexor.Services.Migrations
 
             modelBuilder.Entity("Lexor.Services.Database.Attendance", b =>
                 {
+                    b.HasOne("Lexor.Services.Database.User", "CorrectedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("CorrectedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Lexor.Services.Database.Employee", "Employee")
                         .WithMany("Attendances")
                         .HasForeignKey("EmployeeId")
@@ -1138,16 +1143,11 @@ namespace Lexor.Services.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Lexor.Services.Database.User", "UpdatedByUser")
-                        .WithMany()
-                        .HasForeignKey("UpdatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("CorrectedByAdmin");
 
                     b.Navigation("Employee");
 
                     b.Navigation("RfidCard");
-
-                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("Lexor.Services.Database.AuditLog", b =>

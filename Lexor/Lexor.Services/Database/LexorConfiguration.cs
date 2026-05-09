@@ -107,9 +107,9 @@ namespace Lexor.Services.Database
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Attendance>()
-                .HasOne(a => a.CorrectedByAdmin)
+                .HasOne(a => a.UpdatedByUser)
                 .WithMany()
-                .HasForeignKey(a => a.CorrectedByAdminId)
+                .HasForeignKey(a => a.UpdatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Attendance>()

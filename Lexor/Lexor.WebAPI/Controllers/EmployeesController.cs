@@ -4,6 +4,7 @@ using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
@@ -13,6 +14,13 @@ namespace Lexor.WebAPI.Controllers
         public EmployeesController(IEmployeeService Employeeservice) : base(Employeeservice)
         {
 
+        }
+
+        [HttpPatch("{id}/deactivate")]
+        public async Task<ActionResult<EmployeeResponse>> Deactivate(int id)
+        {
+            var result = await _service.DeactivateAsync(id);
+            return result;
         }
     }
 }

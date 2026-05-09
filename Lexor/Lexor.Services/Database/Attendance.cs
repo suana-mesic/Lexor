@@ -18,8 +18,7 @@ namespace Lexor.Services.Database
         [ForeignKey("RfidCardId")]
         public RfidCard RfidCard { get; set; } = null!;
 
-        [Column(TypeName = "date")]
-        public DateTime Date { get; set; }
+        public DateOnly Date { get; set; }
 
         public DateTime? DateTimeEntered { get; set; }
 
@@ -33,9 +32,8 @@ namespace Lexor.Services.Database
         [MaxLength(500)]
         public string? CorrectionReason { get; set; }
 
-        public int? CorrectedByAdminId { get; set; }
+        public int? UpdatedByUserId { get; set; }
 
-        [ForeignKey("CorrectedByAdminId")]
-        public User? CorrectedByAdmin { get; set; }
+        public User? UpdatedByUser { get; set; }
     }
 }

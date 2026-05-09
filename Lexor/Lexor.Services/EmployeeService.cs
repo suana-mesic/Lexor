@@ -4,6 +4,7 @@ using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
+using Lexor.Services.Helpers;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -104,7 +105,7 @@ namespace Lexor.Services
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (employee == null)
-                throw new KeyNotFoundException($"Zaposlenik sa Id-em {id} nije pronađen.");
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
 
             if (request.User != null)
             {
@@ -123,6 +124,20 @@ namespace Lexor.Services
         {
             var bytes = RandomNumberGenerator.GetBytes(length);
             return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
+        }
+
+        public async Task<EmployeeResponse> DeactivateAsync(int id)
+        {
+            var employee = await _dbContext.Set<Employee>().FirstOrDefaultAsync(e => e.Id == id);
+
+            if (employee == null)
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
+
+            if (employee.IsActive)
+                employee.IsActive = false;
+
+            await _dbContext.SaveChangesAsync();
+            return await GetByIdAsync(id);
         }
     }
 }

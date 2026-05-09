@@ -1,6 +1,7 @@
 ﻿using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
+using Lexor.Services.Helpers;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
@@ -59,7 +60,7 @@ namespace Lexor.Services
             var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
 
             if (entity == null)
-                throw new KeyNotFoundException($"{typeof(TEntity).Name} sa Id-em {id} nije pronađen.");
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
 
             return _mapper.Map<TResponse>(entity);
         }

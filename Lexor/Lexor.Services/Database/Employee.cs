@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -39,9 +37,13 @@ namespace Lexor.Services.Database
         public DateTime HireDate { get; set; }
 
         public bool IsActive { get; set; } = true;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         public int CreatedByUserId { get; set; }
+        
         public DateTime? UpdatedAt { get; set; }
+        
         public int? UpdatedByUserId { get; set; }
 
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();

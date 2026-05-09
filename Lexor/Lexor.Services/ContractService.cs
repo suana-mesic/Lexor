@@ -4,8 +4,10 @@ using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
+using Lexor.Services.Helpers;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 
 namespace Lexor.Services
 {
@@ -55,13 +57,13 @@ namespace Lexor.Services
 
             var employeeExists = await _dbContext.Employees.AnyAsync(e => e.Id == request.EmployeeId);
             if (!employeeExists)
-                throw new KeyNotFoundException($"Zaposlenik sa Id-em {request.EmployeeId} nije pronađen.");
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), request.EmployeeId));
 
             var contractType = await _dbContext.Set<ContractType>()
                 .FirstOrDefaultAsync(ct => ct.Id == request.ContractTypeId);
 
             if (contractType == null)
-                throw new KeyNotFoundException($"Tip ugovora sa Id-em {request.ContractTypeId} nije pronađen.");
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
 
             if (contractType.EndDateRequired && !request.EndDate.HasValue)
                 throw new ValidationException("Datum završetka je obavezan za ovaj tip ugovora.");
@@ -89,7 +91,7 @@ namespace Lexor.Services
 
             var contract = await _dbContext.Contracts.FirstOrDefaultAsync(c => c.Id == id);
             if (contract == null)
-                throw new KeyNotFoundException($"Ugovor sa Id-em {id} nije pronađen.");
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Contract),id));
 
             if (!contract.IsActive)
                 throw new ValidationException($"Nije moguće uređivati neaktivan ugovor {contract.Id}. Istorija je samo za čitanje.");

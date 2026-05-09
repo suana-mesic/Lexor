@@ -33,7 +33,7 @@ namespace Lexor.Services.Validators
         }
     }
 
-    public class EmployeeUserInsertValidator : AbstractValidator<EmployeeUserInsertRequest>
+    public class EmployeeUserInsertValidator : AbstractValidator<EmployeeInsertRequest.UserInsertRequest>
     {
         public EmployeeUserInsertValidator()
         {

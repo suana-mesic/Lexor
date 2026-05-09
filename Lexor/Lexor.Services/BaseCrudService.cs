@@ -3,11 +3,11 @@ using FluentValidation.Results;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
 using MapsterMapper;
-using System.Reflection;
+using Lexor.Services.Helpers;
 
 namespace Lexor.Services
 {
-    public abstract class BaseCRUDService<TEntity, TResponse, TSearch, TInsertRequest, TUpdateRequest> : 
+    public abstract class BaseCRUDService<TEntity, TResponse, TSearch, TInsertRequest, TUpdateRequest> :
         BaseReadService<TEntity, TResponse, TSearch>,
         IBaseCRUDService<TResponse, TSearch, TInsertRequest, TUpdateRequest>
         where TEntity : class
@@ -26,7 +26,7 @@ namespace Lexor.Services
 
         protected virtual TEntity MapInsertRequestToEntity(TInsertRequest request)
         {
-            var entity = _mapper.Map<TEntity>(request ?? throw new ArgumentNullException(nameof(request)));
+            var entity = _mapper.Map<TEntity>(request);
             return entity;
         }
 
@@ -40,7 +40,7 @@ namespace Lexor.Services
 
             if (validationResult.IsValid == false)
             {
-                var errors = validationResult.Errors.Select(e =>_mapper.Map<ValidationFailure>(e));
+                var errors = validationResult.Errors.Select(e => _mapper.Map<ValidationFailure>(e));
                 throw new ValidationException(errors);
             }
 
@@ -52,7 +52,7 @@ namespace Lexor.Services
             _dbContext.Set<TEntity>().Add(entity);
             await _dbContext.SaveChangesAsync();
 
-            var newId = (int) entity.GetType().GetProperty("Id").GetValue(entity);
+            var newId = (int)entity.GetType().GetProperty("Id").GetValue(entity);
             return await GetByIdAsync(newId);
         }
 
@@ -67,8 +67,8 @@ namespace Lexor.Services
 
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
 
-            if(entity == null)
-                throw new KeyNotFoundException($"{typeof(TEntity).Name} sa Id-em {id} nije pronađen.");
+            if (entity == null)
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
 
             MapUpdateRequestToEntity(request, entity);
 
@@ -84,7 +84,7 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
 
             if (entity == null)
-                throw new KeyNotFoundException($"{typeof(TEntity).Name} sa Id-em {id} nije pronađen.");
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
 
             _dbContext.Set<TEntity>().Remove(entity);
             await _dbContext.SaveChangesAsync();
@@ -104,13 +104,13 @@ namespace Lexor.Services
 
         protected void ApplyUpdateAuditFields(object entity)
         {
-            var createdAt = entity.GetType().GetProperty("UpdatedAt");
-            if (createdAt?.CanWrite == true)
-                createdAt.SetValue(entity, DateTime.UtcNow);
+            var updatedAt = entity.GetType().GetProperty("UpdatedAt");
+            if (updatedAt?.CanWrite == true)
+                updatedAt.SetValue(entity, DateTime.UtcNow);
 
-            var createdBy = entity.GetType().GetProperty("UpdatedByUserId");
-            if (createdBy?.CanWrite == true)
-                createdBy.SetValue(entity, _userAccessor.GetUserId() ?? 0);
+            var updatedBy = entity.GetType().GetProperty("UpdatedByUserId");
+            if (updatedBy?.CanWrite == true)
+                updatedBy.SetValue(entity, _userAccessor.GetUserId() ?? 0);
         }
     }
 }

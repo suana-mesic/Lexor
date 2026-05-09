@@ -43,5 +43,38 @@ namespace Lexor.Services.Database
             CreateConfiguration(modelBuilder);
             CreateSeed(modelBuilder);
         }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            RecalculateAttendanceWorkedHours();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override int SaveChanges()
+        {
+            RecalculateAttendanceWorkedHours();
+            return base.SaveChanges();
+        }
+
+        private void RecalculateAttendanceWorkedHours()
+        {
+            foreach (var entry in ChangeTracker.Entries<Attendance>())
+            {
+                if (entry.State is not (EntityState.Added or EntityState.Modified))
+                    continue;
+
+                var a = entry.Entity;
+                if (a.DateTimeEntered.HasValue && a.DateTimeLeft.HasValue
+                    && a.DateTimeLeft.Value > a.DateTimeEntered.Value)
+                {
+                    var hours = (decimal)(a.DateTimeLeft.Value - a.DateTimeEntered.Value).TotalHours;
+                    a.WorkedHours = Math.Round(hours, 2);
+                }
+                else
+                {
+                    a.WorkedHours = null;
+                }
+            }
+        }
     }
 }
