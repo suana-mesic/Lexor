@@ -2,8 +2,8 @@ namespace Lexor.Model.Enums
 {
     public enum NotificationType
     {
-        LeaveRequestApproved = 1,
-        LeaveRequestRejected = 2,
+        LeaveApproved = 1,
+        LeaveRejected = 2,
         SalarySlipGenerated = 3,
         SalarySlipPaid = 4,
         AttendanceCorrected = 5,

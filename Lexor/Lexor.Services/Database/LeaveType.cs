@@ -14,6 +14,6 @@ namespace Lexor.Services.Database
 
         public bool IsPaid { get; set; }
 
-        public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
+        public ICollection<Leave> Leaves { get; set; } = new List<Leave>();
     }
 }

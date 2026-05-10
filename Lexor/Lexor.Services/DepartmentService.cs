@@ -25,8 +25,5 @@ namespace Lexor.Services
             return query;
         }
 
-        //protected override IQueryable<Department> IncludeRelatedEntities(DepartmentSearchObject search, IQueryable<Department> query)
-        //{
-        //}
     }
 }

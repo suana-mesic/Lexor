@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize]
     public class AttendancesController : BaseCRUDController<AttendanceResponse, AttendanceSearchObject, IAttendanceService, AttendanceInsertRequest, AttendanceUpdateRequest>
     {
 
@@ -31,5 +31,26 @@ namespace Lexor.WebAPI.Controllers
             var result = await _service.ScanAsync(request);
             return Ok(result);
         }
+        [Authorize]
+        public override Task<PageResult<AttendanceResponse>> GetAllAsync([FromQuery] AttendanceSearchObject? search = null)
+            => base.GetAllAsync(search);
+
+        [Authorize]
+        public override Task<ActionResult<AttendanceResponse>> GetByIdAsync(int id)
+            => base.GetByIdAsync(id);
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        public override Task<ActionResult<AttendanceResponse>> Update(int id, [FromBody] AttendanceUpdateRequest request)
+            => base.Update(id, request);
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        public override Task<ActionResult<AttendanceResponse>> Create([FromBody] AttendanceInsertRequest request)
+            => base.Create(request);
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        public override Task<ActionResult<AttendanceResponse>> Delete(int id)
+            => base.Delete(id);
+
     }
+
 }

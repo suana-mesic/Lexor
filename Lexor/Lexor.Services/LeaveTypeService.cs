@@ -29,9 +29,5 @@ namespace Lexor.Services
             }
             return query;
         }
-
-        //protected override IQueryable<LeaveType> IncludeRelatedEntities(LeaveTypeSearchObject search, IQueryable<LeaveType> query)
-        //{
-        //}
     }
 }

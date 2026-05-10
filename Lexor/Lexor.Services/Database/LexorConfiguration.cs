@@ -123,29 +123,29 @@ namespace Lexor.Services.Database
                 .HasForeignKey(c => c.CountryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ===== LeaveRequest =====
-            modelBuilder.Entity<LeaveRequest>()
-                .HasOne(lr => lr.Employee)
-                .WithMany(e => e.LeaveRequests)
-                .HasForeignKey(lr => lr.EmployeeId)
+            // ===== Leave =====
+            modelBuilder.Entity<Leave>()
+                .HasOne(l => l.Employee)
+                .WithMany(e => e.Leaves)
+                .HasForeignKey(l => l.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<LeaveRequest>()
-                .HasOne(lr => lr.LeaveType)
-                .WithMany(lt => lt.LeaveRequests)
-                .HasForeignKey(lr => lr.LeaveTypeId)
+            modelBuilder.Entity<Leave>()
+                .HasOne(l => l.LeaveType)
+                .WithMany(lt => lt.Leaves)
+                .HasForeignKey(l => l.LeaveTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<LeaveRequest>()
-                .HasOne(lr => lr.ApprovedByAdmin)
+            modelBuilder.Entity<Leave>()
+                .HasOne(l => l.ApprovedByAdmin)
                 .WithMany()
-                .HasForeignKey(lr => lr.ApprovedByAdminId)
+                .HasForeignKey(l => l.ApprovedByAdminId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<LeaveRequest>()
-                .HasOne(lr => lr.RejectedByAdmin)
+            modelBuilder.Entity<Leave>()
+                .HasOne(l => l.RejectedByAdmin)
                 .WithMany()
-                .HasForeignKey(lr => lr.RejectedByAdminId)
+                .HasForeignKey(l => l.RejectedByAdminId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ===== SalarySlip =====

@@ -30,7 +30,7 @@ namespace Lexor.Services
             return query;
         }
 
-        protected override IQueryable<City> IncludeRelatedEntities(CitySearchObject search, IQueryable<City> query)
+        protected override IQueryable<City> IncludeRelatedEntities(CitySearchObject? search, IQueryable<City> query)
         {
             return query.Include(c => c.Country);
         }

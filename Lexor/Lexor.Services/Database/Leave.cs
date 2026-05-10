@@ -1,11 +1,10 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Lexor.Model.Enums;
 
 namespace Lexor.Services.Database
 {
-    public class LeaveRequest
+    public class Leave
     {
         [Key]
         public int Id { get; set; }
@@ -20,9 +19,9 @@ namespace Lexor.Services.Database
         [ForeignKey("LeaveTypeId")]
         public LeaveType LeaveType { get; set; } = null!;
 
-        public DateTime DateFrom { get; set; }
+        public DateOnly DateFrom { get; set; }
 
-        public DateTime DateTo { get; set; }
+        public DateOnly DateTo { get; set; }
 
         public int NumberOfDays { get; set; }
 
@@ -30,9 +29,10 @@ namespace Lexor.Services.Database
         [MaxLength(1000)]
         public string Reason { get; set; } = string.Empty;
 
-        public LeaveRequestStatus Status { get; set; } = LeaveRequestStatus.Pending;
+        //public LeaveStatus Status { get; set; } = LeaveStatus.Pending;
+        public string? State { get; set; }
 
-        public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public int? ApprovedByAdminId { get; set; }
 

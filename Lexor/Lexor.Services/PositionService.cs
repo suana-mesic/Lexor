@@ -24,9 +24,5 @@ namespace Lexor.Services
             }
             return query;
         }
-
-        //protected override IQueryable<Position> IncludeRelatedEntities(PositionSearchObject search, IQueryable<Position> query)
-        //{
-        //}
     }
 }

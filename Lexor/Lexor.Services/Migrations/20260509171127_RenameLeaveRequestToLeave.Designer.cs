@@ -4,6 +4,7 @@ using Lexor.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lexor.Services.Migrations
 {
     [DbContext(typeof(LexorDbContext))]
-    partial class LexorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260509171127_RenameLeaveRequestToLeave")]
+    partial class RenameLeaveRequestToLeave
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -459,11 +462,11 @@ namespace Lexor.Services.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateOnly>("DateFrom")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("DateFrom")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateOnly>("DateTo")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("DateTo")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
@@ -489,8 +492,8 @@ namespace Lexor.Services.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("State")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

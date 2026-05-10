@@ -7,6 +7,7 @@ using Lexor.Services;
 using Lexor.Services.Access;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
+using Lexor.Services.LeaveStateMachine;
 using Lexor.Services.Validators;
 using Lexor.WebAPI;
 using Mapster;
@@ -49,6 +50,7 @@ TypeAdapterConfig<ContractUpdateRequest, Contract>.NewConfig().IgnoreNullValues(
 TypeAdapterConfig<RFIDUpdateRequest, RfidCard>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<PayrollSettingsUpdateRequest, PayrollSettings>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<AttendanceUpdateRequest, Attendance>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<LeaveUpdateRequest, Leave>.NewConfig().IgnoreNullValues(true);
 
 
 TypeAdapterConfig<City, CityResponse>.NewConfig().Map(dest => dest.CountryName, src => src.Country != null ? src.Country.Name : null);
@@ -67,6 +69,13 @@ builder.Services.AddScoped<IRFIDService, RFIDService>();
 builder.Services.AddScoped<IPayrollSettingsService, PayrollSettingsService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
+builder.Services.AddScoped<BaseLeaveState>();
+builder.Services.AddScoped<InitialLeaveState>();
+builder.Services.AddScoped<PendingLeaveState>();
+builder.Services.AddScoped<ApprovedLeaveState>();
+builder.Services.AddScoped<RejectedLeaveState>();
+builder.Services.AddScoped<CancelledLeaveState>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
 
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 
@@ -83,9 +92,7 @@ builder.Services.AddScoped<IValidator<ContractInsertRequest>, ContractInsertVali
 builder.Services.AddScoped<IValidator<RFIDInsertRequest>, RFIDInsertValidator>();
 builder.Services.AddScoped<IValidator<PayrollSettingsInsertRequest>, PayrollSettingsInsertValidator>();
 builder.Services.AddScoped<IValidator<AttendanceInsertRequest>, AttendanceInsertValidator>();
-
-
-
+builder.Services.AddScoped<IValidator<LeaveInsertRequest>, LeaveInsertValidator>();
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
 builder.Services.AddScoped<IValidator<CityUpdateRequest>, CityUpdateValidator>();
@@ -100,7 +107,8 @@ builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateVali
 builder.Services.AddScoped<IValidator<RFIDUpdateRequest>, RFIDUpdateValidator>();
 builder.Services.AddScoped<IValidator<PayrollSettingsUpdateRequest>, PayrollSettingsUpdateValidator>();
 builder.Services.AddScoped<IValidator<AttendanceUpdateRequest>, AttendanceUpdateValidator>();
-
+builder.Services.AddScoped<IValidator<LeaveUpdateRequest>, LeaveUpdateValidator>();
+builder.Services.AddScoped<IValidator<LeaveRejectRequest>, LeaveRejectValidator>();
 
 
 //adds Bearer in Scalar

@@ -2,8 +2,6 @@
 using Lexor.Model.SearchObjects;
 using Lexor.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.Extensions.FileProviders;
 
 namespace Lexor.WebAPI.Controllers
 {
@@ -35,7 +33,7 @@ namespace Lexor.WebAPI.Controllers
                 var result = await _service.GetByIdAsync(id);
                 return Ok(result);
             }
-            catch(KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }

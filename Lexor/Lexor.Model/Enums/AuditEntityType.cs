@@ -7,7 +7,7 @@ namespace Lexor.Model.Enums
         Contract = 3,
         RfidCard = 4,
         Attendance = 5,
-        LeaveRequest = 6,
+        Leave = 6,
         SalarySlip = 7,
         SalarySlipItem = 8,
         PayrollSettings = 9,

@@ -1,5 +1,4 @@
-﻿using Azure;
-using Lexor.Model.Requests;
+﻿using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 

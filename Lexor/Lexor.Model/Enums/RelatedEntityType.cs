@@ -2,7 +2,7 @@ namespace Lexor.Model.Enums
 {
     public enum RelatedEntityType
     {
-        LeaveRequest = 1,
+        Leave = 1,
         SalarySlip = 2,
         RfidCard = 3,
         Attendance = 4,

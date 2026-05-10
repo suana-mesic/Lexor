@@ -25,7 +25,7 @@ namespace Lexor.Services.Database
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<RfidCard> RfidCards { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
-        public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<Leave> Leaves { get; set; }
         public DbSet<PayrollSettings> PayrollSettings { get; set; }
         public DbSet<SalarySlip> SalarySlips { get; set; }
         public DbSet<SalarySlipItem> SalarySlipItems { get; set; }

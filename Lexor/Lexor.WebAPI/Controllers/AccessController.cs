@@ -1,6 +1,7 @@
 ﻿using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Access;
+using Lexor.Services.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +12,25 @@ namespace Lexor.WebAPI.Controllers
     public class AccessController : ControllerBase
     {
         private readonly IAccessManager _accessManager;
-        public AccessController(IAccessManager accessManager)
+        private readonly ICryptoService _cryptoService;
+
+        public AccessController(IAccessManager accessManager, ICryptoService cryptoService)
         {
             _accessManager = accessManager;
+            _cryptoService = cryptoService;
+        }
+
+        [AllowAnonymous]
+        [HttpGet("generatePassword")]
+        public async Task<ActionResult> Login([FromQuery] string password)
+        {
+            var passwordSalt = _cryptoService.GenerateSalt();
+            var passwordHash = _cryptoService.GenerateHash(password, passwordSalt);
+            return Ok(new
+            {
+                passwordSalt,
+                passwordHash
+            });
         }
 
         [AllowAnonymous]

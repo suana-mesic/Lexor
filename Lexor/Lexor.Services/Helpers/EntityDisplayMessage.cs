@@ -17,6 +17,7 @@ namespace Lexor.Services.Helpers
             { typeof(Country), "Država sa Id-em {0} nije pronađena." },
             { typeof(ContractType), "Tip ugovora sa Id-em {0} nije pronađen." },
             { typeof(LeaveType), "Tip odsustva sa Id-em {0} nije pronađen." },
+            { typeof(Leave), "Odsustvo sa Id-em {0} nije pronađeno." },
             { typeof(Role), "Uloga sa Id-em {0} nije pronađena." },
             { typeof(PayrollSettings), "Postavke obračuna plate sa Id-em {0} nisu pronađene." },
             { typeof(LegalDocumentCategory), "Kategorija dokumenta sa Id-em {0} nije pronađena." },

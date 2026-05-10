@@ -52,7 +52,7 @@ namespace Lexor.Services.Database
 
         public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 
-        public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
+        public ICollection<Leave> Leaves { get; set; } = new List<Leave>();
 
         public ICollection<SalarySlip> SalarySlips { get; set; } = new List<SalarySlip>();
 

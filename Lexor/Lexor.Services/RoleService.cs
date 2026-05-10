@@ -34,10 +34,5 @@ namespace Lexor.Services
             }
             return query;
         }
-
-        //protected override IQueryable<Role> IncludeRelatedEntities(RoleSearchObject search, IQueryable<Role> query)
-        //{
-
-        //}
     }
 }

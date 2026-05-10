@@ -1,6 +1,6 @@
 namespace Lexor.Model.Enums
 {
-    public enum LeaveRequestStatus
+    public enum LeaveStatus
     {
         Pending = 1,
         Approved = 2,
