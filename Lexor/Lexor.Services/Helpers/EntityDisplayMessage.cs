@@ -20,6 +20,7 @@ namespace Lexor.Services.Helpers
             { typeof(Leave), "Odsustvo sa Id-em {0} nije pronađeno." },
             { typeof(Role), "Uloga sa Id-em {0} nije pronađena." },
             { typeof(PayrollSettings), "Postavke obračuna plate sa Id-em {0} nisu pronađene." },
+            { typeof(SalarySlip), "Platna lista sa Id-em {0} nije pronađena." },
             { typeof(LegalDocumentCategory), "Kategorija dokumenta sa Id-em {0} nije pronađena." },
         };
 

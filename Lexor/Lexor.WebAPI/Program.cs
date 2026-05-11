@@ -60,6 +60,7 @@ builder.Services.AddScoped<ICityService, CityService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
+builder.Services.AddScoped<ISalarySlipService, SalarySlipService>();
 builder.Services.AddScoped<IContractTypeService, ContractTypeService>();
 builder.Services.AddScoped<ILegalDocumentCategoryService, LegalDocumentCategoryService>();
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
@@ -109,6 +110,11 @@ builder.Services.AddScoped<IValidator<PayrollSettingsUpdateRequest>, PayrollSett
 builder.Services.AddScoped<IValidator<AttendanceUpdateRequest>, AttendanceUpdateValidator>();
 builder.Services.AddScoped<IValidator<LeaveUpdateRequest>, LeaveUpdateValidator>();
 builder.Services.AddScoped<IValidator<LeaveRejectRequest>, LeaveRejectValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipCalculationRequest>, SalarySlipCalculationInsertValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipSingleRecalculationRequest>, SalarySlipSingleRecalculationValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipAllRecalculationRequest>, SalarySlipAllRecalculationValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipPayAllRequest>, SalarySlipPayAllValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipPaySingleRequest>, SalarySlipPaySingleValidator>();
 
 
 //adds Bearer in Scalar

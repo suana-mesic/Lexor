@@ -42,6 +42,8 @@ namespace Lexor.Services.Access
             if (user == null || !_cryptoService.Verify(user.PasswordHash, user.PasswordSalt, request.Password))
                 return null;
 
+            user.LastLoginAt = DateTime.UtcNow;
+
             var accessToken = _tokenService.GenerateAccessToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
             var refreshDuration = int.Parse(_configuration["JwtToken:RefreshTokenDurationInDays"] ?? "7");

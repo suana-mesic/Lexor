@@ -34,8 +34,7 @@ namespace Lexor.Services
             }
             else
             {
-                var currentUserId = _userAccessor.GetUserId()
-                    ?? throw new UnauthorizedAccessException("Korisnik nije autentificiran.");
+                var currentUserId = _userAccessor.GetUserId();
                 query = query.Where(a => a.Employee.UserId == currentUserId);
             }
             return query;

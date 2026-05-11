@@ -39,8 +39,7 @@ namespace Lexor.Services
             else
             {
                 // non-admin: server forces scope to own leaves regardless of what client sent
-                var currentUserId = _userAccessor.GetUserId()
-                    ?? throw new UnauthorizedAccessException("Korisnik nije autentificiran.");
+                var currentUserId = _userAccessor.GetUserId();
                 query = query.Where(l => l.Employee.UserId == currentUserId);
             }
 
@@ -98,7 +97,7 @@ namespace Lexor.Services
             var validationResult = await _insertValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors.Select(e => _mapper.Map<ValidationFailure>(e)));
-            var currentUserId = _userAccessor.GetUserId() ?? throw new UnauthorizedAccessException("Korisnik nije autentificiran.");
+            var currentUserId = _userAccessor.GetUserId();
 
             var employeeId = await _dbContext.Set<Employee>()
                 .Where(e => e.UserId == currentUserId)

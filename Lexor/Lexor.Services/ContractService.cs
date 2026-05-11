@@ -77,6 +77,7 @@ namespace Lexor.Services
             }
 
             var entity = _mapper.Map<Contract>(request);
+            ApplyCreateAuditFields(entity);
             _dbContext.Contracts.Add(entity);
             await _dbContext.SaveChangesAsync();
 
@@ -97,6 +98,7 @@ namespace Lexor.Services
                 throw new ValidationException($"Nije moguće uređivati neaktivan ugovor {contract.Id}. Istorija je samo za čitanje.");
 
             _mapper.Map(request, contract);
+            ApplyUpdateAuditFields(contract);
             await _dbContext.SaveChangesAsync();
 
             return await GetByIdAsync(id);
