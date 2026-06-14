@@ -6,7 +6,7 @@ using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
-using Lexor.Services.LeaveStateMachine;
+using Lexor.Services.StateMachine.LeaveStateMachine;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,8 +14,8 @@ namespace Lexor.Services
 {
     public class LeaveService : BaseCRUDService<Leave, LeaveResponse, LeaveSearchObject, LeaveInsertRequest, LeaveUpdateRequest>, ILeaveService
     {
-        protected readonly BaseLeaveState _baseLeaveState;
-        protected readonly IValidator<LeaveRejectRequest> _leaveRejectionValidator;
+        private readonly BaseLeaveState _baseLeaveState;
+        private readonly IValidator<LeaveRejectRequest> _leaveRejectionValidator;
 
         public LeaveService(LexorDbContext dbContext, IMapper mapper, IValidator<LeaveInsertRequest> insertValidator, IValidator<LeaveUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor, BaseLeaveState baseLeaveState, IValidator<LeaveRejectRequest> leaveRejectionValidator) : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
@@ -28,6 +28,11 @@ namespace Lexor.Services
             if (search?.LeaveTypeId.HasValue == true)
             {
                 query = query.Where(l => l.LeaveTypeId == search.LeaveTypeId);
+            }
+
+            if (!string.IsNullOrEmpty(search?.State))
+            {
+                query = query.Where(l => l.State == search.State);
             }
 
             if (_userAccessor.IsInRole(RoleNames.Administrator))
@@ -71,6 +76,7 @@ namespace Lexor.Services
                 {
                     if (!_userAccessor.IsInRole(RoleNames.Administrator))
                         item.Employee = null;  // For employees the property "Employee" in LeaveResponse object stays null
+                    item.AllowedActions = await GetAllowedActions(item.Id);
                 }
             }
             return response;
@@ -130,13 +136,9 @@ namespace Lexor.Services
             return result;
         }
 
-        public override async Task DeleteAsync(int id)
+        public override Task DeleteAsync(int id)
         {
-            var entity = await _dbContext.Set<Leave>().FindAsync(id);
-            if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
-            BaseLeaveState state = _baseLeaveState.GetLeaveState(entity.State);
-            await state.DeleteAsync(id);
+            throw new InvalidOperationException("Brisanje odsustva nije podržano. Otkazani zahtjevi ostaju u sistemu radi historije.");
         }
 
         public async Task<LeaveResponse> ApproveAsync(int id)

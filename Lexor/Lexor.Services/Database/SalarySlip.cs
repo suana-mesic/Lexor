@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Lexor.Model.Enums;
 
 namespace Lexor.Services.Database
 {
@@ -41,7 +40,7 @@ namespace Lexor.Services.Database
         [Column(TypeName = "decimal(18,2)")]
         public decimal NetSalary { get; set; }
 
-        public SalarySlipStatus Status { get; set; } = SalarySlipStatus.Pending;
+        public string State{ get; set; } = string.Empty;
 
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 
@@ -51,6 +50,13 @@ namespace Lexor.Services.Database
 
         [ForeignKey("MarkedAsPaidByAdminId")]
         public User? MarkedAsPaidByAdmin { get; set; }
+
+        public DateTime? ApprovedAt { get; set; }
+
+        public int? MarkedAsApprovedByAdminId { get; set; }
+
+        [ForeignKey("MarkedAsApprovedByAdminId")]
+        public User? MarkedAsApprovedByAdmin { get; set; }
 
         public ICollection<SalarySlipItem> Items { get; set; } = new List<SalarySlipItem>();
     }

@@ -11,6 +11,8 @@ namespace Lexor.Services
         public Task<int> RecalculateAllSalaries(SalarySlipAllRecalculationRequest request);
         public Task<SalarySlipResponse> RecalculateSingleSalary(SalarySlipSingleRecalculationRequest request);
         public Task<int> InsertOrRecalculateSalaries(SalarySlipCalculationRequest request);
+        public Task<int> MarkAllSalariesAsApproved(SalarySlipApproveAllRequest request);
+        public Task<SalarySlipResponse> MarkSingleSalaryAsApproved(SalarySlipApproveSingleRequest request);
         public Task<int> MarkAllSalariesAsPaid(SalarySlipPayAllRequest request);
         public Task<SalarySlipResponse> MarkSingleSalaryAsPaid(SalarySlipPaySingleRequest request);
     }

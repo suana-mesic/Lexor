@@ -14,6 +14,8 @@ namespace Lexor.Services
     {
         protected readonly LexorDbContext _dbContext;
         protected readonly IMapper _mapper;
+        private const int MaxPageSize = 100;
+        private const int DefaultPageSize = 20;
 
         protected BaseReadService(LexorDbContext dbContext, IMapper mapper)
         {
@@ -37,10 +39,12 @@ namespace Lexor.Services
             if (!string.IsNullOrWhiteSpace(search.SortBy))
                 query = query.OrderBy(search.SortBy);
 
-            if (search.Page.HasValue && search.PageSize.HasValue)
-                query = query
-                    .Skip((search.Page.Value - 1) * search.PageSize.Value)
-                    .Take(search.PageSize.Value);
+            var page = search.Page ?? 1;
+            var pageSize = Math.Clamp(search.PageSize ?? DefaultPageSize, 1, MaxPageSize);
+
+            query = query
+              .Skip((page - 1) * pageSize)
+              .Take(pageSize);
 
             var entities = await query.ToListAsync();
             var list = entities.Select(item => _mapper.Map<TResponse>(item)).ToList();
@@ -55,7 +59,7 @@ namespace Lexor.Services
         }
         public virtual async Task<TResponse> GetByIdAsync(int id)
         {
-            IQueryable<TEntity> query = _dbContext.Set<TEntity>(); 
+            IQueryable<TEntity> query = _dbContext.Set<TEntity>();
             query = IncludeRelatedEntities(null, query);
             var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
 

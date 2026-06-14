@@ -7,5 +7,6 @@ namespace Lexor.Services
     public interface IAttendanceService : IBaseCRUDService<AttendanceResponse, AttendanceSearchObject, AttendanceInsertRequest, AttendanceUpdateRequest>
     {
         Task<ScanResponse> ScanAsync(ScanRequest request);
+        Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync();
     }
 }

@@ -54,5 +54,21 @@ namespace Lexor.WebAPI.Controllers
             var response = await _service.MarkSingleSalaryAsPaid(request);
             return response;
         }
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        [HttpPost("mark-all-approved")]
+        public async Task<ActionResult<int>> MarkAllAsApproved(SalarySlipApproveAllRequest request)
+        {
+            var count = await _service.MarkAllSalariesAsApproved(request);
+            return Ok(count);
+        }
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        [HttpPost("mark-single-approved")]
+        public async Task<ActionResult<SalarySlipResponse>> MarkSingleAsApproved(SalarySlipApproveSingleRequest request)
+        {
+            var response = await _service.MarkSingleSalaryAsApproved(request);
+            return response;
+        }
     }
 }

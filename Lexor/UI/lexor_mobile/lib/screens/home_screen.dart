@@ -1,0 +1,72 @@
+import 'package:flutter/material.dart';
+import 'package:lexor_mobile/providers/attendance_provider.dart';
+import 'package:lexor_mobile/providers/auth_provider.dart';
+import 'package:lexor_mobile/providers/leave_provider.dart';
+import 'package:lexor_mobile/providers/salary_slip_provider.dart';
+import 'package:lexor_mobile/screens/attendance_tab.dart';
+import 'package:lexor_mobile/screens/home_tab.dart';
+import 'package:lexor_mobile/screens/leave_requests_tab.dart';
+import 'package:provider/provider.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AttendanceProvider>(context, listen: false).fetchSummary();
+      Provider.of<LeaveProvider>(context, listen: false).fetchLatestLeave();
+      Provider.of<SalarySlipProvider>(
+        context,
+        listen: false,
+      ).fetchLatestSalarySlip();
+      Provider.of<LeaveProvider>(context, listen: false).fetchLeaves();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      const HomeTab(),
+      const AttendanceTab(),
+      const Center(child: Text('Platne liste')),
+      const LeaveRequestsTab(),
+      const Center(child: Text('Chat')),
+    ];
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => {setState(() => _selectedIndex = index)},
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Početna'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.access_time),
+            label: 'Prisustvo',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Plate',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.task_alt),
+            label: 'Zahtjevi',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chat',
+          ),
+        ],
+      ),
+    );
+  }
+}

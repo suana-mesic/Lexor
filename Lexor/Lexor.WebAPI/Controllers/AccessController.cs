@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lexor.WebAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class AccessController : ControllerBase
     {
         private readonly IAccessManager _accessManager;
@@ -22,7 +22,7 @@ namespace Lexor.WebAPI.Controllers
 
         [AllowAnonymous]
         [HttpGet("generatePassword")]
-        public async Task<ActionResult> Login([FromQuery] string password)
+        public async Task<ActionResult> GeneratePassword([FromQuery] string password)
         {
             var passwordSalt = _cryptoService.GenerateSalt();
             var passwordHash = _cryptoService.GenerateHash(password, passwordSalt);

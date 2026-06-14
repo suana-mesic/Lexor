@@ -11,23 +11,14 @@ namespace Lexor.WebAPI.Controllers
     [Authorize]
     public class AttendancesController : BaseCRUDController<AttendanceResponse, AttendanceSearchObject, IAttendanceService, AttendanceInsertRequest, AttendanceUpdateRequest>
     {
-
-        protected readonly IConfiguration _configuration;
-        public AttendancesController(IAttendanceService attendanceService, IConfiguration configuration) : base(attendanceService)
+        public AttendancesController(IAttendanceService attendanceService) : base(attendanceService)
         {
-            _configuration = configuration;
         }
 
-        [AllowAnonymous]   // ESP32 doesn't have JWT
         [HttpPost("scan")]
+        [Authorize(AuthenticationSchemes = "DeviceKey")]
         public async Task<ActionResult<ScanResponse>> Scan([FromBody] ScanRequest request)
         {
-            var providedKey = Request.Headers["X-Device-Key"].FirstOrDefault();
-            var expectedKey = _configuration["RfidDeviceApiKey"];
-
-            if (string.IsNullOrEmpty(providedKey) || providedKey != expectedKey)
-                return Unauthorized("Nevažeći ključ uređaja.");
-
             var result = await _service.ScanAsync(request);
             return Ok(result);
         }
@@ -51,6 +42,9 @@ namespace Lexor.WebAPI.Controllers
         public override Task<ActionResult<AttendanceResponse>> Delete(int id)
             => base.Delete(id);
 
+        [HttpGet("summary")]
+        public async Task<AttendanceSummaryResponse> GetAttendanceSummary()
+            => await _service.GetAttendanceSummaryAsync();
     }
 
 }

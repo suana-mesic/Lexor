@@ -1,15 +1,17 @@
-﻿namespace Lexor.Services.Helpers
+﻿using Lexor.Services.Database;
+
+namespace Lexor.Services.Helpers
 {
     internal static class SalarySlipCalculation
     {
-        public static int GetWorkingDaysInMonth(int year, int month)
+        public static int GetWorkingDaysInMonth(int year, int month, PayrollSettings settings)
         {
             var totalDays = DateTime.DaysInMonth(year, month);
             var count = 0;
             for (var d = 1; d <= totalDays; d++)
             {
                 var dow = new DateTime(year, month, d).DayOfWeek;
-                if (dow != DayOfWeek.Saturday && dow != DayOfWeek.Sunday)
+                if (settings.IsWorkDay(dow))
                     count++;
             }
             return count;

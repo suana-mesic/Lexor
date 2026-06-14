@@ -4,5 +4,6 @@ namespace Lexor.Model.SearchObjects
     {
         public int? EmployeeId { get; set; }
         public int? LeaveTypeId { get; set; }
+        public string? State { get; set; }
     }
 }

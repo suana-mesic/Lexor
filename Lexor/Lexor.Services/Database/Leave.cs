@@ -50,5 +50,12 @@ namespace Lexor.Services.Database
 
         [MaxLength(1000)]
         public string? RejectionReason { get; set; }
+
+        public int? CancelledByUserId { get; set; }
+
+        [ForeignKey("CancelledByUserId")]
+        public User? CancelledByUser { get; set; }
+
+        public DateTime? CancelledAt { get; set; }
     }
 }

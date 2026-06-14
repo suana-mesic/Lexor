@@ -456,6 +456,12 @@ namespace Lexor.Services.Migrations
                     b.Property<int?>("ApprovedByAdminId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CancelledByUserId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -495,6 +501,8 @@ namespace Lexor.Services.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedByAdminId");
+
+                    b.HasIndex("CancelledByUserId");
 
                     b.HasIndex("EmployeeId");
 
@@ -731,10 +739,8 @@ namespace Lexor.Services.Migrations
                     b.Property<DateTime?>("ValidTo")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("WorkDaysDescription")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("WorkDaysMask")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -751,7 +757,7 @@ namespace Lexor.Services.Migrations
                             PioMioRate = 17m,
                             UnemploymentRate = 1.5m,
                             ValidFrom = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            WorkDaysDescription = "Pon-Pet"
+                            WorkDaysMask = 31
                         });
                 });
 
@@ -930,6 +936,9 @@ namespace Lexor.Services.Migrations
                     b.Property<decimal>("AdjustedBruto")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("BrutoSalary")
                         .HasColumnType("decimal(18,2)");
 
@@ -938,6 +947,9 @@ namespace Lexor.Services.Migrations
 
                     b.Property<DateTime>("GeneratedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("MarkedAsApprovedByAdminId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("MarkedAsPaidByAdminId")
                         .HasColumnType("int");
@@ -954,8 +966,9 @@ namespace Lexor.Services.Migrations
                     b.Property<int>("PayrollSettingsId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Tax")
                         .HasColumnType("decimal(18,2)");
@@ -970,6 +983,8 @@ namespace Lexor.Services.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MarkedAsApprovedByAdminId");
 
                     b.HasIndex("MarkedAsPaidByAdminId");
 
@@ -1252,6 +1267,10 @@ namespace Lexor.Services.Migrations
                         .HasForeignKey("ApprovedByAdminId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Lexor.Services.Database.User", "CancelledByUser")
+                        .WithMany()
+                        .HasForeignKey("CancelledByUserId");
+
                     b.HasOne("Lexor.Services.Database.Employee", "Employee")
                         .WithMany("Leaves")
                         .HasForeignKey("EmployeeId")
@@ -1270,6 +1289,8 @@ namespace Lexor.Services.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ApprovedByAdmin");
+
+                    b.Navigation("CancelledByUser");
 
                     b.Navigation("Employee");
 
@@ -1349,6 +1370,10 @@ namespace Lexor.Services.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Lexor.Services.Database.User", "MarkedAsApprovedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("MarkedAsApprovedByAdminId");
+
                     b.HasOne("Lexor.Services.Database.User", "MarkedAsPaidByAdmin")
                         .WithMany()
                         .HasForeignKey("MarkedAsPaidByAdminId")
@@ -1361,6 +1386,8 @@ namespace Lexor.Services.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+
+                    b.Navigation("MarkedAsApprovedByAdmin");
 
                     b.Navigation("MarkedAsPaidByAdmin");
 

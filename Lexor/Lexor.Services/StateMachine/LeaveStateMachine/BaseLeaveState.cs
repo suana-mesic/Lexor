@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using Lexor.Model.Requests;
+﻿using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
@@ -8,26 +7,21 @@ using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lexor.Services.LeaveStateMachine
+namespace Lexor.Services.StateMachine.LeaveStateMachine
 {
     public class BaseLeaveState
     {
         protected readonly LexorDbContext _dbContext;
-        protected readonly IValidator<LeaveInsertRequest> _insertValidator;
-        protected readonly IValidator<LeaveUpdateRequest> _updateValidator;
         protected readonly IMapper _mapper;
         protected readonly IAuthenticatedUserAccessor _userAccessor;
-        protected readonly IServiceProvider _serviceProvider;
+        private readonly IServiceProvider _serviceProvider;
 
-
-        public BaseLeaveState(LexorDbContext dbContext, IValidator<LeaveInsertRequest> insertValidator, IMapper mapper, IAuthenticatedUserAccessor userAccessor, IServiceProvider serviceProvider, IValidator<LeaveUpdateRequest> updateValidator)
+        public BaseLeaveState(LexorDbContext dbContext, IMapper mapper, IAuthenticatedUserAccessor userAccessor, IServiceProvider serviceProvider)
         {
             _dbContext = dbContext;
-            _insertValidator = insertValidator;
             _mapper = mapper;
             _userAccessor = userAccessor;
             _serviceProvider = serviceProvider;
-            _updateValidator = updateValidator;
         }
 
         public virtual Task<LeaveResponse> InsertAsync(LeaveInsertRequest request, int employeeId)

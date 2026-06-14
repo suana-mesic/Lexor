@@ -78,7 +78,6 @@ namespace Lexor.Services.Database
                     Id = 1,
                     ValidFrom = seedDate,
                     ValidTo = null,
-                    WorkDaysDescription = "Pon-Pet",
                     OvertimeMultiplier = 1.30m,
                     PersonalDeduction = 300m,
                     PioMioRate = 17m,

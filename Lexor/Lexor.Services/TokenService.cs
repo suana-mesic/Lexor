@@ -1,5 +1,6 @@
-﻿using Lexor.Services.Database;
-using Microsoft.Extensions.Configuration;
+using Lexor.Services.Database;
+using Lexor.Services.Helpers;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,21 +12,16 @@ namespace Lexor.Services
     public class TokenService : ITokenService
     {
         private const int RefreshTokenSizeBytes = 64;
-        private readonly IConfiguration _configuration;
+        private readonly JwtTokenOptions _jwtOptions;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IOptions<JwtTokenOptions> jwtOptions)
         {
-            _configuration = configuration;
+            _jwtOptions = jwtOptions.Value;
         }
 
         public string GenerateAccessToken(User user)
         {
-            string secretKeyString = _configuration["JwtToken:SecretKey"] ?? string.Empty;
-            var issuer = _configuration["JwtToken:Issuer"];
-            var audience = _configuration["JwtToken:Audience"];
-            var durationInMinutes = _configuration["JwtToken:DurationInMinutes"] ?? "1";
-
-            var secretKey = Encoding.UTF8.GetBytes(secretKeyString); //byte []
+            var secretKey = Encoding.UTF8.GetBytes(_jwtOptions.SecretKey);
 
             var claims = new List<Claim>
             {
@@ -35,7 +31,7 @@ namespace Lexor.Services
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
             };
 
-            //User can have more than one role, we add claim for each role 
+            //User can have more than one role, we add claim for each role
             if (user.UserRoles != null)
             {
                 foreach (var userRole in user.UserRoles)
@@ -53,9 +49,9 @@ namespace Lexor.Services
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(secretKey),
                     SecurityAlgorithms.HmacSha256Signature),
-                Issuer = issuer,
-                Audience = audience,
-                Expires = DateTime.UtcNow.AddMinutes(int.Parse(durationInMinutes))
+                Issuer = _jwtOptions.Issuer,
+                Audience = _jwtOptions.Audience,
+                Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.DurationInMinutes)
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

@@ -8,6 +8,7 @@ using Lexor.Services.Database;
 using Lexor.Services.Helpers;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace Lexor.Services
 {
@@ -176,6 +177,65 @@ namespace Lexor.Services
                     .Include(a => a.Employee.Department);
             }
             return query;
+        }
+
+        public async Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync()
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var thisMonth = today.Month;
+            var thisYear = today.Year;
+            var todaysStatus = "";
+
+            var currentUserId = _userAccessor.GetUserId();
+
+            var todaysAttendance = await _dbContext.Attendances
+                .Where(x => x.Employee.UserId == currentUserId && x.Date == today)
+                .Select(x => new { x.DateTimeEntered, x.WorkedHours })
+                .FirstOrDefaultAsync();
+
+            if (todaysAttendance == null)
+            {
+                todaysStatus = "Niste prisutni";
+            }
+            else if (todaysAttendance.DateTimeEntered.HasValue)
+            {
+                var enteredTime = TimeOnly.FromDateTime(todaysAttendance.DateTimeEntered.Value.ToLocalTime());
+                if (enteredTime < PayrollSettings.WorkStartTime)
+                    todaysStatus = "Došli ste ranije";
+                else if (enteredTime > PayrollSettings.WorkStartTime)
+                    todaysStatus = "Došli ste kasnije";
+                else
+                    todaysStatus = "Došli ste tačno na vrijeme";
+            }
+
+            var thisMonthsAttendance = await _dbContext.Attendances
+                .Where(x => x.Employee.UserId == currentUserId &&
+                            x.Date.Month == thisMonth &&
+                            x.Date.Year == thisYear)
+                .Select(x => new { x.WorkedHours })
+                .ToListAsync();
+
+            var monthTotalHours = thisMonthsAttendance.Sum(x => x.WorkedHours ?? 0);
+
+            var settings = await _dbContext.PayrollSettings
+                .OrderByDescending(x => x.ValidFrom)
+                .FirstAsync();
+
+            var totalWorkDays = Enumerable.Range(1, today.Day)
+                .Select(d => new DateOnly(thisYear, thisMonth, d))
+                .Count(d => settings.IsWorkDay(d.DayOfWeek));
+
+            var attendanceRate = totalWorkDays > 0
+                ? (double)thisMonthsAttendance.Count / totalWorkDays * 100
+                : 0;
+
+            return new AttendanceSummaryResponse
+            {
+                TodayWorkedHours = todaysAttendance?.WorkedHours ?? 0,
+                MonthTotalHours = monthTotalHours,
+                MonthAttendanceRate = Math.Round(attendanceRate, 1),
+                TodayStatus = todaysStatus
+            };
         }
     }
 }

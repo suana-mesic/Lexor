@@ -2,14 +2,16 @@ using DotNetEnv;
 using FluentValidation;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
-using Lexor.Model.SearchObjects;
 using Lexor.Services;
 using Lexor.Services.Access;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
-using Lexor.Services.LeaveStateMachine;
+using Lexor.Services.StateMachine.LeaveStateMachine;
+using Lexor.Services.StateMachine.SalarySlipStateMachine;
 using Lexor.Services.Validators;
 using Lexor.WebAPI;
+using Lexor.WebAPI.Auth;
+using Lexor.WebAPI.Filters;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -21,10 +23,17 @@ Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ExceptionFilter>();
+});
+
+builder.Services.AddOptions<JwtTokenOptions>()
+        .Bind(builder.Configuration.GetSection("JwtToken"))
+        .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey), "JwtToken:SecretKey je obavezna konfiguracijska vrijednost.")
+        .ValidateOnStart();
 
 builder.Services.AddDbContext<LexorDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 builder.Services.AddMapster();
 
@@ -78,6 +87,12 @@ builder.Services.AddScoped<RejectedLeaveState>();
 builder.Services.AddScoped<CancelledLeaveState>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 
+builder.Services.AddScoped<BaseSalarySlipState>();
+builder.Services.AddScoped<InitialSalarySlipState>();
+builder.Services.AddScoped<PendingSalarySlipState>();
+builder.Services.AddScoped<ApprovedSalarySlipState>();
+builder.Services.AddScoped<PaidSalarySlipState>();
+
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 
 builder.Services.AddScoped<IValidator<CountryInsertRequest>, CountriesInsertValidator>();
@@ -115,6 +130,8 @@ builder.Services.AddScoped<IValidator<SalarySlipSingleRecalculationRequest>, Sal
 builder.Services.AddScoped<IValidator<SalarySlipAllRecalculationRequest>, SalarySlipAllRecalculationValidator>();
 builder.Services.AddScoped<IValidator<SalarySlipPayAllRequest>, SalarySlipPayAllValidator>();
 builder.Services.AddScoped<IValidator<SalarySlipPaySingleRequest>, SalarySlipPaySingleValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipApproveAllRequest>, SalarySlipApproveAllValidator>();
+builder.Services.AddScoped<IValidator<SalarySlipApproveSingleRequest>, SalarySlipApproveSingleValidator>();
 
 
 //adds Bearer in Scalar
@@ -124,25 +141,47 @@ builder.Services.AddOpenApi(options =>
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 });
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(o =>
-{
-    o.TokenValidationParameters = new TokenValidationParameters
+builder.Services
+    .AddAuthentication(options =>
     {
-        ValidIssuer = builder.Configuration["JwtToken:Issuer"],
-        ValidAudience = builder.Configuration["JwtToken:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["JwtToken:SecretKey"] ?? string.Empty)),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ClockSkew = TimeSpan.Zero
-    };
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(o =>
+    {
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = builder.Configuration["JwtToken:Issuer"],
+            ValidAudience = builder.Configuration["JwtToken:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtToken:SecretKey"] ?? string.Empty)),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    })
+    .AddScheme<DeviceKeyAuthenticationOptions, DeviceKeyAuthenticationHandler>(
+        "DeviceKey",
+        options =>
+        {
+            options.ExpectedKey = builder.Configuration["RfidDeviceApiKey"] ?? string.Empty;
+        });
+
+const string CorsPolicy = "LexorCorsPolicy";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicy, policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        policy.WithOrigins(origins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
 });
 
 var app = builder.Build();
@@ -165,6 +204,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+app.UseCors(CorsPolicy);
 
 app.UseAuthentication();
 

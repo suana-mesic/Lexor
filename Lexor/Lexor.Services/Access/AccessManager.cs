@@ -4,7 +4,7 @@ using Lexor.Model.Responses;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Lexor.Services.Access
 {
@@ -13,15 +13,15 @@ namespace Lexor.Services.Access
         private readonly LexorDbContext _dbContext;
         private readonly ITokenService _tokenService;
         private readonly ICryptoService _cryptoService;
-        private readonly IConfiguration _configuration;
+        private readonly JwtTokenOptions _jwtOptions;
         private readonly IValidator<LoginRequest> _validator;
 
-        public AccessManager(LexorDbContext dbContext, ITokenService tokenService, ICryptoService cryptoService, IConfiguration configuration, IValidator<LoginRequest> validator)
+        public AccessManager(LexorDbContext dbContext, ITokenService tokenService, ICryptoService cryptoService, IOptions<JwtTokenOptions> jwtOptions, IValidator<LoginRequest> validator)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
             _cryptoService = cryptoService;
-            _configuration = configuration;
+            _jwtOptions = jwtOptions.Value;
             _validator = validator;
         }
 
@@ -39,20 +39,19 @@ namespace Lexor.Services.Access
                     .ThenInclude(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == request.Username);
 
-            if (user == null || !_cryptoService.Verify(user.PasswordHash, user.PasswordSalt, request.Password))
+            if (user == null || !_cryptoService.Verify(user.PasswordHash, user.PasswordSalt, request.Password) || !user.IsActive)
                 return null;
 
             user.LastLoginAt = DateTime.UtcNow;
 
             var accessToken = _tokenService.GenerateAccessToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
-            var refreshDuration = int.Parse(_configuration["JwtToken:RefreshTokenDurationInDays"] ?? "7");
 
             var refreshTokenEntity = new RefreshToken
             {
                 UserId = user.Id,
                 Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(refreshDuration)
+                ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDurationInDays)
             };
 
             _dbContext.Set<RefreshToken>().Add(refreshTokenEntity);
@@ -95,13 +94,12 @@ namespace Lexor.Services.Access
 
             var newAccessToken = _tokenService.GenerateAccessToken(existingRefreshToken.User);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
-            var refreshDuration = int.Parse(_configuration["JwtToken:RefreshTokenDurationInDays"] ?? "7");
 
             var refreshTokenEntity = new RefreshToken
             {
                 UserId = existingRefreshToken.UserId,
                 Token = newRefreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(refreshDuration)
+                ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDurationInDays)
             };
 
             _dbContext.RefreshTokens.Add(refreshTokenEntity);
