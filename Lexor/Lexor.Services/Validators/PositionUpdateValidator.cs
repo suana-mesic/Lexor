@@ -9,6 +9,9 @@ namespace Lexor.Services.Validators
         {
             RuleFor(x => x.Name)
                 .MaximumLength(100).WithMessage("Naziv pozicije ne može imati više od 100 karaktera.");
+
+            RuleFor(x => x.DepartmentId)
+                .GreaterThan(0).WithMessage("Odjel je obavezan.");
         }
     }
 }

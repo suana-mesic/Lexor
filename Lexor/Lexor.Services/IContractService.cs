@@ -6,5 +6,6 @@ namespace Lexor.Services
 {
     public interface IContractService : IBaseCRUDService<ContractResponse, ContractSearchObject, ContractInsertRequest, ContractUpdateRequest>
     {
+        Task<ContractResponse> ReplaceActiveAsync(int employeeId, ContractInsertRequest request);
     }
 }

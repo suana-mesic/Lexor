@@ -3,23 +3,12 @@ import 'package:lexor_mobile/models/attendance_response.dart';
 import 'package:lexor_mobile/models/leave_response.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
+import 'package:lexor_mobile/providers/payroll_settings_provider.dart';
+import 'package:lexor_mobile/widgets/error_banner.dart';
+import 'package:lexor_shared/lexor_shared.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
-
-const _bosnianMonths = [
-  'Januar',
-  'Februar',
-  'Mart',
-  'April',
-  'Maj',
-  'Juni',
-  'Juli',
-  'August',
-  'Septembar',
-  'Oktobar',
-  'Novembar',
-  'Decembar',
-];
+import 'package:lexor_mobile/theme/app_colors.dart';
 
 class AttendanceTab extends StatefulWidget {
   const AttendanceTab({super.key});
@@ -31,30 +20,31 @@ class AttendanceTab extends StatefulWidget {
 class _AttendanceTabState extends State<AttendanceTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay = DateTime.now();
-  bool _isWeekend(DateTime day) => day.weekday == 6 || day.weekday == 7;
+  bool _isNonWorkDay(DateTime day, PayrollSettingsProvider settings) =>
+      !settings.isWorkDay(day);
 
-  // placeholder — returns null for future days (no background)
   Color? _getDayColor(
     DateTime day,
     List<AttendanceResponse> attendances,
     List<LeaveResponse> leaves,
+    PayrollSettingsProvider settings,
   ) {
-    if (day.weekday == 6 || day.weekday == 7) return Colors.grey[200];
+    if (_isNonWorkDay(day, settings)) return Colors.grey[200];
 
     final matchLeave = leaves
         .where(
           (l) =>
               (isSameDay(day, l.dateFrom) || day.isAfter(l.dateFrom)) &&
               (isSameDay(day, l.dateTo) || day.isBefore(l.dateTo)) &&
-              l.state == 'ApprovedLeaveState',
+              l.state == LeaveStateType.approved.apiValue,
         )
         .firstOrNull;
 
     if (day.isAfter(DateTime.now())) {
       if (matchLeave != null) {
         return matchLeave.leaveType.isPaid
-            ? const Color(0xFF1A237E)
-            : const Color(0xFFC62828);
+            ? AppColors.primary
+            : AppColors.error;
       }
       return null;
     }
@@ -66,13 +56,15 @@ class _AttendanceTabState extends State<AttendanceTab> {
           a.date.day == day.day,
     );
 
-    if (matchAttendance.isEmpty && matchLeave == null) return Colors.grey[200];
+    if (matchAttendance.isEmpty && matchLeave == null) {
+      return isSameDay(day, DateTime.now()) ? null : Colors.grey[200];
+    }
     if (matchLeave != null) {
       return matchLeave.leaveType.isPaid
-          ? const Color(0xFF1A237E)
-          : const Color(0xFFC62828);
+          ? AppColors.primary
+          : AppColors.error;
     }
-    return const Color(0xFF43A047);
+    return AppColors.success;
   }
 
   AttendanceResponse? findMatch(
@@ -103,17 +95,26 @@ class _AttendanceTabState extends State<AttendanceTab> {
         context,
         listen: false,
       ).fetchLeaves(year: now.year, month: now.month);
+
+      Provider.of<PayrollSettingsProvider>(
+        context,
+        listen: false,
+      ).fetchCurrentSettings();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final attendances = Provider.of<AttendanceProvider>(
+    final attendanceProvider = Provider.of<AttendanceProvider>(
       context,
       listen: true,
-    ).attendances;
+    );
+    final leaveProvider = Provider.of<LeaveProvider>(context, listen: true);
+    final settings = Provider.of<PayrollSettingsProvider>(context, listen: true);
 
-    final leaves = Provider.of<LeaveProvider>(context, listen: true).leaves;
+    final attendances = attendanceProvider.attendances;
+    final leaves = leaveProvider.leaves;
+    final errorMessage = attendanceProvider.error ?? leaveProvider.error;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -124,10 +125,26 @@ class _AttendanceTabState extends State<AttendanceTab> {
             children: [
               _buildHeader(),
               const SizedBox(height: 16),
-              _buildCalendar(attendances, leaves),
+              if (errorMessage != null) ...[
+                ErrorBanner(
+                  message: errorMessage,
+                  onRetry: () {
+                    attendanceProvider.fetchAttendances(
+                      _focusedDay.year,
+                      _focusedDay.month,
+                    );
+                    leaveProvider.fetchLeaves(
+                      year: _focusedDay.year,
+                      month: _focusedDay.month,
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+              _buildCalendar(attendances, leaves, settings),
               const SizedBox(height: 16),
               if (_selectedDay != null)
-                _buildDayDetails(_selectedDay!, attendances, leaves),
+                _buildDayDetails(_selectedDay!, attendances, leaves, settings),
             ],
           ),
         ),
@@ -140,7 +157,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A237E),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: const Row(
@@ -169,6 +186,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
   Widget _buildCalendar(
     List<AttendanceResponse> attendances,
     List<LeaveResponse> leaves,
+    PayrollSettingsProvider settings,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -206,19 +224,19 @@ class _AttendanceTabState extends State<AttendanceTab> {
                 formatButtonVisible: false,
                 titleCentered: true,
                 titleTextFormatter: (date, locale) =>
-                    '${_bosnianMonths[date.month - 1]} ${date.year}',
+                    '${bosnianMonths[date.month - 1]} ${date.year}',
                 titleTextStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Color(0xFF1A237E),
+                  color: AppColors.primary,
                 ),
                 leftChevronIcon: const Icon(
                   Icons.chevron_left,
-                  color: Color(0xFF1A237E),
+                  color: AppColors.primary,
                 ),
                 rightChevronIcon: const Icon(
                   Icons.chevron_right,
-                  color: Color(0xFF1A237E),
+                  color: AppColors.primary,
                 ),
               ),
               calendarBuilders: CalendarBuilders(
@@ -240,7 +258,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
                   );
                 },
                 defaultBuilder: (context, day, focusedDay) {
-                  final color = _getDayColor(day, attendances, leaves);
+                  final color = _getDayColor(day, attendances, leaves, settings);
                   return Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -251,7 +269,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
                       child: Text(
                         '${day.day}',
                         style: TextStyle(
-                          color: color != null && !_isWeekend(day)
+                          color: color != null && color != Colors.grey[200]
                               ? Colors.white
                               : Colors.black87,
                           fontWeight: FontWeight.w600,
@@ -262,24 +280,20 @@ class _AttendanceTabState extends State<AttendanceTab> {
                   );
                 },
                 selectedBuilder: (context, day, focusedDay) {
-                  final color = _getDayColor(day, attendances, leaves);
+                  final color = _getDayColor(day, attendances, leaves, settings);
+                  final hasColor = color != null && color != Colors.grey[200];
                   return Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: color ?? const Color(0xFF1A237E),
+                      color: color,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFF1A237E),
-                        width: 2,
-                      ),
+                      border: Border.all(color: Colors.black87, width: 2.5),
                     ),
                     child: Center(
                       child: Text(
                         '${day.day}',
                         style: TextStyle(
-                          color: _isWeekend(day)
-                              ? Colors.black87
-                              : Colors.white,
+                          color: hasColor ? Colors.white : Colors.black87,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -288,24 +302,20 @@ class _AttendanceTabState extends State<AttendanceTab> {
                   );
                 },
                 todayBuilder: (context, day, focusedDay) {
-                  final color = _getDayColor(day, attendances, leaves);
+                  final color = _getDayColor(day, attendances, leaves, settings);
+                  final hasColor = color != null && color != Colors.grey[200];
                   return Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFF1A237E),
-                        width: 1.5,
-                      ),
+                      border: Border.all(color: Colors.grey, width: 1.5),
                     ),
                     child: Center(
                       child: Text(
                         '${day.day}',
                         style: TextStyle(
-                          color: color != null && !_isWeekend(day)
-                              ? Colors.white
-                              : Colors.black87,
+                          color: hasColor ? Colors.white : Colors.black87,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -335,18 +345,18 @@ class _AttendanceTabState extends State<AttendanceTab> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _legendItem(const Color(0xFF43A047), 'Radni dan'),
+                  _legendItem(AppColors.success, 'Radni dan'),
                   const SizedBox(height: 8),
-                  _legendItem(const Color(0xFFC62828), 'Neplaćen odmor'),
+                  _legendItem(AppColors.error, 'Neplaćen odmor'),
                 ],
               ),
               const SizedBox(width: 32),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _legendItem(const Color(0xFF1A237E), 'Plaćen odmor'),
+                  _legendItem(AppColors.primary, 'Plaćen odmor'),
                   const SizedBox(height: 8),
-                  _legendItem(Colors.grey[200]!, 'Vikend'),
+                  _legendItem(Colors.grey[200]!, 'Neradni dan'),
                 ],
               ),
             ],
@@ -380,16 +390,17 @@ class _AttendanceTabState extends State<AttendanceTab> {
     DateTime day,
     List<AttendanceResponse> attendances,
     List<LeaveResponse> leaves,
+    PayrollSettingsProvider settings,
   ) {
     final record = findMatch(day, attendances);
-    final isWeekend = day.weekday == 6 || day.weekday == 7;
+    final isWeekend = _isNonWorkDay(day, settings);
     final isFuture = day.isAfter(DateTime.now());
     final matchLeave = leaves
         .where(
           (l) =>
               (isSameDay(day, l.dateFrom) || day.isAfter(l.dateFrom)) &&
               (isSameDay(day, l.dateTo) || day.isBefore(l.dateTo)) &&
-              l.state == 'ApprovedLeaveState',
+              l.state == LeaveStateType.approved.apiValue,
         )
         .firstOrNull;
 
@@ -436,7 +447,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Detalji za ${day.day}. ${_bosnianMonths[day.month - 1]} ${day.year}',
+            'Detalji za ${day.day}. ${bosnianMonths[day.month - 1]} ${day.year}',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 16),
@@ -444,16 +455,35 @@ class _AttendanceTabState extends State<AttendanceTab> {
             buildInfoMessage(
               Icons.weekend,
               Colors.grey,
-              'Odabrani dan je vikend — nema radnog vremena.',
+              'Odabrani dan je neradni dan — nema radnog vremena.',
             )
           else if (matchLeave != null)
             buildInfoMessage(
               Icons.beach_access,
               matchLeave.leaveType.isPaid
-                  ? const Color(0xFF1A237E)
-                  : const Color(0xFFC62828),
+                  ? AppColors.primary
+                  : AppColors.error,
               'Odobreno ${matchLeave.leaveType.isPaid ? 'plaćeno' : 'neplaćeno'} odsustvo — nema evidencije dolaska.',
             )
+          else if (isSameDay(day, DateTime.now())) ...[
+            _buildDetailRow(
+              Icons.login,
+              AppColors.success,
+              'Dolazak',
+              record != null
+                  ? formatTime(record.dateTimeEntered)
+                  : 'Nema dolazne evidencije',
+            ),
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              Icons.logout,
+              AppColors.error,
+              'Odlazak',
+              record != null
+                  ? formatTime(record.dateTimeLeft)
+                  : 'Nema odlazne evidencije',
+            ),
+          ]
           else if (isFuture && record == null)
             buildInfoMessage(
               Icons.event_busy,
@@ -469,14 +499,14 @@ class _AttendanceTabState extends State<AttendanceTab> {
           else ...[
             _buildDetailRow(
               Icons.login,
-              const Color(0xFF43A047),
+              AppColors.success,
               'Dolazak',
               formatTime(record.dateTimeEntered),
             ),
             const SizedBox(height: 12),
             _buildDetailRow(
               Icons.logout,
-              const Color(0xFFC62828),
+              AppColors.error,
               'Odlazak',
               formatTime(record.dateTimeLeft),
             ),
@@ -508,11 +538,15 @@ class _AttendanceTabState extends State<AttendanceTab> {
           children: [
             Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
             ),
             Text(
               time,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
           ],
         ),

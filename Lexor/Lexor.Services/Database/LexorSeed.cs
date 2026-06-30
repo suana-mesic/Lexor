@@ -39,14 +39,15 @@ namespace Lexor.Services.Database
                 new Department { Id = 5, Name = "Finansije" }
             );
 
-            // ===== Positions =====
+            // ===== Positions (each tied to its department) =====
             modelBuilder.Entity<Position>().HasData(
-                new Position { Id = 1, Name = "HR menadžer" },
-                new Position { Id = 2, Name = "Recruitment Specialist" },
-                new Position { Id = 3, Name = "Software Developer" },
-                new Position { Id = 4, Name = "DevOps Engineer" },
-                new Position { Id = 5, Name = "Sales Representative" },
-                new Position { Id = 6, Name = "Production Manager" }
+                new Position { Id = 1, Name = "HR menadžer", DepartmentId = 1 },
+                new Position { Id = 2, Name = "Specijalista za zapošljavanje", DepartmentId = 1 },
+                new Position { Id = 3, Name = "Programer", DepartmentId = 2 },
+                new Position { Id = 4, Name = "DevOps inženjer", DepartmentId = 2 },
+                new Position { Id = 5, Name = "Predstavnik prodaje", DepartmentId = 3 },
+                new Position { Id = 6, Name = "Menadžer proizvodnje", DepartmentId = 4 },
+                new Position { Id = 7, Name = "Računovođa", DepartmentId = 5 }
             );
 
             // ===== ContractTypes =====
@@ -86,11 +87,6 @@ namespace Lexor.Services.Database
                     IncomeTaxRate = 10m
                 }
             );
-
-            // NOTE: User and Employee seed data nije ovdje jer:
-            //   - PasswordHash mora se računati runtime sa BCrypt-om
-            //   - Initial admin user će biti seed-an kroz runtime DbInitializer
-            //     u Lexor.WebAPI/Program.cs nakon implementacije AuthService.
         }
     }
 }

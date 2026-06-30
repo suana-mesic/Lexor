@@ -1,3 +1,5 @@
+using Lexor.Model.Enums;
+
 namespace Lexor.Model.Responses
 {
     public class EmployeeResponse
@@ -35,7 +37,20 @@ namespace Lexor.Model.Responses
             public DateTime? EndDate { get; set; }
             public decimal BrutoSalary { get; set; }
             public int WorkHoursPerDay { get; set; } = 8;
-            public bool IsActive { get; set; } = true;
+
+            // Derived from the date range vs today — not stored (see guidelines A.4 for UtcNow).
+            public ContractStatus Status
+            {
+                get
+                {
+                    var today = DateTime.UtcNow.Date;
+                    if (StartDate.Date > today)
+                        return ContractStatus.Upcoming;
+                    if (EndDate.HasValue && EndDate.Value.Date < today)
+                        return ContractStatus.Expired;
+                    return ContractStatus.Active;
+                }
+            }
         }
 
         public class CityResponse

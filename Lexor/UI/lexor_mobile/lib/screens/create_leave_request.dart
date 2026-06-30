@@ -6,6 +6,7 @@ import 'package:lexor_mobile/models/leave_update_request.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/leave_type_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:lexor_mobile/theme/app_colors.dart';
 
 class CreateLeaveRequest extends StatefulWidget {
   final LeaveResponse? leave;
@@ -84,19 +85,31 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A237E),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            widget.leave == null ? 'Novi zahtjev' : 'Uredi zahtjev',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Nazad',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.leave == null ? 'Novi zahtjev' : 'Uredi zahtjev',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ],
           ),
           const Row(
             children: [
@@ -131,7 +144,7 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Color(0xFF1A237E), width: 1.5),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
 
@@ -229,9 +242,9 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A237E),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFF1A237E),
+                disabledBackgroundColor: AppColors.primary,
                 disabledForegroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

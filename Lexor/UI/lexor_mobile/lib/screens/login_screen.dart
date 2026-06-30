@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lexor_shared/lexor_shared.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/screens/home_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:lexor_mobile/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,10 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message = messageFor(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Neispravno korisničko ime ili lozinka.'),
-            backgroundColor: Color(0xFFC62828),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -54,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     const inputDecoration = InputDecoration(
       filled: true,
-      fillColor: Color(0xFFF5F5F5),
+      fillColor: AppColors.neutralBg,
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -66,12 +69,12 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Color(0xFF1A237E), width: 1.5),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A237E),
+      backgroundColor: AppColors.primary,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -201,9 +204,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _login,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A237E),
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor: const Color(0xFF1A237E),
+                          disabledBackgroundColor: AppColors.primary,
                           disabledForegroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(

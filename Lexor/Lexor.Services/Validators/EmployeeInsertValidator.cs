@@ -20,13 +20,13 @@ namespace Lexor.Services.Validators
                 .MaximumLength(200).WithMessage("Adresa ne može imati više od 200 karaktera.");
 
             RuleFor(x => x.CityId)
-                .GreaterThan(0).WithMessage("CityId mora biti veći od 0.");
+                .GreaterThan(0).WithMessage("Grad je obavezan.");
 
             RuleFor(x => x.DepartmentId)
-                .GreaterThan(0).WithMessage("DepartmentId mora biti veći od 0.");
+                .GreaterThan(0).WithMessage("Odjel je obavezan.");
 
             RuleFor(x => x.PositionId)
-                .GreaterThan(0).WithMessage("PositionId mora biti veći od 0.");
+                .GreaterThan(0).WithMessage("Pozicija je obavezna.");
 
             RuleFor(x => x.HireDate)
                 .NotEmpty().WithMessage("Datum zaposlenja je obavezan.");

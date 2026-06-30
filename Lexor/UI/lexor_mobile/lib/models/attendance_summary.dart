@@ -5,14 +5,14 @@ part 'attendance_summary.g.dart';
 @JsonSerializable()
 class AttendanceSummary {
   final double todayWorkedHours;
-  final double monthWorkedHours;
-  final double monthAttendaceRate;
+  final double monthTotalHours;
+  final double monthAttendanceRate;
   final String todayStatus;
 
   AttendanceSummary({
     required this.todayWorkedHours,
-    required this.monthWorkedHours,
-    required this.monthAttendaceRate,
+    required this.monthTotalHours,
+    required this.monthAttendanceRate,
     required this.todayStatus,
   });
 

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/screens/create_leave_request.dart';
+import 'package:lexor_mobile/widgets/error_view.dart';
+import 'package:lexor_shared/lexor_shared.dart';
 import 'package:provider/provider.dart';
+import 'package:lexor_mobile/theme/app_colors.dart';
 
 class LeaveRequestsTab extends StatefulWidget {
   const LeaveRequestsTab({super.key});
@@ -17,11 +20,11 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
   final ScrollController _scrollController = ScrollController();
 
   static const _filters = ['Svi', 'Na čekanju', 'Odobreni', 'Odbijeni'];
-  static const _stateFilters = [
+  static const _stateFilters = <LeaveStateType?>[
     null,
-    'PendingLeaveState',
-    'ApprovedLeaveState',
-    'RejectedLeaveState',
+    LeaveStateType.pending,
+    LeaveStateType.approved,
+    LeaveStateType.rejected,
   ];
 
   @override
@@ -49,23 +52,28 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
   }
 
   Widget _buildStatusChip(String? state) {
-    final (label, bg, fg) = switch (state) {
-      'PendingLeaveState' => (
+    final (label, bg, fg) = switch (LeaveStateType.fromApi(state)) {
+      LeaveStateType.pending => (
         'Na čekanju',
-        const Color(0xFFFFF3E0),
-        const Color(0xFFE65100),
+        AppColors.warningBg,
+        AppColors.warningDark,
       ),
-      'ApprovedLeaveState' => (
+      LeaveStateType.approved => (
         'Odobren',
-        const Color(0xFFE8F5E9),
-        const Color(0xFF2E7D32),
+        AppColors.successBg,
+        AppColors.successDark,
       ),
-      'RejectedLeaveState' => (
+      LeaveStateType.rejected => (
         'Odbijen',
-        const Color(0xFFFFEBEE),
-        const Color(0xFFC62828),
+        AppColors.errorBg,
+        AppColors.error,
       ),
-      _ => ('Nepoznato', const Color(0xFFF5F5F5), const Color(0xFF757575)),
+      LeaveStateType.cancelled => (
+        'Otkazan',
+        AppColors.neutralBg,
+        AppColors.neutralFg,
+      ),
+      _ => ('Nepoznato', AppColors.neutralBg, AppColors.neutralFg),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -97,7 +105,17 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
             const SizedBox(height: 16),
             _buildNewRequestButton(context),
             const SizedBox(height: 16),
-            ...leaveProvider.leaves.map((item) => _buildLeaveCard(item)),
+            if (leaveProvider.error != null && leaveProvider.leaves.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: ErrorView(
+                  message: leaveProvider.error!,
+                  onRetry: () =>
+                      leaveProvider.fetchLeaves(reset: true, stateFilter: _currentFilter),
+                ),
+              )
+            else
+              ...leaveProvider.leaves.map((item) => _buildLeaveCard(item)),
             if (leaveProvider.isLoading)
               const Padding(
                 padding: EdgeInsets.all(16),
@@ -114,7 +132,7 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A237E),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: const Row(
@@ -151,16 +169,19 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
           child: TextButton(
             onPressed: () {
               setState(
-                () => {_selectedFilter = i, _currentFilter = _stateFilters[i]},
+                () => {
+                  _selectedFilter = i,
+                  _currentFilter = _stateFilters[i]?.apiValue,
+                },
               );
               Provider.of<LeaveProvider>(
                 context,
                 listen: false,
-              ).fetchLeaves(stateFilter: _stateFilters[i], reset: true);
+              ).fetchLeaves(stateFilter: _stateFilters[i]?.apiValue, reset: true);
             },
             style: TextButton.styleFrom(
               backgroundColor: selected
-                  ? const Color(0xFF1A237E)
+                  ? AppColors.primary
                   : Colors.transparent,
               foregroundColor: selected ? Colors.white : Colors.black87,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -204,7 +225,7 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1A237E),
+          backgroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -236,12 +257,12 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8EAF6),
+              color: AppColors.primarySoftBg,
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.calendar_month,
-              color: Color(0xFF1A237E),
+              color: AppColors.primary,
               size: 22,
             ),
           ),
@@ -280,7 +301,7 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
             IconButton(
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              icon: const Icon(Icons.edit, color: Color(0xFF1A237E), size: 20),
+              icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
               onPressed: () async {
                 final result = await Navigator.push(
                   context,

@@ -16,6 +16,7 @@ namespace Lexor.WebAPI.Controllers
         }
 
         [HttpGet("current")]
+        [Authorize]
         public async Task<ActionResult<PayrollSettingsResponse>> GetCurrent()
         {
             var result = await _service.GetCurrentAsync();

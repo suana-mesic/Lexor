@@ -8,7 +8,7 @@ namespace Lexor.Services.Validators
         public LeaveUpdateValidator()
         {
             RuleFor(x => x.LeaveTypeId)
-                .GreaterThan(0).WithMessage("ID razloga odsustva mora biti veći od 0.")
+                .GreaterThan(0).WithMessage("Tip odsustva je obavezan.")
                 .When(x => x.LeaveTypeId.HasValue);
 
             RuleFor(x => x.Reason)

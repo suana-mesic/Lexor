@@ -40,7 +40,9 @@ namespace Lexor.Services.Database
         [Column(TypeName = "decimal(18,2)")]
         public decimal NetSalary { get; set; }
 
-        public string State{ get; set; } = string.Empty;
+        // Stored as the state-machine class name via nameof(...), e.g. "PaidSalarySlipState".
+        [MaxLength(50)]
+        public string State { get; set; } = string.Empty;
 
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 

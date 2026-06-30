@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Lexor.Model.Enums;
 
 namespace Lexor.Services.Database
 {
@@ -29,7 +28,8 @@ namespace Lexor.Services.Database
         [MaxLength(1000)]
         public string Reason { get; set; } = string.Empty;
 
-        //public LeaveStatus Status { get; set; } = LeaveStatus.Pending;
+        // Stored as the state-machine class name via nameof(...), e.g. "PendingLeaveState".
+        [MaxLength(50)]
         public string? State { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -57,5 +57,7 @@ namespace Lexor.Services.Database
         public User? CancelledByUser { get; set; }
 
         public DateTime? CancelledAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+
     }
 }

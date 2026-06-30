@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:lexor_mobile/theme/app_colors.dart';
 
 class SnackbarHelper {
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: AppColors.successDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
@@ -17,7 +18,7 @@ class SnackbarHelper {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFC62828),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 4),

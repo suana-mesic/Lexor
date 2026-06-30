@@ -7,7 +7,8 @@ namespace Lexor.Services.Database
     {
         [Key]
         public int Id { get; set; }
-        public static TimeOnly WorkStartTime { get; set; } = new TimeOnly(9, 0);
+        [Column(TypeName = "time")]
+        public TimeOnly WorkStartTime { get; set; } = new TimeOnly(9, 0);
         public DateTime ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
 

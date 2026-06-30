@@ -39,6 +39,10 @@ dependencies:
   # HTTP pozivi prema API-ju
   http: ^1.2.2
 
+  # Zajednički kod sa desktop aplikacijom (ApiError, ...)
+  lexor_shared:
+    path: ../lexor_shared
+
   # Čuvanje tokena lokalno na uređaju
   shared_preferences: ^2.3.2
 

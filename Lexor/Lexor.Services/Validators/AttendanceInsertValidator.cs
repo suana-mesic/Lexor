@@ -8,10 +8,10 @@ namespace Lexor.Services.Validators
         public AttendanceInsertValidator()
         {
             RuleFor(x => x.EmployeeId)
-                .GreaterThan(0).WithMessage("ID uposlenika mora biti veći od 0.");
+                .GreaterThan(0).WithMessage("Uposlenik je obavezan.");
 
             RuleFor(x => x.RfidCardId)
-              .GreaterThan(0).WithMessage("ID RFID kartice mora biti veći od 0.");
+              .GreaterThan(0).WithMessage("RFID kartica je obavezna.");
 
         }
     }

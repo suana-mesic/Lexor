@@ -1,5 +1,6 @@
 using DotNetEnv;
 using FluentValidation;
+using Lexor.Model.Enums;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services;
@@ -14,6 +15,7 @@ using Lexor.WebAPI.Auth;
 using Lexor.WebAPI.Filters;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -42,6 +44,7 @@ builder.Services.AddScoped<ICryptoService, CryptoService>();
 builder.Services.AddScoped<IAccessManager, AccessManager>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticatedUserAccessor, AuthenticatedUserAccessor>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 
 TypeAdapterConfig<RoleUpdateRequest, Role>.NewConfig().IgnoreNullValues(true);
@@ -51,6 +54,7 @@ TypeAdapterConfig<DepartmentUpdateRequest, Department>.NewConfig().IgnoreNullVal
 TypeAdapterConfig<PositionUpdateRequest, Position>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<ContractTypeUpdateRequest, ContractType>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LegalDocumentCategoryUpdateRequest, LegalDocumentCategory>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<LegalDocumentUpdateRequest, LegalDocument>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LeaveTypeUpdateRequest, LeaveType>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<EmployeeUpdateRequest, Employee>.NewConfig().IgnoreNullValues(true).Ignore(dest => dest.User).Ignore(dest => dest.Contracts);
 TypeAdapterConfig<EmployeeInsertRequest, Employee>.NewConfig().IgnoreNullValues(true).Ignore(dest => dest.User).Ignore(dest => dest.Contracts);
@@ -60,9 +64,18 @@ TypeAdapterConfig<RFIDUpdateRequest, RfidCard>.NewConfig().IgnoreNullValues(true
 TypeAdapterConfig<PayrollSettingsUpdateRequest, PayrollSettings>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<AttendanceUpdateRequest, Attendance>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LeaveUpdateRequest, Leave>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<SalarySlip, SalarySlipResponse>.NewConfig()
+    .Map(dest => dest.Status, src => src.State == nameof(PaidSalarySlipState)
+    ? SalarySlipStatus.Paid
+    : SalarySlipStatus.Pending);
 
 
 TypeAdapterConfig<City, CityResponse>.NewConfig().Map(dest => dest.CountryName, src => src.Country != null ? src.Country.Name : null);
+
+TypeAdapterConfig<PayrollSettings, PayrollSettingsResponse>.NewConfig()
+    .Map(dest => dest.WorkDaysDescription, src => PayrollSettingsService.MaskToDescription(src.WorkDaysMask));
+
+TypeAdapterConfig<LegalDocument, LegalDocumentResponse>.NewConfig().Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.Name : null);
 
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<ICityService, CityService>();
@@ -78,6 +91,7 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IRFIDService, RFIDService>();
 builder.Services.AddScoped<IPayrollSettingsService, PayrollSettingsService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<ILegalDocumentService, LegalDocumentService>();
 
 builder.Services.AddScoped<BaseLeaveState>();
 builder.Services.AddScoped<InitialLeaveState>();
@@ -85,6 +99,7 @@ builder.Services.AddScoped<PendingLeaveState>();
 builder.Services.AddScoped<ApprovedLeaveState>();
 builder.Services.AddScoped<RejectedLeaveState>();
 builder.Services.AddScoped<CancelledLeaveState>();
+builder.Services.AddScoped<CompletedLeaveState>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 
 builder.Services.AddScoped<BaseSalarySlipState>();
@@ -102,6 +117,7 @@ builder.Services.AddScoped<IValidator<DepartmentInsertRequest>, DepartmentInsert
 builder.Services.AddScoped<IValidator<PositionInsertRequest>, PositionInsertValidator>();
 builder.Services.AddScoped<IValidator<ContractTypeInsertRequest>, ContractTypeInsertValidator>();
 builder.Services.AddScoped<IValidator<LegalDocumentCategoryInsertRequest>, LegalDocumentCategoryInsertValidator>();
+builder.Services.AddScoped<IValidator<LegalDocumentInsertRequest>, LegalDocumentInsertValidator>();
 builder.Services.AddScoped<IValidator<LeaveTypeInsertRequest>, LeaveTypeInsertValidator>();
 builder.Services.AddScoped<IValidator<EmployeeInsertRequest>, EmployeeInsertValidator>();
 builder.Services.AddScoped<IValidator<ContractInsertRequest>, ContractInsertValidator>();
@@ -117,6 +133,7 @@ builder.Services.AddScoped<IValidator<DepartmentUpdateRequest>, DepartmentUpdate
 builder.Services.AddScoped<IValidator<PositionUpdateRequest>, PositionUpdateValidator>();
 builder.Services.AddScoped<IValidator<ContractTypeUpdateRequest>, ContractTypeUpdateValidator>();
 builder.Services.AddScoped<IValidator<LegalDocumentCategoryUpdateRequest>, LegalDocumentCategoryUpdateValidator>();
+builder.Services.AddScoped<IValidator<LegalDocumentUpdateRequest>, LegalDocumentUpdateValidator>();
 builder.Services.AddScoped<IValidator<LeaveTypeUpdateRequest>, LeaveTypeUpdateValidator>();
 builder.Services.AddScoped<IValidator<EmployeeUpdateRequest>, EmployeeUpdateValidator>();
 builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateValidator>();
@@ -132,7 +149,11 @@ builder.Services.AddScoped<IValidator<SalarySlipPayAllRequest>, SalarySlipPayAll
 builder.Services.AddScoped<IValidator<SalarySlipPaySingleRequest>, SalarySlipPaySingleValidator>();
 builder.Services.AddScoped<IValidator<SalarySlipApproveAllRequest>, SalarySlipApproveAllValidator>();
 builder.Services.AddScoped<IValidator<SalarySlipApproveSingleRequest>, SalarySlipApproveSingleValidator>();
+builder.Services.AddScoped<IValidator<LegalDocumentInsertRequest>, LegalDocumentInsertValidator>();
 
+
+
+builder.Services.AddSingleton<EasyNetQ.IBus>(_ => EasyNetQ.RabbitHutch.CreateBus(builder.Configuration["RabbitMQ:ConnectionString"]));
 
 //adds Bearer in Scalar
 //adds requirement on each endpoint (Scalar shows it as padlock icon)

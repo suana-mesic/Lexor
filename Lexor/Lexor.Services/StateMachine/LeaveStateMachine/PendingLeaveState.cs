@@ -42,6 +42,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
             entity.ApprovedByAdminId = _userAccessor.GetUserId();
             entity.State = nameof(ApprovedLeaveState);
             await _dbContext.SaveChangesAsync();
+            await PublishLeaveStatusAsync(entity, null);
             return _mapper.Map<LeaveResponse>(await GetByIdAsync(entity.Id));
         }
 
@@ -53,6 +54,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
             entity.RejectedByAdminId = _userAccessor.GetUserId();
             entity.State = nameof(RejectedLeaveState);
             await _dbContext.SaveChangesAsync();
+            await PublishLeaveStatusAsync(entity, reason);
             return _mapper.Map<LeaveResponse>(await GetByIdAsync(entity.Id));
         }
 

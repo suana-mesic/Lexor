@@ -5,36 +5,22 @@ import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/create_leave_request.dart';
+import 'package:lexor_mobile/widgets/error_banner.dart';
+import 'package:lexor_shared/lexor_shared.dart';
 import 'package:provider/provider.dart';
+import 'package:lexor_mobile/theme/app_colors.dart';
 
-const _bosnianMonths = [
-  'Januar',
-  'Februar',
-  'Mart',
-  'April',
-  'Maj',
-  'Juni',
-  'Juli',
-  'August',
-  'Septembar',
-  'Oktobar',
-  'Novembar',
-  'Decembar',
-];
+String _salaryStatusLabel(int status) =>
+    SalarySlipStatus.fromCode(status)?.label ?? 'Plata procesirana';
 
-String _salaryStatusLabel(int status) => switch (status) {
-  1 => 'Plata na čekanju',
-  2 => 'Plata isplaćena',
-  _ => 'Plata procesirana',
-};
-
-String _leaveStateLabel(String? state) => switch (state) {
-  'PendingLeaveState' => 'Zahtjev na čekanju',
-  'ApprovedLeaveState' => 'Zahtjev odobren',
-  'RejectedLeaveState' => 'Zahtjev odbijen',
-  'CancelledLeaveState' => 'Zahtjev otkazan',
-  _ => 'Zahtjev',
-};
+String _leaveStateLabel(String? state) =>
+    switch (LeaveStateType.fromApi(state)) {
+      LeaveStateType.pending => 'Zahtjev na čekanju',
+      LeaveStateType.approved => 'Zahtjev odobren',
+      LeaveStateType.rejected => 'Zahtjev odbijen',
+      LeaveStateType.cancelled => 'Zahtjev otkazan',
+      _ => 'Zahtjev',
+    };
 
 String _formatRelativeDate(DateTime dt) {
   final local = dt.toLocal();
@@ -64,6 +50,11 @@ class HomeTab extends StatelessWidget {
       listen: true,
     );
 
+    final errorMessage =
+        attendanceProvider.error ??
+        salarySlipProvider.error ??
+        leaveProvider.error;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -74,6 +65,17 @@ class HomeTab extends StatelessWidget {
             children: [
               _buildHeader(authProvider),
               const SizedBox(height: 16),
+              if (errorMessage != null) ...[
+                ErrorBanner(
+                  message: errorMessage,
+                  onRetry: () {
+                    attendanceProvider.fetchSummary();
+                    salarySlipProvider.fetchLatestSalarySlip();
+                    leaveProvider.fetchLatestLeave();
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
               _buildStatCards(attendanceProvider),
               const SizedBox(height: 24),
               _buildQuickActions(context),
@@ -91,7 +93,7 @@ class HomeTab extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A237E),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -179,7 +181,7 @@ class HomeTab extends StatelessWidget {
                   style: TextStyle(color: Colors.grey, fontSize: 14),
                 ),
                 Text(
-                  '${attendanceProvider.summary?.monthWorkedHours.toStringAsFixed(1) ?? '-'}h',
+                  '${attendanceProvider.summary?.monthTotalHours.toStringAsFixed(1) ?? '-'}h',
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 20,
@@ -187,7 +189,7 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '↑ ${attendanceProvider.summary?.monthAttendaceRate.toStringAsFixed(1) ?? '-'}% prisustvo',
+                  '↑ ${attendanceProvider.summary?.monthAttendanceRate.toStringAsFixed(1) ?? '-'}% prisustvo',
                   style: const TextStyle(color: Colors.green, fontSize: 14),
                 ),
               ],
@@ -237,12 +239,12 @@ class HomeTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE3F2FD),
+                    color: AppColors.infoBg,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.description_outlined,
-                    color: Color(0xFF1976D2),
+                    color: AppColors.info,
                     size: 24,
                   ),
                 ),
@@ -290,7 +292,7 @@ class HomeTab extends StatelessWidget {
         ? _salaryStatusLabel(salarySlip.status)
         : '-';
     final salarySubtitle = salarySlip != null
-        ? '${_bosnianMonths[salarySlip.month - 1]} ${salarySlip.year} - ${salarySlip.netSalary.toStringAsFixed(2)} KM'
+        ? '${bosnianMonthName(salarySlip.month)} ${salarySlip.year} - ${salarySlip.netSalary.toStringAsFixed(2)} KM'
         : '-';
     final salaryTime = salarySlip != null
         ? _formatRelativeDate(salarySlip.generatedAt)

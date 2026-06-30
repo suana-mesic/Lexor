@@ -40,6 +40,15 @@ namespace Lexor.Services
                 // admin may optionally filter by any employee
                 if (search?.EmployeeId.HasValue == true)
                     query = query.Where(l => l.EmployeeId == search.EmployeeId);
+
+                // admin may also search by employee full name
+                if (!string.IsNullOrWhiteSpace(search?.EmployeeName))
+                {
+                    var term = search.EmployeeName.ToLower();
+                    query = query.Where(l =>
+                        (l.Employee.User.FirstName + " " + l.Employee.User.LastName)
+                            .ToLower().Contains(term));
+                }
             }
             else
             {
@@ -72,14 +81,41 @@ namespace Lexor.Services
             var response = await base.GetAllAsync(search);
             if (response != null && response.Items.Count > 0)
             {
+                // The list query already loaded each row; derive allowed actions from the
+                // item's State instead of re-querying the DB per row (avoids N+1).
+                var isAdmin = _userAccessor.IsInRole(RoleNames.Administrator);
                 foreach (var item in response.Items)
                 {
-                    if (!_userAccessor.IsInRole(RoleNames.Administrator))
+                    if (!isAdmin)
                         item.Employee = null;  // For employees the property "Employee" in LeaveResponse object stays null
-                    item.AllowedActions = await GetAllowedActions(item.Id);
+                    item.AllowedActions = AllowedActionsForState(item.State, item.DateFrom);
                 }
             }
             return response;
+        }
+
+        // Allowed actions depend on the current state plus a couple of date-based
+        // business rules (no DB access needed — the row is already loaded).
+        private List<string> AllowedActionsForState(string? state, DateOnly dateFrom)
+        {
+            if (string.IsNullOrEmpty(state)) return new List<string>();
+            var actions = _baseLeaveState.GetLeaveState(state).GetAllowedActions();
+            return ApplyDateRules(actions, state, dateFrom);
+        }
+
+        // Strips actions that are no longer valid given the leave's dates so the
+        // UI doesn't offer them (§7: unavailable actions must not be offered).
+        private static List<string> ApplyDateRules(List<string> actions, string? state, DateOnly dateFrom)
+        {
+            // An approved leave can only be cancelled while it hasn't started yet.
+            if (state == nameof(ApprovedLeaveState)
+                && dateFrom <= DateOnly.FromDateTime(DateTime.UtcNow))
+            {
+                actions = actions
+                    .Where(a => a != nameof(BaseLeaveState.CancelAsync))
+                    .ToList();
+            }
+            return actions;
         }
         public async Task EmployeeIsPermitted(int id)
         {
@@ -191,9 +227,18 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
                 throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
-            BaseLeaveState currentState = _baseLeaveState.GetLeaveState(entity.State);
-            return currentState.GetAllowedActions();
+            var actions = _baseLeaveState.GetLeaveState(entity.State).GetAllowedActions();
+            return ApplyDateRules(actions, entity.State, entity.DateFrom);
         }
 
+        public async Task<int> CompleteFinishedLeaveState()
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            return await _dbContext.Set<Leave>()
+                .Where(l => l.State == nameof(ApprovedLeaveState) && l.DateTo < today)
+                .ExecuteUpdateAsync(s => s
+                .SetProperty(l => l.State, nameof(CompletedLeaveState))
+                .SetProperty(l => l.CompletedAt, DateTime.UtcNow));
+        }
     }
 }

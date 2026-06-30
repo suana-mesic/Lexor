@@ -39,6 +39,7 @@ namespace Lexor.Services
                 }
 
                 var entity = _mapper.Map<PayrollSettings>(request);
+                entity.WorkDaysMask = DescriptionToMask(request.WorkDaysDescription);
                 _dbContext.Set<PayrollSettings>().Add(entity);
                 await _dbContext.SaveChangesAsync();
 
@@ -52,6 +53,22 @@ namespace Lexor.Services
                 throw;
             }
         }
+
+        // Pretvara opis radnih dana u bitmask (Pon=bit0 ... Ned=bit6).
+        public static int DescriptionToMask(string? description) => description?.Trim() switch
+        {
+            "Pon-Sub" => 63,
+            "Pon-Ned" => 127,
+            _ => 31, // Pon-Pet (default)
+        };
+
+        // Pretvara bitmask nazad u čitljiv opis (za response).
+        public static string MaskToDescription(int mask) => mask switch
+        {
+            63 => "Pon-Sub",
+            127 => "Pon-Ned",
+            _ => "Pon-Pet",
+        };
 
         public async Task<PayrollSettingsResponse?> GetCurrentAsync()
         {

@@ -6,6 +6,7 @@ import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/attendance_tab.dart';
 import 'package:lexor_mobile/screens/home_tab.dart';
 import 'package:lexor_mobile/screens/leave_requests_tab.dart';
+import 'package:lexor_mobile/screens/salary_tab.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final List<Widget> _screens = [
       const HomeTab(),
       const AttendanceTab(),
-      const Center(child: Text('Platne liste')),
+      const SalaryTab(),
       const LeaveRequestsTab(),
       const Center(child: Text('Chat')),
     ];

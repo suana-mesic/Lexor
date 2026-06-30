@@ -20,6 +20,15 @@ namespace Lexor.Services
         {
         }
 
+        public override async Task<PageResult<EmployeeResponse>> GetAllAsync(EmployeeSearchObject? search = null)
+        {
+            var result = await base.GetAllAsync(search);
+            // List view doesn't need the (potentially large) profile image — keep payloads slim.
+            foreach (var e in result.Items)
+                e.User.ProfileImageBase64 = null;
+            return result;
+        }
+
         protected override IQueryable<Employee> ApplyFilters(IQueryable<Employee> query, EmployeeSearchObject? search)
         {
             if (search != null)
@@ -40,8 +49,7 @@ namespace Lexor.Services
                     ActivityStatus.Inactive => query.Where(e => !e.IsActive),
                     ActivityStatus.All => query,
                     null => query,
-                    _ => throw new ValidationException(
-                        $"Nevažeća vrijednost ActivityStatus: {(int)search.ActivityStatus.Value}.")
+                    _ => throw new ValidationException("Nevažeći filter statusa aktivnosti.")
                 };
             }
             return query;
@@ -66,6 +74,8 @@ namespace Lexor.Services
             {
                 throw new ValidationException(validationResult.Errors);
             }
+
+            await ValidatePositionMatchesDepartment(request.PositionId, request.DepartmentId);
 
             await using var tx = await _dbContext.Database.BeginTransactionAsync();
             try
@@ -107,6 +117,12 @@ namespace Lexor.Services
             if (employee == null)
                 throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
 
+            // Validate the resulting position/department pairing. Either field may be
+            // omitted in the request, so fall back to the employee's current value.
+            var effectiveDepartmentId = request.DepartmentId ?? employee.DepartmentId;
+            var effectivePositionId = request.PositionId ?? employee.PositionId;
+            await ValidatePositionMatchesDepartment(effectivePositionId, effectiveDepartmentId);
+
             if (request.User != null)
             {
                 _mapper.Map(request.User, employee.User);
@@ -118,6 +134,18 @@ namespace Lexor.Services
             await _dbContext.SaveChangesAsync();
 
             return await GetByIdAsync(id);
+        }
+
+        // A position belongs to exactly one department. Reject combinations where the
+        // selected position lives in a different department (e.g. HR + Software Developer).
+        private async Task ValidatePositionMatchesDepartment(int positionId, int departmentId)
+        {
+            var position = await _dbContext.Positions.FirstOrDefaultAsync(p => p.Id == positionId);
+            if (position == null)
+                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Position), positionId));
+
+            if (position.DepartmentId != departmentId)
+                throw new ValidationException("Odabrana pozicija ne pripada odabranom odjelu.");
         }
 
         private static string GenerateInvitationCode(int length = 8)

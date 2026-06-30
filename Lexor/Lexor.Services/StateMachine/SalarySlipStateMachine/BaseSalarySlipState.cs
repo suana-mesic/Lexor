@@ -58,7 +58,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                 case nameof(PaidSalarySlipState):
                     return _serviceProvider.GetService<PaidSalarySlipState>()!;
                 default:
-                    throw new InvalidOperationException($"Stanje plate {stateName} je nepoznato.");
+                    throw new InvalidOperationException("Platna lista je u nevažećem stanju.");
             }
         }
 
@@ -126,19 +126,22 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                 .GroupBy(l => l.EmployeeId)
                 .ToDictionaryAsync(g => g.Key, g => g.ToList());
 
-            var payrollSettings = await _dbContext.PayrollSettings
-                .OrderByDescending(x => x.ValidFrom)
-                .FirstAsync();
-
-            // 5) Working days in this calendar month (Mon-Fri)
-            var workingDays = SalarySlipCalculation.GetWorkingDaysInMonth(request.Year, request.Month, payrollSettings);
+            // 5) Working days in this calendar month — use the period-correct settings
+            //    resolved above, not a second "latest settings" load.
+            var workingDays = SalarySlipCalculation.GetWorkingDaysInMonth(request.Year, request.Month, settings);
 
             var generated = new List<SalarySlip>();
 
             foreach (var employee in employees)
             {
-                // Use active contract; skip employees without one (e.g. recently deactivated).
-                var contract = employee.Contracts.FirstOrDefault(c => c.IsActive);
+                // Pick the contract that was in effect during the payroll PERIOD (not "today" and not by
+                // the IsActive flag) — same period-based logic as PayrollSettings above. This keeps
+                // retroactive runs correct and ignores future-dated contracts that aren't in effect yet.
+                var contract = employee.Contracts
+                    .Where(c => c.StartDate.Date <= periodDate
+                             && (c.EndDate == null || c.EndDate.Value.Date >= periodDate))
+                    .OrderByDescending(c => c.StartDate)
+                    .FirstOrDefault();
                 if (contract == null)
                     continue;
 

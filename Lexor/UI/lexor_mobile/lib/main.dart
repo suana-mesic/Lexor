@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:lexor_mobile/auth_store.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/leave_type_provider.dart';
+import 'package:lexor_mobile/providers/payroll_settings_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
+import 'package:lexor_mobile/screens/home_screen.dart';
 import 'package:lexor_mobile/screens/login_screen.dart';
+import 'package:lexor_mobile/session.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final loggedIn = await loadToken();
   runApp(
     MultiProvider(
       providers: [
@@ -16,68 +22,26 @@ void main() {
         ChangeNotifierProvider(create: (_) => SalarySlipProvider()),
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
         ChangeNotifierProvider(create: (_) => LeaveTypeProvider()),
+        ChangeNotifierProvider(create: (_) => PayrollSettingsProvider()),
       ],
-      child: const MyApp(),
+      child: MyApp(loggedIn: loggedIn),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool loggedIn;
+  const MyApp({super.key, required this.loggedIn});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      navigatorKey: navigatorKey,
+      title: 'Lexor',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const LoginScreen(),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      home: loggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

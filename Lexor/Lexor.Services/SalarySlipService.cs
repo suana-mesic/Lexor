@@ -305,7 +305,7 @@ namespace Lexor.Services
         {
             SalarySlipStatus.Pending => nameof(PendingSalarySlipState),
             SalarySlipStatus.Paid => nameof(PaidSalarySlipState),
-            _ => throw new InvalidOperationException($"Nepoznat status: {status}")
+            _ => throw new InvalidOperationException("Nevažeći status platne liste.")
         };
     }
 }

@@ -123,6 +123,13 @@ namespace Lexor.Services.Database
                 .HasForeignKey(c => c.CountryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ===== Position (each position belongs to one department) =====
+            modelBuilder.Entity<Position>()
+                .HasOne(p => p.Department)
+                .WithMany(d => d.Positions)
+                .HasForeignKey(p => p.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ===== Leave =====
             modelBuilder.Entity<Leave>()
                 .HasOne(l => l.Employee)

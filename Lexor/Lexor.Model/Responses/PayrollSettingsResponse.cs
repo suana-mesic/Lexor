@@ -6,6 +6,7 @@ namespace Lexor.Model.Responses
         public DateTime ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
         public string WorkDaysDescription { get; set; } = string.Empty;
+        public int WorkDaysMask { get; set; }
         public decimal OvertimeMultiplier { get; set; }
         public decimal PersonalDeduction { get; set; }
         public decimal PioMioRate { get; set; }

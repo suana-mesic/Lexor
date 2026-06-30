@@ -18,6 +18,34 @@ namespace Lexor.Services
 
         }
 
+        public override async Task<RFIDResponse> InsertAsync(RFIDInsertRequest request)
+        {
+            var duplicate = await _dbContext.Set<RfidCard>()
+                .AnyAsync(c => c.Uid == request.Uid && c.IsActive);
+
+            if (duplicate)
+                throw new ValidationException("Već postoji aktivna kartica sa ovim UID-om.");
+
+            // An employee may have at most one active card at a time.
+            if (request.IsActive)
+            {
+                var activeCard = await _dbContext.Set<RfidCard>()
+                    .Include(c => c.Employee)
+                        .ThenInclude(e => e.User)
+                    .FirstOrDefaultAsync(c => c.EmployeeId == request.EmployeeId && c.IsActive);
+
+                if (activeCard != null)
+                {
+                    var name = $"{activeCard.Employee.User.FirstName} {activeCard.Employee.User.LastName}";
+                    throw new ValidationException(
+                        $"Uposlenik {name} već ima aktivnu karticu. " +
+                        "Potrebno je prvo deaktivirati staru karticu kako bi se nova mogla dodati.");
+                }
+            }
+
+            return await base.InsertAsync(request);
+        }
+
         public async Task<RFIDResponse> DeactivateAsync(int id)
         {
             var card = await _dbContext.Set<RfidCard>().FindAsync(id)
@@ -42,14 +70,21 @@ namespace Lexor.Services
                     query = query.Where(rfid => rfid.EmployeeId == search.EmployeeId);
                 }
 
+                if (!string.IsNullOrWhiteSpace(search.EmployeeName))
+                {
+                    var term = search.EmployeeName.ToLower();
+                    query = query.Where(rfid =>
+                        (rfid.Employee.User.FirstName + " " + rfid.Employee.User.LastName)
+                            .ToLower().Contains(term));
+                }
+
                 query = search.ActivityStatus switch
                 {
                     ActivityStatus.Active => query.Where(rfid => rfid.IsActive),
                     ActivityStatus.Inactive => query.Where(rfid => !rfid.IsActive),
                     ActivityStatus.All => query,
                     null => query,
-                    _ => throw new ValidationException(
-                        $"Nevažeća vrijednost ActivityStatus: {(int)search.ActivityStatus.Value}.")
+                    _ => throw new ValidationException("Nevažeći filter statusa aktivnosti.")
                 };
             }
             return query;

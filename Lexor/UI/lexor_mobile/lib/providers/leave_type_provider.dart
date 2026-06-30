@@ -1,34 +1,22 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:lexor_mobile/api_client.dart';
 import 'package:lexor_mobile/models/leave_response.dart';
-import 'package:lexor_mobile/providers/auth_provider.dart';
+import 'package:lexor_shared/lexor_shared.dart';
 
 class LeaveTypeProvider extends ChangeNotifier {
-  static const String _baseUrl = 'http://10.0.2.2:5170';
   List<LeaveTypeResponse> leaveTypes = [];
+  String? error;
 
   Future<void> fetchLeaveTypes() async {
-    print('fetchLeaveTypes called');
-    var uri = Uri.parse('${_baseUrl}/LeaveTypes');
+    error = null;
     try {
-      var response = await http.get(
-        uri,
-        headers: {'Authorization': 'Bearer ${AuthProvider.accessToken}'},
-      );
-
-      print('LeaveTypes status: ${response.statusCode}');
-      print('LeaveTypes body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        var items = data['items'] as List;
-        leaveTypes = items.map((e) => LeaveTypeResponse.fromJson(e)).toList();
-        notifyListeners();
-      }
+      final data = await ApiClient.get('/LeaveTypes');
+      final items = data['items'] as List;
+      leaveTypes = items.map((e) => LeaveTypeResponse.fromJson(e)).toList();
     } catch (e) {
-      print('LeaveTypes error: $e');
+      error = messageFor(e);
+    } finally {
+      notifyListeners();
     }
   }
 }

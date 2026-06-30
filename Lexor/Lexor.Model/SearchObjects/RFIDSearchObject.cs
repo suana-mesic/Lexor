@@ -6,5 +6,6 @@ namespace Lexor.Model.SearchObjects
     {
         public int? EmployeeId { get; set; }
         public ActivityStatus? ActivityStatus { get; set; }
+        public string? EmployeeName { get; set; }
     }
 }

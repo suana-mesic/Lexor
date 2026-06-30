@@ -193,6 +193,11 @@ namespace Lexor.Services
                 .Select(x => new { x.DateTimeEntered, x.WorkedHours })
                 .FirstOrDefaultAsync();
 
+            // Active payroll settings (used for work-start time and the working-day mask).
+            var settings = await _dbContext.PayrollSettings
+                .OrderByDescending(x => x.ValidFrom)
+                .FirstAsync();
+
             if (todaysAttendance == null)
             {
                 todaysStatus = "Niste prisutni";
@@ -200,9 +205,9 @@ namespace Lexor.Services
             else if (todaysAttendance.DateTimeEntered.HasValue)
             {
                 var enteredTime = TimeOnly.FromDateTime(todaysAttendance.DateTimeEntered.Value.ToLocalTime());
-                if (enteredTime < PayrollSettings.WorkStartTime)
+                if (enteredTime < settings.WorkStartTime)
                     todaysStatus = "Došli ste ranije";
-                else if (enteredTime > PayrollSettings.WorkStartTime)
+                else if (enteredTime > settings.WorkStartTime)
                     todaysStatus = "Došli ste kasnije";
                 else
                     todaysStatus = "Došli ste tačno na vrijeme";
@@ -216,10 +221,6 @@ namespace Lexor.Services
                 .ToListAsync();
 
             var monthTotalHours = thisMonthsAttendance.Sum(x => x.WorkedHours ?? 0);
-
-            var settings = await _dbContext.PayrollSettings
-                .OrderByDescending(x => x.ValidFrom)
-                .FirstAsync();
 
             var totalWorkDays = Enumerable.Range(1, today.Day)
                 .Select(d => new DateOnly(thisYear, thisMonth, d))

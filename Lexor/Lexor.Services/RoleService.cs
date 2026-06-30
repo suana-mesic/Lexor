@@ -28,8 +28,7 @@ namespace Lexor.Services
                     ActivityStatus.Inactive => query.Where(c => !c.IsActive),
                     ActivityStatus.All => query,
                     null => query,
-                    _ => throw new ValidationException(
-                        $"Nevažeća vrijednost ActivityStatus: {(int)search.ActivityStatus.Value}.")
+                    _ => throw new ValidationException("Nevažeći filter statusa aktivnosti.")
                 };
             }
             return query;

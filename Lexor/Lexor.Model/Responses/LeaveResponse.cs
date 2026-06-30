@@ -1,5 +1,3 @@
-using Lexor.Model.Enums;
-using System.Security.Principal;
 namespace Lexor.Model.Responses
 {
     public class LeaveResponse

@@ -8,10 +8,10 @@ namespace Lexor.Services.Validators
         public ContractInsertValidator()
         {
             RuleFor(x => x.EmployeeId)
-                .GreaterThan(0).WithMessage("EmployeeId mora biti veći od 0.");
+                .GreaterThan(0).WithMessage("Uposlenik je obavezan.");
 
             RuleFor(x => x.ContractTypeId)
-                .GreaterThan(0).WithMessage("ContractTypeId mora biti veći od 0.");
+                .GreaterThan(0).WithMessage("Tip ugovora je obavezan.");
 
             RuleFor(x => x.StartDate)
                 .NotEmpty().WithMessage("Datum početka je obavezan.");
@@ -21,11 +21,11 @@ namespace Lexor.Services.Validators
                 .When(x => x.EndDate.HasValue);
 
             RuleFor(x => x.BrutoSalary)
-                .GreaterThan(0).WithMessage("Bruto plata mora biti veća od 0.");
+                .GreaterThan(0).WithMessage("Bruto plata mora biti veća od 0.")
+                .LessThanOrEqualTo(1_000_000m).WithMessage("Bruto plata ne može biti veća od 1.000.000 KM.");
 
             RuleFor(x => x.WorkHoursPerDay)
-                .GreaterThan(0).WithMessage("Broj radnih sati po danu mora biti veći od 0.")
-                .LessThanOrEqualTo(24).WithMessage("Broj radnih sati po danu ne može biti veći od 24.");
+                .InclusiveBetween(1, 24).WithMessage("Broj radnih sati po danu mora biti između 1 i 24.");
         }
     }
 }

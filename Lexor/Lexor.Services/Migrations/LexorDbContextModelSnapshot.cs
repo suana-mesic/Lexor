@@ -247,9 +247,6 @@ namespace Lexor.Services.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -462,6 +459,9 @@ namespace Lexor.Services.Migrations
                     b.Property<int?>("CancelledByUserId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -496,7 +496,8 @@ namespace Lexor.Services.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("State")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -742,6 +743,9 @@ namespace Lexor.Services.Migrations
                     b.Property<int>("WorkDaysMask")
                         .HasColumnType("int");
 
+                    b.Property<TimeOnly>("WorkStartTime")
+                        .HasColumnType("time");
+
                     b.HasKey("Id");
 
                     b.ToTable("PayrollSettings");
@@ -757,7 +761,8 @@ namespace Lexor.Services.Migrations
                             PioMioRate = 17m,
                             UnemploymentRate = 1.5m,
                             ValidFrom = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            WorkDaysMask = 31
+                            WorkDaysMask = 31,
+                            WorkStartTime = new TimeOnly(9, 0, 0)
                         });
                 });
 
@@ -769,6 +774,9 @@ namespace Lexor.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -776,38 +784,52 @@ namespace Lexor.Services.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.ToTable("Positions");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            DepartmentId = 1,
                             Name = "HR menadžer"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Recruitment Specialist"
+                            DepartmentId = 1,
+                            Name = "Specijalista za zapošljavanje"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Software Developer"
+                            DepartmentId = 2,
+                            Name = "Programer"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "DevOps Engineer"
+                            DepartmentId = 2,
+                            Name = "DevOps inženjer"
                         },
                         new
                         {
                             Id = 5,
-                            Name = "Sales Representative"
+                            DepartmentId = 3,
+                            Name = "Predstavnik prodaje"
                         },
                         new
                         {
                             Id = 6,
-                            Name = "Production Manager"
+                            DepartmentId = 4,
+                            Name = "Menadžer proizvodnje"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            DepartmentId = 5,
+                            Name = "Računovođa"
                         });
                 });
 
@@ -968,7 +990,8 @@ namespace Lexor.Services.Migrations
 
                     b.Property<string>("State")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("Tax")
                         .HasColumnType("decimal(18,2)");
@@ -1340,6 +1363,17 @@ namespace Lexor.Services.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("Lexor.Services.Database.Position", b =>
+                {
+                    b.HasOne("Lexor.Services.Database.Department", "Department")
+                        .WithMany("Positions")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+                });
+
             modelBuilder.Entity("Lexor.Services.Database.RefreshToken", b =>
                 {
                     b.HasOne("Lexor.Services.Database.User", "User")
@@ -1447,6 +1481,8 @@ namespace Lexor.Services.Migrations
             modelBuilder.Entity("Lexor.Services.Database.Department", b =>
                 {
                     b.Navigation("Employees");
+
+                    b.Navigation("Positions");
                 });
 
             modelBuilder.Entity("Lexor.Services.Database.Employee", b =>

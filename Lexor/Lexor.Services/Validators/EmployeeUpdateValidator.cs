@@ -20,15 +20,15 @@ namespace Lexor.Services.Validators
                 .When(x => x.Address != null);
 
             RuleFor(x => x.CityId)
-                .GreaterThan(0).WithMessage("CityId mora biti veći od 0.")
+                .GreaterThan(0).WithMessage("Grad je obavezan.")
                 .When(x => x.CityId.HasValue);
 
             RuleFor(x => x.DepartmentId)
-                .GreaterThan(0).WithMessage("DepartmentId mora biti veći od 0.")
+                .GreaterThan(0).WithMessage("Odjel je obavezan.")
                 .When(x => x.DepartmentId.HasValue);
 
             RuleFor(x => x.PositionId)
-                .GreaterThan(0).WithMessage("PositionId mora biti veći od 0.")
+                .GreaterThan(0).WithMessage("Pozicija je obavezna.")
                 .When(x => x.PositionId.HasValue);
         }
     }
