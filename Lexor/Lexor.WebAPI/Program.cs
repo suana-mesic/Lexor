@@ -45,6 +45,7 @@ builder.Services.AddScoped<IAccessManager, AccessManager>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticatedUserAccessor, AuthenticatedUserAccessor>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 
 TypeAdapterConfig<RoleUpdateRequest, Role>.NewConfig().IgnoreNullValues(true);
@@ -65,9 +66,10 @@ TypeAdapterConfig<PayrollSettingsUpdateRequest, PayrollSettings>.NewConfig().Ign
 TypeAdapterConfig<AttendanceUpdateRequest, Attendance>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LeaveUpdateRequest, Leave>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<SalarySlip, SalarySlipResponse>.NewConfig()
-    .Map(dest => dest.Status, src => src.State == nameof(PaidSalarySlipState)
-    ? SalarySlipStatus.Paid
-    : SalarySlipStatus.Pending);
+    .Map(dest => dest.Status, src =>
+        src.State == nameof(PaidSalarySlipState) ? SalarySlipStatus.Paid :
+        src.State == nameof(ApprovedSalarySlipState) ? SalarySlipStatus.Approved :
+        SalarySlipStatus.Pending);
 
 
 TypeAdapterConfig<City, CityResponse>.NewConfig().Map(dest => dest.CountryName, src => src.Country != null ? src.Country.Name : null);
@@ -136,6 +138,7 @@ builder.Services.AddScoped<IValidator<LegalDocumentCategoryUpdateRequest>, Legal
 builder.Services.AddScoped<IValidator<LegalDocumentUpdateRequest>, LegalDocumentUpdateValidator>();
 builder.Services.AddScoped<IValidator<LeaveTypeUpdateRequest>, LeaveTypeUpdateValidator>();
 builder.Services.AddScoped<IValidator<EmployeeUpdateRequest>, EmployeeUpdateValidator>();
+builder.Services.AddScoped<IValidator<ProfileUpdateRequest>, ProfileUpdateValidator>();
 builder.Services.AddScoped<IValidator<ContractUpdateRequest>, ContractUpdateValidator>();
 builder.Services.AddScoped<IValidator<RFIDUpdateRequest>, RFIDUpdateValidator>();
 builder.Services.AddScoped<IValidator<PayrollSettingsUpdateRequest>, PayrollSettingsUpdateValidator>();
@@ -213,10 +216,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
-        options.WithPreferredScheme("Bearer")
-               .WithHttpBearerAuthentication(bearer =>
+        options.AddPreferredSecuritySchemes(new[] { "Bearer" })
+               .AddHttpAuthentication("Bearer", scheme =>
                {
-                   bearer.Token = "";
+                   scheme.Token = "";
                });
     });
 }

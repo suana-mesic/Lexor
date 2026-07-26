@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
@@ -22,7 +23,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
                             && l.DateTo >= request.DateFrom);
 
             if (hasOverlap)
-                throw new InvalidOperationException("Već postoji aktivno odsustvo koje se preklapa sa navedenim periodom.");
+                throw new BusinessException("Već postoji aktivno odsustvo koje se preklapa sa navedenim periodom.");
 
             var entity = _mapper.Map<Leave>(request);
             entity.EmployeeId = employeeId;

@@ -28,7 +28,7 @@ namespace Lexor.WebAPI.Controllers
         [HttpGet("{id}")]
         public virtual async Task<ActionResult<TResponse>> GetByIdAsync(int id)
         {
-            // KeyNotFoundException -> 404 is handled centrally by ExceptionFilter,
+            // NotFoundException -> 404 is handled centrally by ExceptionFilter,
             // which also returns a { message } body (consistent with every other error).
             var result = await _service.GetByIdAsync(id);
             return Ok(result);

@@ -4,7 +4,9 @@ import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/leave_type_provider.dart';
+import 'package:lexor_mobile/providers/notification_provider.dart';
 import 'package:lexor_mobile/providers/payroll_settings_provider.dart';
+import 'package:lexor_mobile/providers/profile_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/home_screen.dart';
 import 'package:lexor_mobile/screens/login_screen.dart';
@@ -23,6 +25,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
         ChangeNotifierProvider(create: (_) => LeaveTypeProvider()),
         ChangeNotifierProvider(create: (_) => PayrollSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MyApp(loggedIn: loggedIn),
     ),

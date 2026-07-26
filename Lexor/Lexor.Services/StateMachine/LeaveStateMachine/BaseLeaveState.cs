@@ -1,4 +1,5 @@
-﻿using EasyNetQ;
+﻿using Lexor.Model.Exceptions;
+using EasyNetQ;
 using Lexor.Model;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
@@ -29,32 +30,27 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
 
         public virtual Task<LeaveResponse> InsertAsync(LeaveInsertRequest request, int employeeId)
         {
-            throw new InvalidOperationException("Nije moguće dodati novo odsustvo u trenutnom stanju.");
+            throw new BusinessException("Nije moguće dodati novo odsustvo u trenutnom stanju.");
         }
         public virtual Task<LeaveResponse> UpdateAsync(int id, LeaveUpdateRequest request)
         {
-            throw new InvalidOperationException("Nije moguće ažurirati odsustvo u trenutnom stanju.");
+            throw new BusinessException("Nije moguće ažurirati odsustvo u trenutnom stanju.");
         }
         public virtual Task<LeaveResponse> ApproveAsync(int id)
         {
-            throw new InvalidOperationException("Nije moguće odobriti odsustvo u trenutnom stanju.");
+            throw new BusinessException("Nije moguće odobriti odsustvo u trenutnom stanju.");
         }
         public virtual Task<LeaveResponse> RejectAsync(int id, string reason)
         {
-            throw new InvalidOperationException("Nije moguće odbiti odsustvo u trenutnom stanju.");
+            throw new BusinessException("Nije moguće odbiti odsustvo u trenutnom stanju.");
         }
-        public virtual Task<LeaveResponse> CancelAsync(int id)
+        public virtual Task<LeaveResponse> CancelAsync(int id, string? reason)
         {
-            throw new InvalidOperationException("Nije moguće poništiti odsustvo u trenutnom stanju.");
+            throw new BusinessException("Nije moguće poništiti odsustvo u trenutnom stanju.");
         }
-        public virtual Task DeleteAsync(int id)
-        {
-            throw new InvalidOperationException("Nije moguće izbrisati odsustvo u trenutnom stanju.");
-        }
-
         public virtual Task<LeaveResponse> CompleteAsync(int id)
         {
-            throw new InvalidOperationException("Nije moguće završiti odsustvo u trenutnom stanju.");
+            throw new BusinessException("Nije moguće završiti odsustvo u trenutnom stanju.");
         }
         public IQueryable<Leave> IncludeRelatedEntities(LeaveSearchObject? search, IQueryable<Leave> query)
         {
@@ -71,7 +67,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
             var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
 
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
 
             return entity;
         }
@@ -92,7 +88,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
                 case nameof(CompletedLeaveState):
                     return _serviceProvider.GetService<CompletedLeaveState>()!;
                 default:
-                    throw new InvalidOperationException("Odsustvo je u nevažećem stanju.");
+                    throw new BusinessException("Odsustvo je u nevažećem stanju.");
             }
         }
 

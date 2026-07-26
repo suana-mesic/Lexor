@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/models/leave_response.dart';
 import 'package:lexor_desktop/models/search_result.dart';
+import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/providers/leave_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/app_notify.dart';
 import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:lexor_shared/lexor_shared.dart';
+import 'package:provider/provider.dart';
 
-/// Admin view of all leave/absence requests ("Zahtjevi"). Read-only table for
-/// now; per-status actions (approve/reject/cancel) are added separately.
+/// Admin view of all leave/absence requests ("Zahtjevi"). Per-status actions
+/// (approve / reject / cancel) are driven by the server's `allowedActions`.
 class LeavesScreen extends StatefulWidget {
   const LeavesScreen({super.key});
 
@@ -114,9 +117,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _tableCard()),
-        ],
+        children: [Expanded(child: _tableCard())],
       ),
     );
   }
@@ -234,11 +235,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
   Widget _filterField(String label, Widget child) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        const SizedBox(height: 6),
-        child,
-      ],
+      children: [Text(label), const SizedBox(height: 6), child],
     );
   }
 
@@ -256,10 +253,9 @@ class _LeavesScreenState extends State<LeavesScreen> {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        const minTableWidth = 880.0;
+        const minTableWidth = 980.0;
         final needsHScroll = constraints.maxWidth < minTableWidth;
-        final tableWidth =
-            needsHScroll ? minTableWidth : constraints.maxWidth;
+        final tableWidth = needsHScroll ? minTableWidth : constraints.maxWidth;
 
         // Show as many WHOLE rows as fit (no partial "peeking" row). Any rows
         // beyond that are reached via the table's own vertical scroll — the
@@ -304,12 +300,14 @@ class _LeavesScreenState extends State<LeavesScreen> {
                           3: FlexColumnWidth(2),
                           4: FlexColumnWidth(1),
                           5: FlexColumnWidth(2),
+                          6: IntrinsicColumnWidth(),
                         },
                         defaultVerticalAlignment:
                             TableCellVerticalAlignment.middle,
                         border: TableBorder(
-                          horizontalInside:
-                              BorderSide(color: Colors.grey.shade200),
+                          horizontalInside: BorderSide(
+                            color: Colors.grey.shade200,
+                          ),
                         ),
                         children: [
                           _buildHeaderTableRow(),
@@ -351,14 +349,21 @@ class _LeavesScreenState extends State<LeavesScreen> {
     return TableRow(
       decoration: BoxDecoration(color: Colors.grey[50]),
       children: [
-        _tableCell(const Text('Uposlenik', style: style),
-            isFirst: true, isHeader: true),
+        _tableCell(
+          const Text('Uposlenik', style: style),
+          isFirst: true,
+          isHeader: true,
+        ),
         _tableCell(const Text('Tip zahtjeva', style: style), isHeader: true),
         _tableCell(const Text('Od', style: style), isHeader: true),
         _tableCell(const Text('Do', style: style), isHeader: true),
         _tableCell(const Text('Dani', style: style), isHeader: true),
-        _tableCell(const Text('Status', style: style),
-            isLast: true, isHeader: true),
+        _tableCell(const Text('Status', style: style), isHeader: true),
+        _tableCell(
+          const Text('Akcije', style: style),
+          isLast: true,
+          isHeader: true,
+        ),
       ],
     );
   }
@@ -392,8 +397,270 @@ class _LeavesScreenState extends State<LeavesScreen> {
         _tableCell(Text(_dateFormat.format(l.dateFrom))),
         _tableCell(Text(_dateFormat.format(l.dateTo))),
         _tableCell(Text('${l.numberOfDays}')),
-        _tableCell(_statusBadge(l.status), isLast: true),
+        _tableCell(_statusBadge(l.status)),
+        _tableCell(_actionsCell(l), isLast: true),
       ],
+    );
+  }
+
+  /// Action icons are driven by the server's `allowedActions`:
+  /// - Pending  → Odobri (✓) + Odbij (✗)
+  /// - Approved → Poništi (only if it hasn't started yet)
+  /// - terminal states → no actions
+  Widget _actionsCell(LeaveResponse l) {
+    final currentUserId = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).userId;
+    final isOwnRequest = l.employee?.user.id == currentUserId;
+
+    final actions = l.allowedActions;
+    final canApprove = actions.contains('ApproveAsync');
+    final canReject = actions.contains('RejectAsync');
+    // Poništi se na panelu prikazuje samo za Odobreno (admin override), ne za Na čekanju.
+    final canCancel = actions.contains('CancelAsync') && !canApprove;
+
+    // Vlastiti zahtjev na čekanju → objašnjenje umjesto Odobri/Odbij.
+    if (isOwnRequest && (canApprove || canReject || canCancel)) {
+      return Tooltip(
+        message: 'Ne možete odlučivati o vlastitom zahtjevu za odsustvo.',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.info_outline, size: 18, color: Colors.grey[500]),
+            const SizedBox(width: 6),
+            Text(
+              'Vaš zahtjev',
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final showApprove = !isOwnRequest && canApprove;
+    final showReject = !isOwnRequest && canReject;
+    final showCancel = !isOwnRequest && canCancel;
+
+    if (!showApprove && !showReject && !showCancel) {
+      return Text('—', style: TextStyle(color: Colors.grey[400]));
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showApprove)
+          IconButton(
+            icon: const Icon(Icons.check, size: 20),
+            color: AppColors.success,
+            tooltip: 'Odobri',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _approve(l),
+          ),
+        if (showReject)
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            color: AppColors.error,
+            tooltip: 'Odbij',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _reject(l),
+          ),
+        if (showCancel)
+          IconButton(
+            icon: const Icon(Icons.cancel_outlined, size: 20),
+            color: AppColors.grey,
+            tooltip: 'Poništi',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _cancel(l),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _approve(LeaveResponse l) async {
+    final ok = await _confirm(
+      title: 'Odobri zahtjev',
+      message:
+          'Odobriti zahtjev za odsustvo uposlenika '
+          '${l.employeeFullName}?',
+      confirmLabel: 'Odobri',
+      confirmColor: AppColors.success,
+    );
+    if (ok != true) return;
+    await _runAction(() => _provider.approve(l.id), 'Zahtjev odobren');
+  }
+
+  Future<void> _cancel(LeaveResponse l) async {
+    final result = await _askCancellationReason(l);
+    if (result == null) return; // dialog dismissed
+    final reason = result.isEmpty ? null : result;
+    await _runAction(() => _provider.cancel(l.id, reason), 'Zahtjev poništen');
+  }
+
+  Future<void> _reject(LeaveResponse l) async {
+    final reason = await _askRejectionReason(l);
+    if (reason == null) return; // cancelled the dialog
+    await _runAction(() => _provider.reject(l.id, reason), 'Zahtjev odbijen');
+  }
+
+  /// Runs a state-changing action, then reloads the list and shows feedback.
+  Future<void> _runAction(
+    Future<void> Function() action,
+    String successMessage,
+  ) async {
+    try {
+      await action();
+      if (!mounted) return;
+      showSnack(context, successMessage);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      showSnack(context, messageFor(e), error: true);
+    }
+  }
+
+  Future<bool?> _confirm({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    required Color confirmColor,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Otkaži'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: confirmColor,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Reject requires a reason (enforced on the server too). Returns the reason,
+  /// or null if the admin cancels the dialog.
+  Future<String?> _askRejectionReason(LeaveResponse l) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) {
+        String? error;
+        return StatefulBuilder(
+          builder: (context, setLocalState) => AlertDialog(
+            title: const Text('Odbij zahtjev'),
+            content: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Razlog odbijanja zahtjeva uposlenika '
+                    '${l.employeeFullName}:',
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: controller,
+                    maxLines: 3,
+                    maxLength: 1000,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Unesite razlog…',
+                      border: const OutlineInputBorder(),
+                      errorText: error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Otkaži'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final text = controller.text.trim();
+                  if (text.isEmpty) {
+                    setLocalState(() => error = 'Razlog je obavezan.');
+                    return;
+                  }
+                  Navigator.pop(context, text);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Odbij'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Cancellation reason is optional. Returns the text (possibly empty) on confirm,
+  // or null if the admin dismissed the dialog.
+  Future<String?> _askCancellationReason(LeaveResponse l) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Poništi zahtjev'),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Poništiti odobreni zahtjev uposlenika ${l.employeeFullName}?',
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                maxLength: 1000,
+                decoration: const InputDecoration(
+                  labelText: 'Razlog (opcionalno)',
+                  hintText: 'Unesite razlog poništavanja…',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // null → dismissed
+            child: const Text('Odustani'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Poništi'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -403,6 +670,7 @@ class _LeavesScreenState extends State<LeavesScreen> {
       LeaveStateType.approved => (AppColors.success, AppColors.successBg),
       LeaveStateType.rejected => (AppColors.error, AppColors.errorBg),
       LeaveStateType.cancelled => (AppColors.grey, const Color(0xFFEEEEEE)),
+      LeaveStateType.completed => (AppColors.info, AppColors.infoBg),
       null => (AppColors.grey, const Color(0xFFEEEEEE)),
     };
     return Align(

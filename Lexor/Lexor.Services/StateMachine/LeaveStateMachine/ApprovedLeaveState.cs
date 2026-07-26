@@ -1,8 +1,8 @@
-using Azure.Identity;
+﻿using Lexor.Model.Exceptions;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
 using MapsterMapper;
-using System.Collections.Specialized;
+using Lexor.Model.Constants;
 
 namespace Lexor.Services.StateMachine.LeaveStateMachine
 {
@@ -13,21 +13,28 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
 
         }
 
-        public async override Task<LeaveResponse> CancelAsync(int id)
+        public async override Task<LeaveResponse> CancelAsync(int id, string? reason)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
             var entity = await GetByIdAsync(id);
-            if (entity.DateFrom <= today)
-                throw new InvalidOperationException("Nije moguće otkazati odsustvo koje je već počelo.");
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var isAdmin = _userAccessor.IsInRole(RoleNames.Administrator);
 
+            if(isAdmin && entity.Employee.UserId == _userAccessor.GetUserId())
+                throw new BusinessException("Administrator ne može sam sebi poništiti odsustvo.");
+            // Once the leave has started, only an administrator can cancel it (override).
+            if (entity.DateFrom <= today && !isAdmin)
+                throw new BusinessException(
+                    "Rok za otkazivanje je prošao jer je odsustvo počelo. Obratite se administratoru.");
+
+            entity.CancellationReason = reason;
             entity.CancelledAt = DateTime.UtcNow;
             entity.CancelledByUserId = _userAccessor.GetUserId();
             entity.State = nameof(CancelledLeaveState);
             await _dbContext.SaveChangesAsync();
+            if (entity.Employee.User.Id != _userAccessor.GetUserId())
+                await PublishLeaveStatusAsync(entity, reason);
             return _mapper.Map<LeaveResponse>(await GetByIdAsync(entity.Id));
         }
-
 
         public async override Task<LeaveResponse> CompleteAsync(int id)
         {

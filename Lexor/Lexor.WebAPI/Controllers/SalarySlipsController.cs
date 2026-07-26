@@ -70,5 +70,21 @@ namespace Lexor.WebAPI.Controllers
             var response = await _service.MarkSingleSalaryAsApproved(request);
             return response;
         }
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> GetSlipPdf(int id)
+        {
+            var (bytes, fileName) = await _service.GetSlipPdfAsync(id);
+            return File(bytes, "application/pdf", fileName);
+        }
+
+        [Authorize(Roles = RoleNames.Administrator)]
+        [HttpGet("report/pdf")]
+        public async Task<IActionResult> GetMonthlyReportPdf([FromQuery] int year, [FromQuery] int month)
+        {
+            var bytes = await _service.GetMonthlyReportPdfAsync(year, month);
+            return File(bytes, "application/pdf", $"izvjestaj-plata-{year}-{month:D2}.pdf");
+        }
     }
 }

@@ -32,10 +32,11 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
     );
     if (picked != null) {
       setState(() {
-        if (isFrom)
+        if (isFrom) {
           _dateFrom = picked;
-        else
+        } else {
           _dateTo = picked;
+        }
       });
     }
   }
@@ -158,7 +159,7 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
           DropdownButtonFormField<int>(
             validator: (_) =>
                 _selectedLeaveTypeId == null ? 'Odaberite tip zahtjeva' : null,
-            value: _selectedLeaveTypeId,
+            initialValue: _selectedLeaveTypeId,
             hint: const Text('Odaberite tip zahtjeva'),
             decoration: fieldDecoration,
             items: leaveTypeProvider.leaveTypes
@@ -176,8 +177,9 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
               if (_dateFrom == null) return 'Odaberite datum';
               if (_dateFrom!.isBefore(
                 DateTime.now().subtract(const Duration(days: 1)),
-              ))
+              )) {
                 return 'Datum mora biti danas ili u budućnosti';
+              }
               return null;
             },
             readOnly: true,
@@ -201,8 +203,9 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
           TextFormField(
             validator: (_) {
               if (_dateTo == null) return "Odaberite datum";
-              if (_dateFrom != null && _dateTo!.isBefore(_dateFrom!))
+              if (_dateFrom != null && _dateTo!.isBefore(_dateFrom!)) {
                 return "Datum završetka mora biti nakon datuma početka";
+              }
               return null;
             },
             readOnly: true,
@@ -225,10 +228,12 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
           const SizedBox(height: 8),
           TextFormField(
             validator: (value) {
-              if (value == null || value.trim().isEmpty)
+              if (value == null || value.trim().isEmpty) {
                 return 'Razlog je obavezan';
-              if (value.length > 1000)
+              }
+              if (value.length > 1000) {
                 return 'Razlog ne može imati više od 1000 karaktera';
+              }
               return null;
             },
             controller: _reasonController,

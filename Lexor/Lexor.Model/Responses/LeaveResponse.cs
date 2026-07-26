@@ -13,6 +13,7 @@ namespace Lexor.Model.Responses
         public string? State { get; set; }
         public string? RejectionReason { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? CancellationReason { get; set; }
         public List<string> AllowedActions { get; set; } = new List<string>();
         public class LeaveTypeResponse
         {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/providers/contract_provider.dart';
@@ -204,7 +205,7 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
                 const SizedBox(height: 16),
                 _twoCol(
                   _textField(_email, 'Email', required: true, isEmail: true),
-                  _textField(_phone, 'Telefon'),
+                  _textField(_phone, 'Telefon', isPhone: true),
                 ),
                 const SizedBox(height: 16),
                 _twoCol(
@@ -382,11 +383,16 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
     String label, {
     bool required = false,
     bool isEmail = false,
+    bool isPhone = false,
   }) {
     return TextFormField(
       controller: c,
+      inputFormatters: isPhone
+          ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]'))]
+          : null,
       decoration: InputDecoration(
         labelText: label + (required ? ' *' : ''),
+        hintText: isPhone ? 'npr. 062 123 456' : null,
         border: const OutlineInputBorder(),
         isDense: true,
       ),
@@ -396,6 +402,10 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
         if (isEmail && t.isNotEmpty &&
             !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t)) {
           return 'Unesite ispravan email.';
+        }
+        if (isPhone && t.isNotEmpty &&
+            !RegExp(r'^\+?\d{8,15}$').hasMatch(t.replaceAll(' ', ''))) {
+          return 'Unesite ispravan broj (8–15 cifara, npr. 062 123 456).';
         }
         return null;
       },

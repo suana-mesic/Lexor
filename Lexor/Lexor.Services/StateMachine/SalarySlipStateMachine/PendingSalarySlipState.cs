@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
@@ -23,7 +24,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
 
 
             if (existingSlip == null)
-                throw new InvalidOperationException("Evidencija o plati ne postoji.");
+                throw new BusinessException("Evidencija o plati ne postoji.");
 
             // 1) Remove old slip — Items cascade automatically via FK constraint
             _dbContext.Set<SalarySlip>().Remove(existingSlip);
@@ -38,7 +39,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
             });
 
             if (count == 0)
-                throw new InvalidOperationException("Nije moguće generisati novi obračun za odabranog uposlenika.");
+                throw new BusinessException("Nije moguće generisati novi obračun za odabranog uposlenika.");
 
             // 3) Load and return the new slip with everything needed for response
             var newSlip = await _dbContext.Set<SalarySlip>()
@@ -65,7 +66,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                .FirstOrDefaultAsync();
 
             if (pendingSalary == null)
-                throw new InvalidOperationException("Evidencija o plati ne postoji.");
+                throw new BusinessException("Evidencija o plati ne postoji.");
 
             pendingSalary.State = nameof(ApprovedSalarySlipState);
             pendingSalary.ApprovedAt = DateTime.UtcNow;

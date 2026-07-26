@@ -76,17 +76,35 @@ abstract class BaseProvider<T> with ChangeNotifier {
     );
   }
 
-  Future<http.Response> _send(Future<http.Response> Function() request) async {
+  Future<http.Response> _send(
+    Future<http.Response> Function() request, {
+    bool isRetry = false,
+  }) async {
     late http.Response res;
     try {
       res = await request();
     } catch (e) {
       throw ApiException(ApiError.fromException(e));
     }
+    if (res.statusCode == 401 && !isRetry) {
+      if (await _tryRefresh()) {
+        return _send(request, isRetry: true);
+      }
+    }
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw ApiException(ApiError.fromResponse(res));
     }
     return res;
+  }
+
+  Future<bool> _tryRefresh() async {
+    final refresh = AuthProvider.refreshToken;
+    if (refresh == null || refresh.isEmpty) return false;
+    final result = await AuthService.refresh(ApiConfig.baseUrl, refresh);
+    if (result == null) return false;
+    AuthProvider.accessToken = result.accessToken;
+    AuthProvider.refreshToken = result.refreshToken;
+    return true;
   }
 
   String _queryString(Map<String, dynamic> params) {
@@ -116,10 +134,13 @@ Future<List<RefOption>> fetchRefOptions(String endpoint) async {
   final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint').replace(
     queryParameters: {'page': '1', 'pageSize': '1000', 'sortBy': 'Name'},
   );
-  final res = await http.get(uri, headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ${AuthProvider.accessToken}',
-  });
+  final res = await http.get(
+    uri,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${AuthProvider.accessToken}',
+    },
+  );
   if (res.statusCode != 200) {
     throw ApiException(ApiError.fromResponse(res));
   }

@@ -1,4 +1,5 @@
-﻿using Lexor.Model.Requests;
+﻿using Lexor.Model.Exceptions;
+using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
 using MapsterMapper;
@@ -24,7 +25,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                .FirstOrDefaultAsync();
 
             if (approvedSalary == null)
-                throw new InvalidOperationException("Evidencija o plati ne postoji.");
+                throw new BusinessException("Evidencija o plati ne postoji.");
 
             approvedSalary.State = nameof(PaidSalarySlipState);
             approvedSalary.PaidAt = DateTime.UtcNow;

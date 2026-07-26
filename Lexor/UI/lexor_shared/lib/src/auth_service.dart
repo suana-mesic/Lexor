@@ -69,6 +69,30 @@ class AuthService {
     }
   }
 
+  static Future<AuthResult?> refresh(
+    String baseUrl,
+    String refreshToken,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/Access/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return AuthResult(
+          data['accessToken'],
+          data['userId'],
+          data['refreshToken'],
+        );
+      }
+    } catch (_e) {
+      // Network/parse error → treat as failed refresh.
+    }
+    return null;
+  }
+
   /// Roles from the JWT `role` claim (single value or list).
   static List<String> rolesFromToken(String token) {
     final role = JwtDecoder.decode(token)['role'];

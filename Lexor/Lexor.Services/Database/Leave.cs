@@ -59,5 +59,7 @@ namespace Lexor.Services.Database
         public DateTime? CancelledAt { get; set; }
         public DateTime? CompletedAt { get; set; }
 
+        [MaxLength(1000)]
+        public string? CancellationReason { get; set; }
     }
 }

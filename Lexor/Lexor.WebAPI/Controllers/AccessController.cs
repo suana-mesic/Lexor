@@ -22,15 +22,15 @@ namespace Lexor.WebAPI.Controllers
 
         [AllowAnonymous]
         [HttpGet("generatePassword")]
-        public async Task<ActionResult> GeneratePassword([FromQuery] string password)
+        public Task<ActionResult> GeneratePassword([FromQuery] string password)
         {
             var passwordSalt = _cryptoService.GenerateSalt();
             var passwordHash = _cryptoService.GenerateHash(password, passwordSalt);
-            return Ok(new
+            return Task.FromResult<ActionResult>(Ok(new
             {
                 passwordSalt,
                 passwordHash
-            });
+            }));
         }
 
         [AllowAnonymous]

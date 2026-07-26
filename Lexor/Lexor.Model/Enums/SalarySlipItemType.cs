@@ -9,6 +9,7 @@ namespace Lexor.Model.Enums
         Health = 5,
         Unemployment = 6,
         PersonalDeduction = 7,
-        IncomeTax = 8
+        IncomeTax = 8,
+        TaxBase = 9
     }
 }

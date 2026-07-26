@@ -60,6 +60,11 @@ namespace Lexor.Services.Validators
             RuleFor(x => x.PhoneNumber)
                 .MaximumLength(20).WithMessage("Broj telefona ne može imati više od 20 karaktera.")
                 .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
+
+            RuleFor(x => x.PhoneNumber)
+                .Matches(@"^\+?[0-9\s]{8,20}$")
+                .WithMessage("Telefon mora biti u ispravnom formatu (npr. 062 123 456).")
+                .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
         }
     }
 }

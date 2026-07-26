@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using Lexor.Model.Enums;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
@@ -27,21 +28,21 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
 
         public virtual Task<int> GenerateSalarySlipsForPeriod(SalarySlipCalculationRequest request)
         {
-            throw new InvalidOperationException("Nije moguće obračunati plate u trenutnom stanju.");
+            throw new BusinessException("Nije moguće obračunati plate u trenutnom stanju.");
         }
         public virtual Task<SalarySlipResponse> RecalculateSingleSalary(SalarySlipSingleRecalculationRequest request)
         {
-            throw new InvalidOperationException("Nije moguće ponovo obračunati platu u trenutnom stanju.");
+            throw new BusinessException("Nije moguće ponovo obračunati platu u trenutnom stanju.");
         }
 
         public virtual Task<SalarySlipResponse> MarkSingleSalaryAsPaid(SalarySlipPaySingleRequest request)
         {
-            throw new InvalidOperationException("Nije moguće označiti platu kao plaćenu u trenutnom stanju.");
+            throw new BusinessException("Nije moguće označiti platu kao plaćenu u trenutnom stanju.");
         }
 
         public virtual Task<SalarySlipResponse> MarkSingleSalaryAsApproved(SalarySlipApproveSingleRequest request)
         {
-            throw new InvalidOperationException("Nije moguće označiti platu kao odobrenu u trenutnom stanju.");
+            throw new BusinessException("Nije moguće označiti platu kao odobrenu u trenutnom stanju.");
         }
 
 
@@ -58,7 +59,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                 case nameof(PaidSalarySlipState):
                     return _serviceProvider.GetService<PaidSalarySlipState>()!;
                 default:
-                    throw new InvalidOperationException("Platna lista je u nevažećem stanju.");
+                    throw new BusinessException("Platna lista je u nevažećem stanju.");
             }
         }
 
@@ -79,7 +80,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                           && (ps.ValidTo == null || ps.ValidTo >= periodDate))
                 .OrderByDescending(ps => ps.ValidFrom)
                 .FirstOrDefaultAsync()
-                ?? throw new KeyNotFoundException($"Ne postoje važeće postavke obračuna za period {request.Month}/{request.Year}.");
+                ?? throw new NotFoundException($"Ne postoje važeće postavke obračuna za period {request.Month}/{request.Year}.");
 
             // 2) Always skip employees who already have a slip for this period (defense in depth
             //    against duplicate creation in both bulk and single-employee paths).
@@ -107,6 +108,12 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
             //    to avoid N+1 queries inside the per-employee loop.
             var employeeIds = employees.Select(e => e.Id).ToList();
             var approvedState = nameof(ApprovedLeaveState);
+            var completedState = nameof(CompletedLeaveState);
+            var monthStart = new DateOnly(request.Year, request.Month, 1);
+            var monthEnd = new DateOnly(request.Year, request.Month, DateTime.DaysInMonth(request.Year, request.Month));
+            // DateTime bounds of the same month, for overlap checks against Contract's DateTime fields.
+            var monthStartDt = monthStart.ToDateTime(TimeOnly.MinValue);
+            var monthEndDt = monthEnd.ToDateTime(TimeOnly.MinValue);
 
             var attendancesByEmployee = await _dbContext.Set<Attendance>()
                 .Where(a => employeeIds.Contains(a.EmployeeId)
@@ -119,10 +126,10 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
             var unpaidLeavesByEmployee = await _dbContext.Set<Leave>()
                 .Include(l => l.LeaveType)
                 .Where(l => employeeIds.Contains(l.EmployeeId)
-                         && l.State == approvedState
+                         && (l.State == approvedState || l.State == completedState)
                          && !l.LeaveType.IsPaid
-                         && l.DateFrom.Year == request.Year
-                         && l.DateFrom.Month == request.Month)
+                         && l.DateFrom <= monthEnd
+                         && l.DateTo >= monthStart)
                 .GroupBy(l => l.EmployeeId)
                 .ToDictionaryAsync(g => g.Key, g => g.ToList());
 
@@ -132,14 +139,25 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
 
             var generated = new List<SalarySlip>();
 
+            // Working days (per PayrollSettings work-day mask) between two dates, inclusive.
+            int WorkingDaysInRange(DateOnly from, DateOnly to)
+            {
+                var count = 0;
+                for (var d = from; d <= to; d = d.AddDays(1))
+                    if (settings.IsWorkDay(d.DayOfWeek)) count++;
+                return count;
+            }
+
             foreach (var employee in employees)
             {
-                // Pick the contract that was in effect during the payroll PERIOD (not "today" and not by
-                // the IsActive flag) — same period-based logic as PayrollSettings above. This keeps
-                // retroactive runs correct and ignores future-dated contracts that aren't in effect yet.
+                // Pick the contract in effect during the payroll PERIOD (not "today" and not by the
+                // IsActive flag). A contract counts if it OVERLAPS the payroll month at all, so a
+                // mid-month hire (contract starting e.g. on the 23rd) is still picked up for that month.
+                // Future-dated contracts (starting after the month ends) are ignored. If several overlap,
+                // the latest-starting one wins.
                 var contract = employee.Contracts
-                    .Where(c => c.StartDate.Date <= periodDate
-                             && (c.EndDate == null || c.EndDate.Value.Date >= periodDate))
+                    .Where(c => c.StartDate.Date <= monthEndDt
+                             && (c.EndDate == null || c.EndDate.Value.Date >= monthStartDt))
                     .OrderByDescending(c => c.StartDate)
                     .FirstOrDefault();
                 if (contract == null)
@@ -153,15 +171,22 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
 
                 var bruto = contract.BrutoSalary;
 
-                // 6) Overtime: per day, count hours above WorkHoursPerDay
+                // 6) Overtime: only on WORKING days, hours above WorkHoursPerDay (e.g. stayed 9h instead of 8h).
                 var attendances = attendancesByEmployee.GetValueOrDefault(employee.Id, new List<Attendance>());
                 var overtimeHours = attendances
+                    .Where(a => settings.IsWorkDay(a.Date.DayOfWeek))
                     .Sum(a => Math.Max(0m, (a.WorkedHours ?? 0m) - workHoursPerDay));
                 var overtimeAmount = Math.Round(overtimeHours * hourlyRate * settings.OvertimeMultiplier, 2);
 
                 // 7) Unpaid leave days in this period
                 var unpaidLeaves = unpaidLeavesByEmployee.GetValueOrDefault(employee.Id, new List<Leave>());
-                var unpaidDays = unpaidLeaves.Sum(l => l.NumberOfDays);
+                // Count only the WORKING days of each leave that fall INSIDE this payroll month.
+                var unpaidDays = unpaidLeaves.Sum(l =>
+                {
+                    var from = l.DateFrom > monthStart ? l.DateFrom : monthStart;
+                    var to = l.DateTo < monthEnd ? l.DateTo : monthEnd;
+                    return WorkingDaysInRange(from, to);
+                });
                 var unpaidAmount = Math.Round(unpaidDays * workHoursPerDay * hourlyRate, 2);
 
                 // 8) Adjusted bruto (contracted bruto + overtime − unpaid leave)
@@ -252,11 +277,23 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                     Rate = settings.UnemploymentRate,
                     Amount = -unemployment
                 });
+                // Personal deduction reduces ONLY the tax base (not net pay). Show it as the
+                // amount subtracted to reach the tax base, immediately followed by the tax base.
+                if (settings.PersonalDeduction > 0)
+                {
+                    slip.Items.Add(new SalarySlipItem
+                    {
+                        ItemType = SalarySlipItemType.PersonalDeduction,
+                        Name = "Lični odbitak",
+                        Description = "Umanjuje poreznu osnovicu",
+                        Amount = settings.PersonalDeduction
+                    });
+                }
                 slip.Items.Add(new SalarySlipItem
                 {
-                    ItemType = SalarySlipItemType.PersonalDeduction,
-                    Name = "Lični odbitak",
-                    Amount = -settings.PersonalDeduction
+                    ItemType = SalarySlipItemType.TaxBase,
+                    Name = "Porezna osnovica",
+                    Amount = Math.Round(taxBase, 2)
                 });
                 slip.Items.Add(new SalarySlipItem
                 {

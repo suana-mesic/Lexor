@@ -1,6 +1,7 @@
 enum SalarySlipStatus {
-  pending(1, 'Plata na čekanju'),
-  paid(2, 'Plata isplaćena');
+  pending(1, 'Na čekanju'),
+  paid(2, 'Plaćena'),
+  approved(3, 'Odobrena');
 
   final int code;
   final String label;

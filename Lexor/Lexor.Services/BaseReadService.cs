@@ -1,4 +1,5 @@
-﻿using Lexor.Model.Responses;
+﻿using Lexor.Model.Exceptions;
+using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
@@ -64,7 +65,7 @@ namespace Lexor.Services
             var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
 
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
 
             return _mapper.Map<TResponse>(entity);
         }

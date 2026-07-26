@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/models/employee_response.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
@@ -127,8 +128,7 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
           'firstName': _firstName.text.trim(),
           'lastName': _lastName.text.trim(),
           'email': _email.text.trim(),
-          'phoneNumber':
-              _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+          'phoneNumber': _phone.text.trim().isEmpty ? null : _phone.text.trim(),
         },
         'dateOfBirth': _dateOfBirth?.toIso8601String(),
         'address': _address.text.trim(),
@@ -267,10 +267,7 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
                 const SizedBox(height: 12),
                 Expanded(
                   child: TabBarView(
-                    children: [
-                      _personalTab(),
-                      _contractsTab(),
-                    ],
+                    children: [_personalTab(), _contractsTab()],
                   ),
                 ),
               ],
@@ -301,7 +298,7 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
                   const SizedBox(height: 16),
                   _twoCol(
                     _text(_email, 'Email', required: true, isEmail: true),
-                    _text(_phone, 'Telefon'),
+                    _text(_phone, 'Telefon', isPhone: true),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -309,7 +306,10 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
                     children: [
                       Expanded(
                         child: _dateField(
-                            'Datum rođenja *', _dateOfBirth, _pickDateOfBirth),
+                          'Datum rođenja *',
+                          _dateOfBirth,
+                          _pickDateOfBirth,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(child: _statusToggle()),
@@ -319,15 +319,20 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
                   _text(_address, 'Adresa', required: true),
                   const SizedBox(height: 16),
                   _twoCol(
-                    _dropdown('Grad', _cityId, widget.cities,
-                        (v) => setState(() => _cityId = v)),
+                    _dropdown(
+                      'Grad',
+                      _cityId,
+                      widget.cities,
+                      (v) => setState(() => _cityId = v),
+                    ),
                     _dropdown('Odjel', _departmentId, widget.departments, (v) {
                       setState(() {
                         _departmentId = v;
                         // Clear a position that no longer belongs to the new department.
                         if (_positionId != null &&
-                            !widget.positions.any((p) =>
-                                p.id == _positionId && p.departmentId == v)) {
+                            !widget.positions.any(
+                              (p) => p.id == _positionId && p.departmentId == v,
+                            )) {
                           _positionId = null;
                         }
                       });
@@ -337,14 +342,20 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
                   // Guard the value: if the stored position doesn't belong to
                   // the current department (legacy/inconsistent data), show it
                   // empty rather than crash, forcing a valid pick.
-                  Builder(builder: (_) {
-                    final posItems = _positionsForDepartment();
-                    final posValue = posItems.any((o) => o.id == _positionId)
-                        ? _positionId
-                        : null;
-                    return _dropdown('Pozicija', posValue, posItems,
-                        (v) => setState(() => _positionId = v));
-                  }),
+                  Builder(
+                    builder: (_) {
+                      final posItems = _positionsForDepartment();
+                      final posValue = posItems.any((o) => o.id == _positionId)
+                          ? _positionId
+                          : null;
+                      return _dropdown(
+                        'Pozicija',
+                        posValue,
+                        posItems,
+                        (v) => setState(() => _positionId = v),
+                      );
+                    },
+                  ),
                   if (_error != null) ...[
                     const SizedBox(height: 16),
                     Text(
@@ -364,8 +375,7 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed:
-                    _saving ? null : () => Navigator.pop(context, false),
+                onPressed: _saving ? null : () => Navigator.pop(context, false),
                 child: const Text('Otkaži'),
               ),
               const SizedBox(width: 8),
@@ -403,10 +413,12 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
     final history = [...e.contracts]
       ..sort((a, b) => b.startDate.compareTo(a.startDate));
     final active = e.activeContract;
-    final upcoming =
-        history.where((c) => c.status == ContractStatus.upcoming).toList();
-    final past =
-        history.where((c) => c.status == ContractStatus.expired).toList();
+    final upcoming = history
+        .where((c) => c.status == ContractStatus.upcoming)
+        .toList();
+    final past = history
+        .where((c) => c.status == ContractStatus.expired)
+        .toList();
 
     // Contracts can only be created for active employees. The personal-data tab
     // can toggle status, but that must be saved first — the server is the source
@@ -450,8 +462,11 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline,
-                      color: Colors.orange.shade700, size: 18),
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.orange.shade700,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -636,19 +651,20 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
   }
 
   Widget _twoCol(Widget a, Widget b) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: a),
-          const SizedBox(width: 12),
-          Expanded(child: b),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(child: a),
+      const SizedBox(width: 12),
+      Expanded(child: b),
+    ],
+  );
 
   Widget _text(
     TextEditingController c,
     String label, {
     bool required = false,
     bool isEmail = false,
+    bool isPhone = false,
   }) {
     return TextFormField(
       controller: c,
@@ -656,16 +672,26 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
         labelText: label + (required ? ' *' : ''),
         border: const OutlineInputBorder(),
         isDense: true,
+        hintText: isPhone ? 'npr. 062 123 456' : null,
       ),
       validator: (v) {
         final t = (v ?? '').trim();
         if (required && t.isEmpty) return '$label je obavezno polje.';
-        if (isEmail && t.isNotEmpty &&
+        if (isEmail &&
+            t.isNotEmpty &&
             !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t)) {
           return 'Unesite ispravan email.';
         }
+        if (isPhone &&
+            t.isNotEmpty &&
+            !RegExp(r'^\+?\d{8,15}$').hasMatch(t.replaceAll(' ', ''))) {
+          return 'Unesite ispravan broj (8–15 cifara, npr. 062 123 456).';
+        }
         return null;
       },
+      inputFormatters: isPhone
+          ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]'))]
+          : null,
     );
   }
 

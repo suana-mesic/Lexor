@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/dashboard_provider.dart';
 import 'package:lexor_desktop/screens/login_screen.dart';
-import 'package:lexor_desktop/screens/main_shell.dart';
 import 'package:provider/provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:window_manager/window_manager.dart';

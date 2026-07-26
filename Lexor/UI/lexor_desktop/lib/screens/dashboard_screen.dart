@@ -517,6 +517,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       LeaveStateType.approved: AppColors.successBright,
       LeaveStateType.rejected: AppColors.error,
       LeaveStateType.cancelled: AppColors.grey,
+      LeaveStateType.completed: AppColors.info,
     };
 
     final total = data.leavesByStatus

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Lexor.Model.Exceptions;
+using FluentValidation;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
@@ -77,7 +78,7 @@ namespace Lexor.Services
 
         public async Task<(byte[] Bytes, string FileName)> GetFileForDownloadAsync(int id)
         {
-            var doc = await _dbContext.Set<LegalDocument>().FirstOrDefaultAsync(d=>d.Id==id)??throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(LegalDocument), id));
+            var doc = await _dbContext.Set<LegalDocument>().FirstOrDefaultAsync(d=>d.Id==id)??throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(LegalDocument), id));
             return (Convert.FromBase64String(doc.FileBase64), $"{doc.Name}.pdf");
         }
     }

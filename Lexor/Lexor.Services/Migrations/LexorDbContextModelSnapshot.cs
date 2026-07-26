@@ -453,6 +453,10 @@ namespace Lexor.Services.Migrations
                     b.Property<int?>("ApprovedByAdminId")
                         .HasColumnType("int");
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
 

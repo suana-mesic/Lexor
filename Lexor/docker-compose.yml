@@ -12,5 +12,16 @@ services:
     volumes:
       - sqlserver_data:/var/opt/mssql
 
+  lexor-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: lexor-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"     # AMQP — aplikacija se spaja ovdje
+      - "15672:15672"   # Management UI — http://localhost:15672
+
 volumes:
   sqlserver_data:

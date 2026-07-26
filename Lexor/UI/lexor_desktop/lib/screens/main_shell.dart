@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
+import 'package:lexor_desktop/screens/attendance_screen.dart';
 import 'package:lexor_desktop/screens/dashboard_screen.dart';
 import 'package:lexor_desktop/screens/employees_screen.dart';
 import 'package:lexor_desktop/screens/leaves_screen.dart';
 import 'package:lexor_desktop/screens/legal_document_screen.dart';
 import 'package:lexor_desktop/screens/login_screen.dart';
+import 'package:lexor_desktop/screens/payroll_screen.dart';
 import 'package:lexor_desktop/screens/payroll_settings_screen.dart';
 import 'package:lexor_desktop/screens/reference_data_screen.dart';
+import 'package:lexor_desktop/screens/reports_screen.dart';
 import 'package:lexor_desktop/screens/rfid_cards_screen.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:lexor_desktop/widgets/app_header.dart';
@@ -74,8 +77,14 @@ class _MainShellState extends State<MainShell> {
         return const EmployeesScreen();
       case 2:
         return const RfidCardsScreen();
+      case 3:
+        return const AttendanceScreen();
       case 4:
         return const LeavesScreen();
+      case 5:
+        return const ReportsScreen();
+      case 6:
+        return const PayrollScreen();
       case 7:
         return const LegalDocumentScreen();
       case 8:

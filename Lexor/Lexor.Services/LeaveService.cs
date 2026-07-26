@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
 using Lexor.Model.Constants;
@@ -70,7 +71,7 @@ namespace Lexor.Services
             {
                 var currentUserId = _userAccessor.GetUserId();
                 if (response.Employee?.User?.Id != currentUserId)
-                    throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                    throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
                 response.Employee = null;    // For employees the property "Employee" in LeaveResponse object stays null
             }
             return response;
@@ -130,7 +131,7 @@ namespace Lexor.Services
 
                 // employee is trying to access leaveID that is not his
                 if (currentUserId != ownerUserId)
-                    throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                    throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
             }
         }
 
@@ -164,7 +165,7 @@ namespace Lexor.Services
 
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
 
             BaseLeaveState state = _baseLeaveState.GetLeaveState(entity.State);
             var result = await state.UpdateAsync(id, request);
@@ -174,14 +175,30 @@ namespace Lexor.Services
 
         public override Task DeleteAsync(int id)
         {
-            throw new InvalidOperationException("Brisanje odsustva nije podržano. Otkazani zahtjevi ostaju u sistemu radi historije.");
+            throw new BusinessException("Brisanje odsustva nije podržano. Otkazani zahtjevi ostaju u sistemu radi historije.");
+        }
+
+        // An admin who is also an employee must not decide on their OWN leave request.
+        private async Task EnsureNotOwnRequest(Leave entity)
+        {
+            var currentUserId = _userAccessor.GetUserId();
+            var ownEmployeeId = await _dbContext.Set<Employee>()
+                .Where(e => e.UserId == currentUserId)
+                .Select(e => (int?)e.Id)
+                .FirstOrDefaultAsync();
+
+            if (ownEmployeeId.HasValue && ownEmployeeId.Value == entity.EmployeeId)
+                throw new BusinessException("Ne možete odlučivati o vlastitom zahtjevu za odsustvo.");
         }
 
         public async Task<LeaveResponse> ApproveAsync(int id)
         {
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+
+            await EnsureNotOwnRequest(entity);
+
             BaseLeaveState state = _baseLeaveState.GetLeaveState(entity.State);
             return await state.ApproveAsync(id);
         }
@@ -194,20 +211,23 @@ namespace Lexor.Services
 
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+
+            await EnsureNotOwnRequest(entity);
+
             BaseLeaveState state = _baseLeaveState.GetLeaveState(entity.State);
             return await state.RejectAsync(id, request.RejectionReason);
         }
 
-        public async Task<LeaveResponse> CancelAsync(int id)
+        public async Task<LeaveResponse> CancelAsync(int id, string? reason)
         {
             await EmployeeIsPermitted(id);
 
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
             BaseLeaveState state = _baseLeaveState.GetLeaveState(entity.State);
-            var result = await state.CancelAsync(id);
+            var result = await state.CancelAsync(id, reason);
             result.Employee = null; // For employees the property "Employee" in LeaveResponse object stays null
             return result;
         }
@@ -226,19 +246,10 @@ namespace Lexor.Services
             await EmployeeIsPermitted(id);
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
             var actions = _baseLeaveState.GetLeaveState(entity.State).GetAllowedActions();
             return ApplyDateRules(actions, entity.State, entity.DateFrom);
         }
 
-        public async Task<int> CompleteFinishedLeaveState()
-        {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            return await _dbContext.Set<Leave>()
-                .Where(l => l.State == nameof(ApprovedLeaveState) && l.DateTo < today)
-                .ExecuteUpdateAsync(s => s
-                .SetProperty(l => l.State, nameof(CompletedLeaveState))
-                .SetProperty(l => l.CompletedAt, DateTime.UtcNow));
-        }
     }
 }

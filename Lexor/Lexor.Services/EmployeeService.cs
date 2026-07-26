@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using FluentValidation;
 using Lexor.Model.Enums;
 using Lexor.Model.Requests;
@@ -15,9 +16,12 @@ namespace Lexor.Services
     {
         const string chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ23456789"; // without similar (0/O, 1/I/L)
 
-        public EmployeeService(LexorDbContext dbContext, IMapper mapper, IValidator<EmployeeInsertRequest> insertValidator, IValidator<EmployeeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor)
+        private readonly IValidator<ProfileUpdateRequest> _profileValidator;
+
+        public EmployeeService(LexorDbContext dbContext, IMapper mapper, IValidator<EmployeeInsertRequest> insertValidator, IValidator<EmployeeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor, IValidator<ProfileUpdateRequest> profileValidator)
             : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
+            _profileValidator = profileValidator;
         }
 
         public override async Task<PageResult<EmployeeResponse>> GetAllAsync(EmployeeSearchObject? search = null)
@@ -115,7 +119,7 @@ namespace Lexor.Services
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (employee == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
 
             // Validate the resulting position/department pairing. Either field may be
             // omitted in the request, so fall back to the employee's current value.
@@ -142,7 +146,7 @@ namespace Lexor.Services
         {
             var position = await _dbContext.Positions.FirstOrDefaultAsync(p => p.Id == positionId);
             if (position == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Position), positionId));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Position), positionId));
 
             if (position.DepartmentId != departmentId)
                 throw new ValidationException("Odabrana pozicija ne pripada odabranom odjelu.");
@@ -154,12 +158,49 @@ namespace Lexor.Services
             return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
         }
 
+        public async Task<EmployeeResponse> GetMyProfileAsync()
+        {
+            var userId = _userAccessor.GetUserId();
+            var employeeId = await _dbContext.Employees
+                .Where(e => e.UserId == userId)
+                .Select(e => (int?)e.Id)
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException("Profil nije pronađen za trenutnog korisnika.");
+
+            return await GetByIdAsync(employeeId);
+        }
+
+        public async Task<EmployeeResponse> UpdateMyProfileAsync(ProfileUpdateRequest request)
+        {
+            var validationResult = await _profileValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+                throw new ValidationException(validationResult.Errors);
+
+            var userId = _userAccessor.GetUserId();
+            var employee = await _dbContext.Employees
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.UserId == userId);
+
+            if (employee == null)
+                throw new NotFoundException("Profil nije pronađen za trenutnog korisnika.");
+
+            // Only contact details — never job/org fields (department, position, salary…).
+            if (request.Email != null) employee.User.Email = request.Email;
+            if (request.PhoneNumber != null) employee.User.PhoneNumber = request.PhoneNumber;
+            if (request.Address != null) employee.Address = request.Address;
+
+            ApplyUpdateAuditFields(employee);
+            await _dbContext.SaveChangesAsync();
+
+            return await GetByIdAsync(employee.Id);
+        }
+
         public async Task<EmployeeResponse> DeactivateAsync(int id)
         {
             var employee = await _dbContext.Set<Employee>().FirstOrDefaultAsync(e => e.Id == id);
 
             if (employee == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), id));
 
             if (employee.IsActive)
                 employee.IsActive = false;

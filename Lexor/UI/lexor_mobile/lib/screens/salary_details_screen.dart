@@ -50,17 +50,16 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
     final isPaid = slip.status == SalarySlipStatus.paid.code;
     final monthName = bosnianMonthName(slip.month);
 
-    SalaryItemCategory? _cat(int t) => SalarySlipItemType.fromCode(t)?.category;
+    SalaryItemCategory? cat(int t) => SalarySlipItemType.fromCode(t)?.category;
 
     final items = _detail?.items ?? [];
     final brutoItems = items
-        .where((i) => _cat(i.itemType) == SalaryItemCategory.bruto)
+        .where((i) => cat(i.itemType) == SalaryItemCategory.bruto)
         .toList();
-    final contributionItems = items
-        .where((i) => _cat(i.itemType) == SalaryItemCategory.contribution)
-        .toList();
-    final deductionItems = items
-        .where((i) => _cat(i.itemType) == SalaryItemCategory.deduction)
+    // Everything after bruto is shown in its natural (calculation) order:
+    // contributions, personal deduction, tax base, income tax.
+    final otherItems = items
+        .where((i) => cat(i.itemType) != SalaryItemCategory.bruto)
         .toList();
 
     return Scaffold(
@@ -89,12 +88,7 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildBreakdownCard(
-                            slip,
-                            brutoItems,
-                            contributionItems,
-                            deductionItems,
-                          ),
+                          _buildBreakdownCard(slip, brutoItems, otherItems),
                           const SizedBox(height: 16),
                         ],
                       ),
@@ -169,17 +163,13 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isPaid
-                      ? AppColors.successBg
-                      : AppColors.warningBg,
+                  color: isPaid ? AppColors.successBg : AppColors.warningBg,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   isPaid ? 'Plaćen' : 'Na čekanju',
                   style: TextStyle(
-                    color: isPaid
-                        ? AppColors.success
-                        : AppColors.warning,
+                    color: isPaid ? AppColors.success : AppColors.warning,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -245,8 +235,7 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
   Widget _buildBreakdownCard(
     SalarySlipResponse slip,
     List<SalarySlipItemResponse> brutoItems,
-    List<SalarySlipItemResponse> contributionItems,
-    List<SalarySlipItemResponse> deductionItems,
+    List<SalarySlipItemResponse> otherItems,
   ) {
     final rows = <Widget>[];
 
@@ -258,11 +247,7 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
       rows.add(_buildSeparatorRow('Korigovana bruto', slip.adjustedBruto));
     }
 
-    for (final item in contributionItems) {
-      rows.add(_buildItemRow(item));
-    }
-
-    for (final item in deductionItems) {
+    for (final item in otherItems) {
       rows.add(_buildItemRow(item));
     }
 
@@ -290,9 +275,10 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
   }
 
   Widget _buildItemRow(SalarySlipItemResponse item) {
-    final isNeutral =
-        SalarySlipItemType.fromCode(item.itemType) ==
-        SalarySlipItemType.brutoBase;
+    final type = SalarySlipItemType.fromCode(item.itemType);
+    final isNeutral = type == SalarySlipItemType.brutoBase ||
+        type == SalarySlipItemType.taxBase ||
+        type == SalarySlipItemType.personalDeduction;
     final isPositive = item.amount > 0 && !isNeutral;
 
     final Color amountColor;

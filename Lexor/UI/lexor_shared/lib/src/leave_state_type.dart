@@ -2,7 +2,8 @@ enum LeaveStateType {
   pending('PendingLeaveState', 'Na čekanju'),
   approved('ApprovedLeaveState', 'Odobreno'),
   rejected('RejectedLeaveState', 'Odbijeno'),
-  cancelled('CancelledLeaveState', 'Otkazano');
+  cancelled('CancelledLeaveState', 'Otkazano'),
+  completed('CompletedLeaveState', 'Završeno');
 
   final String apiValue;
   final String label;

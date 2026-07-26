@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Lexor.Model.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -6,52 +7,51 @@ using System.Net;
 
 namespace Lexor.WebAPI.Filters
 {
-    public class ExceptionFilter:ExceptionFilterAttribute
+    public class ExceptionFilter : ExceptionFilterAttribute
     {
         private readonly ILogger<ExceptionFilter> _logger;
         public ExceptionFilter(ILogger<ExceptionFilter> logger)
         {
             _logger = logger;
         }
+
         public override void OnException(ExceptionContext context)
         {
-            if(context.Exception is ValidationException fvEx)
+            switch (context.Exception)
             {
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                var message = fvEx.Errors.FirstOrDefault()?.ErrorMessage ?? fvEx.Message;
-                context.Result = new JsonResult(new { message });
+                case ValidationException fvEx:
+                    SetResult(context, HttpStatusCode.BadRequest,
+                        fvEx.Errors.FirstOrDefault()?.ErrorMessage ?? fvEx.Message);
+                    break;
+
+                case NotFoundException nfEx:
+                    SetResult(context, HttpStatusCode.NotFound, nfEx.Message);
+                    break;
+
+                case BusinessException bEx:
+                    SetResult(context, HttpStatusCode.BadRequest, bEx.Message);
+                    break;
+
+                case DbUpdateException dbEx when IsForeignKeyViolation(dbEx):
+                    SetResult(context, HttpStatusCode.Conflict,
+                        "Zapis se ne može obrisati jer se koristi u drugim podacima.");
+                    break;
+
+                default:
+                    _logger.LogError(context.Exception, "Neočekivana greška.");
+                    SetResult(context, HttpStatusCode.InternalServerError, "Greška na serveru.");
+                    break;
             }
-            else if (context.Exception is KeyNotFoundException knfEx)
-            {
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                context.Result = new JsonResult(new { message = knfEx.Message });
-            }
-            else if (context.Exception is DbUpdateException dbEx && IsForeignKeyViolation(dbEx))
-            {
-                // Zapis se koristi u drugim tabelama (FK ograničenje) — jasna poruka umjesto 500.
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
-                context.Result = new JsonResult(new
-                {
-                    message = "Zapis se ne može obrisati jer se koristi u drugim podacima."
-                });
-            }
-            else if (context.Exception is InvalidOperationException ioEx)
-            {
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                context.Result = new JsonResult(new { message = ioEx.Message });
-            }
-            else
-            {
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                _logger.LogError(context.Exception, "Neočekivana greška.");
-                context.Result = new JsonResult(new { message = "Greška na serveru." });
-            }
+        }
+
+        private static void SetResult(ExceptionContext context, HttpStatusCode status, string message)
+        {
+            context.HttpContext.Response.StatusCode = (int)status;
+            context.Result = new JsonResult(new { message });
         }
 
         private static bool IsForeignKeyViolation(DbUpdateException ex)
         {
-            // SQL Server FK constraint = error 547; provjeravamo preko poruke da izbjegnemo
-            // tvrdu zavisnost na Microsoft.Data.SqlClient u ovom sloju.
             for (Exception? e = ex; e != null; e = e.InnerException)
             {
                 var msg = e.Message ?? string.Empty;

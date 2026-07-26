@@ -64,9 +64,7 @@ class LeaveProvider extends ChangeNotifier {
     } else {
       query = {
         'fromDate': DateFormat('yyyy-MM-dd').format(DateTime(year!, month!, 1)),
-        'toDate': DateFormat(
-          'yyyy-MM-dd',
-        ).format(DateTime(year!, month! + 1, 0)),
+        'toDate': DateFormat('yyyy-MM-dd').format(DateTime(year, month + 1, 0)),
       };
     }
 

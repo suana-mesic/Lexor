@@ -94,13 +94,15 @@ class _EditContractDialogState extends State<EditContractDialog> {
   // update the active Neodređeno contract's end date on the server.
   bool get _willShiftActiveEndDate {
     if (_startDate == null) return false;
-    if (_isSameDay(_startDate!, widget.contract.startDate.toLocal())) return false;
+    if (_isSameDay(_startDate!, widget.contract.startDate.toLocal()))
+      return false;
     final a = widget.activeContract;
     if (a == null || a.endDate == null) return false;
     // Active contract is "linked" to this upcoming contract if its EndDate is
     // exactly one day before this contract's current StartDate.
-    final linkedDate =
-        widget.contract.startDate.toLocal().subtract(const Duration(days: 1));
+    final linkedDate = widget.contract.startDate.toLocal().subtract(
+      const Duration(days: 1),
+    );
     return _isSameDay(a.endDate!.toLocal(), linkedDate);
   }
 
@@ -111,8 +113,9 @@ class _EditContractDialogState extends State<EditContractDialog> {
     final a = widget.activeContract;
     if (a == null || a.endDate == null || _startDate == null) return false;
     if (_willShiftActiveEndDate) return false;
-    return _startDate!
-        .isAfter(a.endDate!.toLocal().add(const Duration(days: 1)));
+    return _startDate!.isAfter(
+      a.endDate!.toLocal().add(const Duration(days: 1)),
+    );
   }
 
   Future<void> _save() async {
@@ -123,7 +126,8 @@ class _EditContractDialogState extends State<EditContractDialog> {
     }
     if (_needsEndDate && _endDate == null) {
       setState(
-          () => _error = 'Datum kraja je obavezan za odabrani tip ugovora.');
+        () => _error = 'Datum kraja je obavezan za odabrani tip ugovora.',
+      );
       return;
     }
 
@@ -193,7 +197,7 @@ class _EditContractDialogState extends State<EditContractDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DropdownButtonFormField<int>(
-                value: _contractTypeId,
+                initialValue: _contractTypeId,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Tip ugovora *',
@@ -224,8 +228,11 @@ class _EditContractDialogState extends State<EditContractDialog> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.warning_amber_rounded,
-                          color: Colors.orange.shade700, size: 18),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange.shade700,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -254,8 +261,9 @@ class _EditContractDialogState extends State<EditContractDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _brutoSalary,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Bruto plata (KM) *',
                   border: OutlineInputBorder(),
@@ -290,10 +298,7 @@ class _EditContractDialogState extends State<EditContractDialog> {
                 const SizedBox(height: 12),
                 Text(
                   _error!,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: AppColors.error, fontSize: 13),
                 ),
               ],
             ],

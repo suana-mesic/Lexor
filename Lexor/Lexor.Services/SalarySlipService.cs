@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
 using Lexor.Model.Constants;
@@ -12,6 +13,7 @@ using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq.Dynamic.Core;
+using Lexor.Services.Reports;
 
 namespace Lexor.Services
 {
@@ -96,14 +98,14 @@ namespace Lexor.Services
                 .Include(ss => ss.Employee).ThenInclude(e => e.User)
                 .Include(ss => ss.Items)
                 .FirstOrDefaultAsync(ss => ss.Id == id)
-                ?? throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(SalarySlip), id));
+                ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(SalarySlip), id));
 
             // Non-admin: must be the owner of SalarySlip.
             if (!_userAccessor.IsInRole(RoleNames.Administrator))
             {
                 var currentUserId = _userAccessor.GetUserId();
                 if (entity.Employee.UserId != currentUserId)
-                    throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(SalarySlip), id));
+                    throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(SalarySlip), id));
             }
 
             return _mapper.Map<SalarySlipResponse>(entity);
@@ -134,7 +136,7 @@ namespace Lexor.Services
                     .SetProperty(s => s.MarkedAsApprovedByAdminId, currentUserId));
 
             if (updatedCount == 0)
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Ne postoje plate za mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year} u statusu čekanja na odobrenje.");
 
             return updatedCount;
@@ -159,7 +161,7 @@ namespace Lexor.Services
                     .Select(e => e.User.FirstName + " " + e.User.LastName)
                     .FirstOrDefaultAsync();
 
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Ne postoji plata za uposlenika {employeeFullName}, mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year}.");
             }
 
@@ -189,7 +191,7 @@ namespace Lexor.Services
                     .SetProperty(s => s.MarkedAsPaidByAdminId, currentUserId));
 
             if (updatedCount == 0)
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Ne postoje plate za mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year} u statusu čekanja na plaćanje.");
 
             return updatedCount;
@@ -215,7 +217,7 @@ namespace Lexor.Services
                     .Select(e => e.User.FirstName + " " + e.User.LastName)
                     .FirstOrDefaultAsync();
 
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Ne postoji plata za uposlenika {employeeFullName}, mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year}");
             }
 
@@ -239,7 +241,7 @@ namespace Lexor.Services
                 .ToListAsync();
 
             if (!existingSlips.Any())
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Nisu pronađene obračunate i neplaćene plate za mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year}.");
 
             // 2) Remove old slips — Items cascade automatically via FK constraint
@@ -279,9 +281,9 @@ namespace Lexor.Services
                     .FirstOrDefaultAsync();
 
                 if (string.IsNullOrWhiteSpace(employeeFullName))
-                    throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), request.EmployeeId));
+                    throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), request.EmployeeId));
 
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Ne postoji podatak o plati za uposlenika {employeeFullName}, mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year}.");
             }
 
@@ -296,6 +298,23 @@ namespace Lexor.Services
             if (!validationErrors.IsValid)
                 throw new ValidationException(validationErrors.Errors.Select(e => _mapper.Map<ValidationFailure>(e)));
 
+            // Payroll can only be run once the period has fully ended (from the 1st of the
+            // next month) — the current month's data (attendance/overtime/leave) isn't final yet.
+            var now = DateTime.UtcNow;
+            var isPastMonth = request.Year < now.Year
+                || (request.Year == now.Year && request.Month < now.Month);
+            if (!isPastMonth)
+                throw new BusinessException("Obračun se može pokrenuti tek nakon što mjesec završi.");
+
+            // A period-wide payroll run may only happen once; block re-running once slips exist.
+            if (request.EmployeeId == null)
+            {
+                var alreadyRun = await _dbContext.Set<SalarySlip>()
+                    .AnyAsync(ss => ss.Year == request.Year && ss.Month == request.Month);
+                if (alreadyRun)
+                    throw new BusinessException("Obračun za odabrani period je već pokrenut.");
+            }
+
             BaseSalarySlipState state = _salarySlipState.GetSalarySlipState(nameof(InitialSalarySlipState));
             var result = await state.GenerateSalarySlipsForPeriod(request);
             return result;
@@ -304,8 +323,40 @@ namespace Lexor.Services
         private static string MapStatusToStateName(SalarySlipStatus status) => status switch
         {
             SalarySlipStatus.Pending => nameof(PendingSalarySlipState),
+            SalarySlipStatus.Approved => nameof(ApprovedSalarySlipState),
             SalarySlipStatus.Paid => nameof(PaidSalarySlipState),
-            _ => throw new InvalidOperationException("Nevažeći status platne liste.")
+            _ => throw new BusinessException("Nevažeći status platne liste.")
         };
+
+        public async Task<(byte[]Bytes, string FileName)> GetSlipPdfAsync(int id)
+        {
+            var slip = await GetByIdAsync(id);
+            if (slip.Status != SalarySlipStatus.Paid)
+                throw new BusinessException("PDF je dostupan samo za platne liste koje su plaćene.");
+            var name =
+                    $"{slip.Employee.User.FirstName}-{slip.Employee.User.LastName}".Replace(" ", "-");
+            var fileName = $"platna-lista-{name}-{slip.Year}-{slip.Month:D2}.pdf";
+
+            return (SalarySlipPdf.SingleSlip(slip), fileName);
+        }
+
+        public async Task<byte[]> GetMonthlyReportPdfAsync(int year, int month)
+        {
+            if (month < 1 || month > 12)
+                throw new BusinessException("Mjesec mora biti u rasponu od januara do decembra.");
+
+            var query = IncludeRelatedEntities(null, _dbContext.Set<SalarySlip>());
+            query = ApplyFilters(query, new SalarySlipCalculationSearchObject
+            {
+                Year = year,
+                Month = month,
+                Status = SalarySlipStatus.Paid
+            });
+
+            var slips = await query.ToListAsync();
+            var responses = slips.Select(s => _mapper.Map<SalarySlipResponse>(s)).ToList();
+
+            return SalarySlipPdf.MonthlyReport(year, month, responses);
+        }
     }
 }

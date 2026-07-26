@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
+import 'package:lexor_mobile/providers/notification_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/attendance_tab.dart';
 import 'package:lexor_mobile/screens/home_tab.dart';
@@ -18,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  NotificationProvider? _notif;
 
   @override
   void initState() {
@@ -30,12 +32,20 @@ class _HomeScreenState extends State<HomeScreen> {
         listen: false,
       ).fetchLatestSalarySlip();
       Provider.of<LeaveProvider>(context, listen: false).fetchLeaves();
+      _notif = Provider.of<NotificationProvider>(context, listen: false);
+      _notif!.startPolling();
     });
   }
 
   @override
+  void dispose() {
+    _notif?.stopPolling();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<Widget> _screens = [
+    final List<Widget> screens = [
       const HomeTab(),
       const AttendanceTab(),
       const SalaryTab(),
@@ -43,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const Center(child: Text('Chat')),
     ];
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => {setState(() => _selectedIndex = index)},

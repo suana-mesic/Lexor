@@ -1,5 +1,5 @@
 /// Zajednički kod koji dijele lexor_mobile i lexor_desktop aplikacije.
-library lexor_shared;
+library;
 
 export 'src/api_error.dart';
 export 'src/api_exception.dart';

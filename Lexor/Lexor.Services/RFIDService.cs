@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Lexor.Model.Exceptions;
+using FluentValidation;
 using Lexor.Model.Enums;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
@@ -49,7 +50,7 @@ namespace Lexor.Services
         public async Task<RFIDResponse> DeactivateAsync(int id)
         {
             var card = await _dbContext.Set<RfidCard>().FindAsync(id)
-                ?? throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(RfidCard), id));
+                ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(RfidCard), id));
 
             if (!card.IsActive)
                 return await GetByIdAsync(id);

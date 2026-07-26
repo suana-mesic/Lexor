@@ -110,8 +110,10 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
                 padding: const EdgeInsets.only(top: 24),
                 child: ErrorView(
                   message: leaveProvider.error!,
-                  onRetry: () =>
-                      leaveProvider.fetchLeaves(reset: true, stateFilter: _currentFilter),
+                  onRetry: () => leaveProvider.fetchLeaves(
+                    reset: true,
+                    stateFilter: _currentFilter,
+                  ),
                 ),
               )
             else
@@ -163,38 +165,39 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: List.generate(_filters.length, (i) {
-        final selected = _selectedFilter == i;
-        return Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: TextButton(
-            onPressed: () {
-              setState(
-                () => {
-                  _selectedFilter = i,
-                  _currentFilter = _stateFilters[i]?.apiValue,
-                },
-              );
-              Provider.of<LeaveProvider>(
-                context,
-                listen: false,
-              ).fetchLeaves(stateFilter: _stateFilters[i]?.apiValue, reset: true);
-            },
-            style: TextButton.styleFrom(
-              backgroundColor: selected
-                  ? AppColors.primary
-                  : Colors.transparent,
-              foregroundColor: selected ? Colors.white : Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          final selected = _selectedFilter == i;
+          return Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  _selectedFilter = i;
+                  _currentFilter = _stateFilters[i]?.apiValue;
+                });
+                Provider.of<LeaveProvider>(context, listen: false).fetchLeaves(
+                  stateFilter: _stateFilters[i]?.apiValue,
+                  reset: true,
+                );
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: selected
+                    ? AppColors.primary
+                    : Colors.transparent,
+                foregroundColor: selected ? Colors.white : Colors.black87,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
+              child: Text(_filters[i], style: const TextStyle(fontSize: 13)),
             ),
-            child: Text(_filters[i], style: const TextStyle(fontSize: 13)),
-          ),
-        );
-      }),
+          );
+        }),
       ),
     );
   }

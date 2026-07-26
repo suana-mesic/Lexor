@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Lexor.Model.Exceptions;
+using FluentValidation;
 using FluentValidation.Results;
 using Lexor.Model.Constants;
 using Lexor.Model.Requests;
@@ -23,15 +24,27 @@ namespace Lexor.Services
             {
                 query = query.Where(a => a.Employee.DepartmentId == search.DepartmentId);
             }
-            if (search?.FromDate.HasValue == true && search?.ToDate.HasValue == true)
+            if (search?.FromDate.HasValue == true)
             {
-                query = query.Where(a => a.Date >= search.FromDate && a.Date <= search.ToDate);
+                query = query.Where(a => a.Date >= search.FromDate);
+            }
+            if (search?.ToDate.HasValue == true)
+            {
+                query = query.Where(a => a.Date <= search.ToDate);
             }
             if (_userAccessor.IsInRole(RoleNames.Administrator))
             {
                 // admin may optionally filter by any employee
                 if (search?.EmployeeId.HasValue == true)
                     query = query.Where(a => a.EmployeeId == search.EmployeeId);
+
+                if (!string.IsNullOrWhiteSpace(search?.EmployeeName))
+                {
+                    var term = search.EmployeeName.ToLower();
+                    query = query.Where(a =>
+                        (a.Employee.User.FirstName + " " + a.Employee.User.LastName)
+                            .ToLower().Contains(term));
+                }
             }
             else
             {
@@ -139,7 +152,7 @@ namespace Lexor.Services
                     .Select(a => (int?)a.Employee.UserId)
                     .FirstOrDefaultAsync();
                 if (currentUserId != ownerUserId)
-                    throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Attendance), id));
+                    throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Attendance), id));
             }
             return response;
         }
@@ -153,18 +166,41 @@ namespace Lexor.Services
                 throw new ValidationException(errors);
             }
 
+            await EnsureNotOwnAttendance(id);
+
             var entity = await _dbContext.Set<Attendance>().FindAsync(id) ??
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Attendance), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Attendance), id));
 
             _mapper.Map(request, entity);
 
             entity.IsCorrected = true;
             entity.CorrectionReason = request.CorrectionReason;
 
+            // WorkedHours is recomputed centrally in LexorDbContext.SaveChanges — no manual set here.
+
             ApplyUpdateAuditFields(entity);
             await _dbContext.SaveChangesAsync();
 
             return await GetByIdAsync(id);
+        }
+
+        public override async Task DeleteAsync(int id)
+        {
+            await EnsureNotOwnAttendance(id);
+            await base.DeleteAsync(id);
+        }
+
+        // An administrator must not edit or delete their own attendance record.
+        private async Task EnsureNotOwnAttendance(int id)
+        {
+            var currentUserId = _userAccessor.GetUserId();
+            var ownerUserId = await _dbContext.Set<Attendance>()
+                .Where(a => a.Id == id)
+                .Select(a => (int?)a.Employee.UserId)
+                .FirstOrDefaultAsync();
+
+            if (ownerUserId != null && ownerUserId == currentUserId)
+                throw new BusinessException("Ne možete uređivati niti brisati vlastito prisustvo.");
         }
 
         protected override IQueryable<Attendance> IncludeRelatedEntities(AttendanceSearchObject? search, IQueryable<Attendance> query)

@@ -9,6 +9,7 @@ namespace Lexor.Services.Validators
         public LeaveRejectValidator()
         {
             RuleFor(x => x.RejectionReason)
+                .NotEmpty().WithMessage("Razlog odbijanja je obavezan.")
                 .MaximumLength(1000).WithMessage("Razlog odbijanja zahtjeva ne može imati više od 1000 karaktera.");
         }
     }

@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using FluentValidation;
 using Lexor.Model.Enums;
 using Lexor.Model.Requests;
@@ -60,7 +61,7 @@ namespace Lexor.Services
 
             var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeId);
             if (employee == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), request.EmployeeId));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), request.EmployeeId));
 
             if (!employee.IsActive)
                 throw new ValidationException("Nije moguće kreirati ugovor za neaktivnog uposlenika.");
@@ -69,7 +70,7 @@ namespace Lexor.Services
                 .FirstOrDefaultAsync(ct => ct.Id == request.ContractTypeId);
 
             if (contractType == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
 
             if (contractType.EndDateRequired && !request.EndDate.HasValue)
                 throw new ValidationException("Datum završetka je obavezan za ovaj tip ugovora.");
@@ -114,14 +115,14 @@ namespace Lexor.Services
 
             var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
             if (employee == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), employeeId));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Employee), employeeId));
 
             if (!employee.IsActive)
                 throw new ValidationException("Nije moguće kreirati ugovor za neaktivnog uposlenika.");
 
             var contractType = await _dbContext.Set<ContractType>()
                 .FirstOrDefaultAsync(ct => ct.Id == request.ContractTypeId)
-                ?? throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
+                ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
 
             if (contractType.EndDateRequired && !request.EndDate.HasValue)
                 throw new ValidationException("Datum završetka je obavezan za ovaj tip ugovora.");
@@ -207,7 +208,7 @@ namespace Lexor.Services
         {
             var contract = await _dbContext.Contracts.FirstOrDefaultAsync(c => c.Id == id);
             if (contract == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Contract), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Contract), id));
 
             var today = DateTime.UtcNow.Date;
 
@@ -249,7 +250,7 @@ namespace Lexor.Services
 
             var contract = await _dbContext.Contracts.FirstOrDefaultAsync(c => c.Id == id);
             if (contract == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Contract), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Contract), id));
 
             var today = DateTime.UtcNow.Date;
 
@@ -264,7 +265,7 @@ namespace Lexor.Services
 
             var contractType = await _dbContext.Set<ContractType>()
                 .FirstOrDefaultAsync(ct => ct.Id == request.ContractTypeId)
-                ?? throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
+                ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(ContractType), request.ContractTypeId));
 
             if (contractType.EndDateRequired && !request.EndDate.HasValue)
                 throw new ValidationException("Datum završetka je obavezan za ovaj tip ugovora.");

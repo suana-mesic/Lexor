@@ -1,3 +1,4 @@
+﻿using Lexor.Model.Exceptions;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
@@ -25,7 +26,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
                             && l.DateTo >= request.DateFrom);
 
             if (hasOverlap)
-                throw new InvalidOperationException("Već postoji aktivno odsustvo koje se preklapa sa navedenim periodom.");
+                throw new BusinessException("Već postoji aktivno odsustvo koje se preklapa sa navedenim periodom.");
 
             _mapper.Map(request, entity);
 
@@ -57,17 +58,21 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
             await PublishLeaveStatusAsync(entity, reason);
             return _mapper.Map<LeaveResponse>(await GetByIdAsync(entity.Id));
         }
-
-        public async override Task<LeaveResponse> CancelAsync(int id)
+        public async override Task<LeaveResponse> CancelAsync(int id, string? reason)
         {
             var entity = await GetByIdAsync(id);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            if (entity.DateFrom <= today)
+                throw new BusinessException("Nije moguće otkazati zahtjev koji je već počeo.");
+
+            entity.CancellationReason = reason;
             entity.CancelledAt = DateTime.UtcNow;
             entity.CancelledByUserId = _userAccessor.GetUserId();
             entity.State = nameof(CancelledLeaveState);
             await _dbContext.SaveChangesAsync();
             return _mapper.Map<LeaveResponse>(await GetByIdAsync(entity.Id));
         }
-
         public override List<string> GetAllowedActions()
         {
             return new List<string> { nameof(ApproveAsync), nameof(RejectAsync), nameof(CancelAsync), nameof(UpdateAsync) };

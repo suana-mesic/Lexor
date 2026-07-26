@@ -9,6 +9,7 @@ namespace Lexor.Model.Enums
         AttendanceCorrected = 5,
         RfidCardAssigned = 6,
         RfidCardDeactivated = 7,
-        General = 99
+        General = 99,
+        LeaveCancelled = 8,
     }
 }

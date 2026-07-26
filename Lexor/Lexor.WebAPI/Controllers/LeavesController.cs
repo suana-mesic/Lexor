@@ -28,14 +28,11 @@ namespace Lexor.WebAPI.Controllers
 
         [HttpPut("cancel/{id}")]
         [Authorize(Roles = $"{RoleNames.Employee},{RoleNames.Administrator}")]
-        public async Task<ActionResult<LeaveResponse>> Cancel(int id)
+        public async Task<ActionResult<LeaveResponse>> Cancel(int id, [FromBody] LeaveCancelRequest? request)
         {
-            var result = await _service.CancelAsync(id);
+            var result = await _service.CancelAsync(id, request?.CancellationReason);
             return result;
         }
-
-        public override Task<ActionResult<LeaveResponse>> Delete(int id)
-            => Task.FromResult<ActionResult<LeaveResponse>>(StatusCode(StatusCodes.Status405MethodNotAllowed));
 
         [HttpPut("approve/{id}")]
         [Authorize(Roles = RoleNames.Administrator)]

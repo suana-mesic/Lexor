@@ -1,4 +1,4 @@
-enum SalaryItemCategory { bruto, contribution, deduction }
+enum SalaryItemCategory { bruto, contribution, deduction, info }
 
 enum SalarySlipItemType {
   brutoBase(1, SalaryItemCategory.bruto),
@@ -8,7 +8,8 @@ enum SalarySlipItemType {
   health(5, SalaryItemCategory.contribution),
   unemployment(6, SalaryItemCategory.contribution),
   personalDeduction(7, SalaryItemCategory.deduction),
-  incomeTax(8, SalaryItemCategory.deduction);
+  incomeTax(8, SalaryItemCategory.deduction),
+  taxBase(9, SalaryItemCategory.info);
 
   final int code;
   final SalaryItemCategory category;

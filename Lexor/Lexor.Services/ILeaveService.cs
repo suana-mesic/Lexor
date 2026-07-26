@@ -8,8 +8,7 @@ namespace Lexor.Services
     {
         public Task<LeaveResponse> ApproveAsync(int id);
         public Task<LeaveResponse> RejectAsync(int id, LeaveRejectRequest request);
-        public Task<LeaveResponse> CancelAsync(int id);
+        public Task<LeaveResponse> CancelAsync(int id, string? reason);
         public Task<List<string>> GetAllowedActions(int id);
-        public Task<int> CompleteFinishedLeaveState();
     }
 }

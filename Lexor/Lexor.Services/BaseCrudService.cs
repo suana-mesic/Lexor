@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Lexor.Model.Exceptions;
+using FluentValidation;
 using FluentValidation.Results;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
@@ -68,7 +69,7 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
 
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
 
             MapUpdateRequestToEntity(request, entity);
 
@@ -84,7 +85,7 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<TEntity>().FindAsync(id);
 
             if (entity == null)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(TEntity), id));
 
             _dbContext.Set<TEntity>().Remove(entity);
             await _dbContext.SaveChangesAsync();

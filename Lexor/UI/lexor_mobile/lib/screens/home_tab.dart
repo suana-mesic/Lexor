@@ -5,7 +5,9 @@ import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/create_leave_request.dart';
+import 'package:lexor_mobile/screens/profile_screen.dart';
 import 'package:lexor_mobile/widgets/error_banner.dart';
+import 'package:lexor_mobile/widgets/notifications_bell.dart';
 import 'package:lexor_shared/lexor_shared.dart';
 import 'package:provider/provider.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
@@ -63,7 +65,7 @@ class HomeTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(authProvider),
+              _buildHeader(context, authProvider),
               const SizedBox(height: 16),
               if (errorMessage != null) ...[
                 ErrorBanner(
@@ -88,7 +90,7 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(AuthProvider authProvider) {
+  Widget _buildHeader(BuildContext context, AuthProvider authProvider) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -119,11 +121,17 @@ class HomeTab extends StatelessWidget {
               ],
             ),
           ),
-          const Row(
+          Row(
             children: [
-              Icon(Icons.notifications, color: Colors.white, size: 28),
-              SizedBox(width: 16),
-              Icon(Icons.person, color: Colors.white, size: 28),
+              const NotificationBell(),
+              const SizedBox(width: 16),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                ),
+                child: const Icon(Icons.person, color: Colors.white, size: 28),
+              ),
             ],
           ),
         ],

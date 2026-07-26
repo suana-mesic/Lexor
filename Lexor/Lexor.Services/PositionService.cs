@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Lexor.Model.Exceptions;
+using FluentValidation;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
@@ -56,7 +57,7 @@ namespace Lexor.Services
 
             var exists = await _dbContext.Departments.AnyAsync(d => d.Id == departmentId);
             if (!exists)
-                throw new KeyNotFoundException(EntityDisplayMessage.NotFound(typeof(Department), departmentId));
+                throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Department), departmentId));
         }
     }
 }
