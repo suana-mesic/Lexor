@@ -140,71 +140,52 @@ class HomeTab extends StatelessWidget {
   }
 
   Widget _buildStatCards(AttendanceProvider attendanceProvider) {
-    return Row(
+    final summary = attendanceProvider.summary;
+    return Column(
       children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Prisutnost danas',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                Text(
-                  '${attendanceProvider.summary?.todayWorkedHours.toStringAsFixed(1) ?? '-'}h',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  attendanceProvider.summary?.todayStatus ?? '-',
-                  style: const TextStyle(color: Colors.green, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
+        _statCard(
+          title: 'Prisutnost danas',
+          value: '${summary?.todayWorkedHours.toStringAsFixed(1) ?? '-'}h',
+          subtitle: summary?.todayStatus ?? '-',
         ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Ovaj mjesec',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                Text(
-                  '${attendanceProvider.summary?.monthTotalHours.toStringAsFixed(1) ?? '-'}h',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '↑ ${attendanceProvider.summary?.monthAttendanceRate.toStringAsFixed(1) ?? '-'}% prisustvo',
-                  style: const TextStyle(color: Colors.green, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
+        const SizedBox(height: 16),
+        _statCard(
+          title: 'Prisutnost ovaj mjesec',
+          value: '${summary?.monthTotalHours.toStringAsFixed(1) ?? '-'}h',
+          subtitle:
+              '↑ ${summary?.monthAttendanceRate.toStringAsFixed(1) ?? '-'}% prisustvo',
         ),
       ],
+    );
+  }
+
+  Widget _statCard({
+    required String title,
+    required String value,
+    required String subtitle,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(subtitle, style: const TextStyle(color: Colors.green, fontSize: 14)),
+        ],
+      ),
     );
   }
 

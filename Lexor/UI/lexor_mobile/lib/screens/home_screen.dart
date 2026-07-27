@@ -5,6 +5,7 @@ import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/notification_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/attendance_tab.dart';
+import 'package:lexor_mobile/screens/chat_tab.dart';
 import 'package:lexor_mobile/screens/home_tab.dart';
 import 'package:lexor_mobile/screens/leave_requests_tab.dart';
 import 'package:lexor_mobile/screens/salary_tab.dart';
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const AttendanceTab(),
       const SalaryTab(),
       const LeaveRequestsTab(),
-      const Center(child: Text('Chat')),
+      const ChatTab(),
     ];
     return Scaffold(
       body: screens[_selectedIndex],

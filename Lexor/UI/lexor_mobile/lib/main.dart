@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lexor_mobile/auth_store.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
+import 'package:lexor_mobile/providers/chat_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/leave_type_provider.dart';
 import 'package:lexor_mobile/providers/notification_provider.dart';
@@ -27,6 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PayrollSettingsProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MyApp(loggedIn: loggedIn),
     ),

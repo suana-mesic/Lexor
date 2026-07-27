@@ -1,5 +1,7 @@
-﻿using Lexor.Model.Exceptions;
+﻿using EasyNetQ;
 using FluentValidation;
+using Lexor.Model;
+using Lexor.Model.Exceptions;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
@@ -13,9 +15,11 @@ namespace Lexor.Services
 {
     public class LegalDocumentService : BaseCRUDService<LegalDocument, LegalDocumentResponse, LegalDocumentSearchObject, LegalDocumentInsertRequest, LegalDocumentUpdateRequest>, ILegalDocumentService
     {
-        public LegalDocumentService(LexorDbContext dbContext, IMapper mapper, IValidator<LegalDocumentInsertRequest> insertValidator, IValidator<LegalDocumentUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor)
+        private readonly IBus _bus;
+        public LegalDocumentService(LexorDbContext dbContext, IMapper mapper, IValidator<LegalDocumentInsertRequest> insertValidator, IValidator<LegalDocumentUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor, IBus bus)
            : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
+            _bus = bus;
         }
 
         protected override IQueryable<LegalDocument> IncludeRelatedEntities(LegalDocumentSearchObject? search, IQueryable<LegalDocument> query = null)
@@ -28,6 +32,13 @@ namespace Lexor.Services
             if (search?.CategoryId is int cid)
                 query = query.Where(d => d.CategoryId == cid);
             return query;
+        }
+
+        public override async Task<LegalDocumentResponse> InsertAsync(LegalDocumentInsertRequest request)
+        {
+            var response = await base.InsertAsync(request);
+            await _bus.PubSub.PublishAsync(new LegalDocumentUploaded { DocumentId = response.Id });
+            return response;
         }
 
         // List view never needs the file bytes — project to the DTO in the query so SQL
@@ -78,7 +89,7 @@ namespace Lexor.Services
 
         public async Task<(byte[] Bytes, string FileName)> GetFileForDownloadAsync(int id)
         {
-            var doc = await _dbContext.Set<LegalDocument>().FirstOrDefaultAsync(d=>d.Id==id)??throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(LegalDocument), id));
+            var doc = await _dbContext.Set<LegalDocument>().FirstOrDefaultAsync(d => d.Id == id) ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(LegalDocument), id));
             return (Convert.FromBase64String(doc.FileBase64), $"{doc.Name}.pdf");
         }
     }

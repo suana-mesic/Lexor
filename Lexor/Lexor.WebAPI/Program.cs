@@ -15,10 +15,10 @@ using Lexor.WebAPI.Auth;
 using Lexor.WebAPI.Filters;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using SmartComponents.LocalEmbeddings;
 using System.Text;
 
 Env.TraversePath().Load();
@@ -29,6 +29,11 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExceptionFilter>();
 });
+
+builder.Services.AddOptions<GroqOptions>()
+    .Bind(builder.Configuration.GetSection("Groq"))
+    .Validate(o=>!string.IsNullOrWhiteSpace(o.ApiKey), "Groq:ApiKey je obavezna konfiguracijska vrijednost.")
+    .ValidateOnStart(); 
 
 builder.Services.AddOptions<JwtTokenOptions>()
         .Bind(builder.Configuration.GetSection("JwtToken"))
@@ -79,6 +84,8 @@ TypeAdapterConfig<PayrollSettings, PayrollSettingsResponse>.NewConfig()
 
 TypeAdapterConfig<LegalDocument, LegalDocumentResponse>.NewConfig().Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.Name : null);
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<ICityService, CityService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -94,6 +101,8 @@ builder.Services.AddScoped<IRFIDService, RFIDService>();
 builder.Services.AddScoped<IPayrollSettingsService, PayrollSettingsService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<ILegalDocumentService, LegalDocumentService>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.AddScoped<BaseLeaveState>();
 builder.Services.AddScoped<InitialLeaveState>();
@@ -102,8 +111,6 @@ builder.Services.AddScoped<ApprovedLeaveState>();
 builder.Services.AddScoped<RejectedLeaveState>();
 builder.Services.AddScoped<CancelledLeaveState>();
 builder.Services.AddScoped<CompletedLeaveState>();
-builder.Services.AddScoped<ILeaveService, LeaveService>();
-
 builder.Services.AddScoped<BaseSalarySlipState>();
 builder.Services.AddScoped<InitialSalarySlipState>();
 builder.Services.AddScoped<PendingSalarySlipState>();
@@ -111,7 +118,6 @@ builder.Services.AddScoped<ApprovedSalarySlipState>();
 builder.Services.AddScoped<PaidSalarySlipState>();
 
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
-
 builder.Services.AddScoped<IValidator<CountryInsertRequest>, CountriesInsertValidator>();
 builder.Services.AddScoped<IValidator<CityInsertRequest>, CityInsertValidator>();
 builder.Services.AddScoped<IValidator<RoleInsertRequest>, RoleInsertValidator>();
@@ -154,9 +160,8 @@ builder.Services.AddScoped<IValidator<SalarySlipApproveAllRequest>, SalarySlipAp
 builder.Services.AddScoped<IValidator<SalarySlipApproveSingleRequest>, SalarySlipApproveSingleValidator>();
 builder.Services.AddScoped<IValidator<LegalDocumentInsertRequest>, LegalDocumentInsertValidator>();
 
-
-
 builder.Services.AddSingleton<EasyNetQ.IBus>(_ => EasyNetQ.RabbitHutch.CreateBus(builder.Configuration["RabbitMQ:ConnectionString"]));
+builder.Services.AddSingleton(new LocalEmbedder());
 
 //adds Bearer in Scalar
 //adds requirement on each endpoint (Scalar shows it as padlock icon)
