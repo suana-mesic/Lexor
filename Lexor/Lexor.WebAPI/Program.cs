@@ -7,6 +7,7 @@ using Lexor.Services;
 using Lexor.Services.Access;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
+using Lexor.Services.ML;
 using Lexor.Services.StateMachine.LeaveStateMachine;
 using Lexor.Services.StateMachine.SalarySlipStateMachine;
 using Lexor.Services.Validators;
@@ -21,7 +22,7 @@ using Scalar.AspNetCore;
 using SmartComponents.LocalEmbeddings;
 using System.Text;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
+using Lexor.Services.ML;
 
 Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -167,6 +168,7 @@ builder.Services.AddScoped<IValidator<LegalDocumentInsertRequest>, LegalDocument
 
 builder.Services.AddSingleton<EasyNetQ.IBus>(_ => EasyNetQ.RabbitHutch.CreateBus(builder.Configuration["RabbitMQ:ConnectionString"]));
 builder.Services.AddSingleton(new LocalEmbedder());
+builder.Services.AddSingleton<IAbsencePredictionService, AbsencePredictionService>();
 
 //adds Bearer in Scalar
 //adds requirement on each endpoint (Scalar shows it as padlock icon)
@@ -260,6 +262,9 @@ using (var scope = app.Services.CreateScope())
 
         var crypto = services.GetRequiredService<ICryptoService>();
         await DataSeeder.SeedAsync(db, crypto);
+        // Train the absence-prediction model from the seeded/real attendance history.
+        var predictor = services.GetRequiredService<IAbsencePredictionService>();
+        await predictor.TrainAsync();
     }
 }
 
