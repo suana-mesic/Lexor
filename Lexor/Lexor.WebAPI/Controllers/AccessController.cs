@@ -4,11 +4,13 @@ using Lexor.Services.Access;
 using Lexor.Services.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Lexor.WebAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [EnableRateLimiting("auth")]
     public class AccessController : ControllerBase
     {
         private readonly IAccessManager _accessManager;
@@ -67,6 +69,22 @@ namespace Lexor.WebAPI.Controllers
         public async Task<IActionResult> Activate([FromBody] ActivateAccountRequest request)
         {
             await _accessManager.Activate(request);
+            return NoContent();
+        }
+
+        [AllowAnonymous]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            await _accessManager.ForgotPassword(request);
+            return NoContent();
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            await _accessManager.ResetPassword(request);
             return NoContent();
         }
     }

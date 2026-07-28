@@ -21,6 +21,7 @@ builder.Services.AddHostedService<LeaveNotificationConsumer>();
 builder.Services.AddHostedService<LeaveCompletionWorker>();
 builder.Services.AddHostedService<EmployeeInvitedConsumer>();
 builder.Services.AddHostedService<LegalDocumentIndexConsumer>();
+builder.Services.AddHostedService<PasswordResetConsumer>();
 
 builder.Services.AddSingleton(new LocalEmbedder());
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();

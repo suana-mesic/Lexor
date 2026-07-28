@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Lexor.Services.Database
@@ -41,6 +39,14 @@ namespace Lexor.Services.Database
         public string? InvitationCode { get; set; }
 
         public bool IsCodeActivated { get; set; } = false;
+
+        public string? PasswordResetCodeHash { get; set; }
+
+        public string? PasswordResetCodeSalt { get; set; }
+
+        public DateTime? PasswordResetExpiresAt { get; set; }
+
+        public int PasswordResetAttempts { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

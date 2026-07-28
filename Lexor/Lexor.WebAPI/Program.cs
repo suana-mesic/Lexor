@@ -20,6 +20,8 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using SmartComponents.LocalEmbeddings;
 using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -134,6 +136,8 @@ builder.Services.AddScoped<IValidator<PayrollSettingsInsertRequest>, PayrollSett
 builder.Services.AddScoped<IValidator<AttendanceInsertRequest>, AttendanceInsertValidator>();
 builder.Services.AddScoped<IValidator<LeaveInsertRequest>, LeaveInsertValidator>();
 builder.Services.AddScoped<IValidator<ActivateAccountRequest>, ActivateAccountValidator>();
+builder.Services.AddScoped<IValidator<ForgotPasswordRequest>, ForgotPasswordValidator>();
+builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
 builder.Services.AddScoped<IValidator<CityUpdateRequest>, CityUpdateValidator>();
@@ -214,6 +218,20 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Sensitive auth endpoints: max 10 requests / minute per client IP.
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -241,6 +259,9 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
+app.UseRateLimiter();
+
 app.MapControllers();
 
 app.Run();
+public partial class Program { }

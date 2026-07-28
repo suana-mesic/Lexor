@@ -5,6 +5,7 @@ import 'package:lexor_mobile/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
 import 'package:lexor_mobile/screens/activation_screen.dart';
+import 'package:lexor_mobile/screens/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -242,6 +243,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: const Text(
                           'Aktivirajte nalog',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        ),
+                        child: const Text(
+                          'Zaboravili ste lozinku?',
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
