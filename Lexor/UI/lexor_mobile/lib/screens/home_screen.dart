@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
-import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/providers/notification_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';

@@ -99,6 +99,9 @@ class LeaveProvider extends ChangeNotifier {
         'reason': reason,
       },
     );
+    // Refresh the home "recent activity" so the new request shows immediately,
+    // no matter where it was created from.
+    await fetchLatestLeave();
   }
 
   Future<void> updateLeave(
@@ -106,5 +109,15 @@ class LeaveProvider extends ChangeNotifier {
     int id,
   ) async {
     await ApiClient.put('/Leaves/$id', body: leaveUpdateRequest.toJson());
+  }
+
+  void reset() {
+    leaveRecentActivityResponse = null;
+    leaves = [];
+    isLoading = false;
+    error = null;
+    _page = 1;
+    hasMore = true;
+    notifyListeners();
   }
 }

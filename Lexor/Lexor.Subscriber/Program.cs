@@ -15,11 +15,18 @@ builder.Services.AddDbContext<LexorDbContext>(options => options.UseSqlServer(bu
 builder.Services.AddSingleton<IBus>(_ =>
     RabbitHutch.CreateBus(builder.Configuration["RabbitMQ:ConnectionString"]));
 
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+
 builder.Services.AddHostedService<LeaveNotificationConsumer>();
 builder.Services.AddHostedService<LeaveCompletionWorker>();
-builder.Services.AddSingleton(new LocalEmbedder());
+builder.Services.AddHostedService<EmployeeInvitedConsumer>();
 builder.Services.AddHostedService<LegalDocumentIndexConsumer>();
+
+builder.Services.AddSingleton(new LocalEmbedder());
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+
 builder.Services.AddScoped<ILegalDocumentIndexer, LegalDocumentIndexer>();
+
 
 var host = builder.Build();
 host.Run(); 

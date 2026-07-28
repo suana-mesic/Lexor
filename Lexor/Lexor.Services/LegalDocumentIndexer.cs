@@ -1,6 +1,4 @@
-﻿using Lexor.Model.Exceptions;
-using Lexor.Services.Database;
-using Lexor.Services.Helpers;
+﻿using Lexor.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using SmartComponents.LocalEmbeddings;
 using System.Text;
@@ -28,9 +26,12 @@ namespace Lexor.Services
         public async Task IndexAsync(int documentId)
         {
             var document = await _dbContext.Set<LegalDocument>()
-                .Include(d => d.Chunks)
-                .FirstOrDefaultAsync(d => d.Id == documentId)
-                ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(LegalDocument), documentId));
+             .Include(d => d.Chunks)
+             .FirstOrDefaultAsync(d => d.Id == documentId);
+
+            // The document may have been deleted between upload and this background run — skip quietly.
+            if (document == null)
+                return;
 
             // Re-indexing: drop any existing chunks first.
             if (document.Chunks.Count > 0)
@@ -51,7 +52,18 @@ namespace Lexor.Services
                     EmbeddingJson = JsonSerializer.Serialize(vector)
                 });
             }
-            await _dbContext.SaveChangesAsync();
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // If the document was deleted while we were indexing it, there is nothing to
+                // persist — ignore. Otherwise it's a real failure, so rethrow.
+                var stillExists = await _dbContext.Set<LegalDocument>().AnyAsync(d => d.Id == documentId);
+                if (stillExists)
+                    throw;
+            }
         }
 
         private static string ExtractText(byte[] pdfBytes)

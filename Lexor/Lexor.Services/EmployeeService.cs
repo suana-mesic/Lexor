@@ -9,6 +9,10 @@ using Lexor.Services.Helpers;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using EasyNetQ;
+using Lexor.Model;
+using Microsoft.Extensions.Logging;
+using Lexor.Model.Constants;
 
 namespace Lexor.Services
 {
@@ -17,11 +21,15 @@ namespace Lexor.Services
         const string chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ23456789"; // without similar (0/O, 1/I/L)
 
         private readonly IValidator<ProfileUpdateRequest> _profileValidator;
+        private readonly IBus _bus;
+        private readonly ILogger<EmployeeService> _logger;
 
-        public EmployeeService(LexorDbContext dbContext, IMapper mapper, IValidator<EmployeeInsertRequest> insertValidator, IValidator<EmployeeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor, IValidator<ProfileUpdateRequest> profileValidator)
-            : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
+        public EmployeeService(LexorDbContext dbContext, IMapper mapper, IValidator<EmployeeInsertRequest> insertValidator, IValidator<EmployeeUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor, IValidator<ProfileUpdateRequest> profileValidator, IBus bus, ILogger<EmployeeService> logger)
+                 : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
             _profileValidator = profileValidator;
+            _bus = bus;
+            _logger = logger;
         }
 
         public override async Task<PageResult<EmployeeResponse>> GetAllAsync(EmployeeSearchObject? search = null)
@@ -81,29 +89,54 @@ namespace Lexor.Services
 
             await ValidatePositionMatchesDepartment(request.PositionId, request.DepartmentId);
 
+
+            User user;
+            Employee employee;
             await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
             try
             {
-                var user = _mapper.Map<User>(request.User);
+                user = _mapper.Map<User>(request.User);
+                user.Username = user.Email; // employees log in with their email
                 user.InvitationCode = GenerateInvitationCode();
-                _dbContext.Users.Add(user);
+                _dbContext.Users.Add(user);            
                 await _dbContext.SaveChangesAsync();
+                
+                var employeeRoleId = await _dbContext.Roles
+                    .Where(r => r.Name == RoleNames.Employee)
+                    .Select(r => r.Id)
+                    .FirstOrDefaultAsync();
+                _dbContext.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = employeeRoleId });
 
-                var employee = _mapper.Map<Employee>(request);
+                employee = _mapper.Map<Employee>(request);
                 employee.UserId = user.Id;
                 _dbContext.Employees.Add(employee);
                 ApplyCreateAuditFields(employee);
                 await _dbContext.SaveChangesAsync();
 
                 await tx.CommitAsync();
-
-                return await GetByIdAsync(employee.Id);
             }
             catch
             {
                 await tx.RollbackAsync();
                 throw;
             }
+
+            // Best-effort welcome email with the activation code — never blocks account creation.
+            
+            try
+            {
+                await _bus.PubSub.PublishAsync(new EmployeeInvited
+                {
+                    Email = user.Email,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    InvitationCode = user.InvitationCode!
+                });
+            }   catch(Exception ex)
+            {
+                _logger.LogWarning(ex, "Nije uspjelo slanje pozivnice za uposlenika {Email}.", user.Email);
+            }
+            return await GetByIdAsync(employee.Id);
         }
 
         public override async Task<EmployeeResponse> UpdateAsync(int id, EmployeeUpdateRequest request)

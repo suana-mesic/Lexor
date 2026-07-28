@@ -141,19 +141,28 @@ class HomeTab extends StatelessWidget {
 
   Widget _buildStatCards(AttendanceProvider attendanceProvider) {
     final summary = attendanceProvider.summary;
+
+    // New employee (or no hours recorded this month) → friendly empty state, not zeros.
+    if (summary == null || summary.monthTotalHours == 0) {
+      return _emptyCard(
+        icon: Icons.access_time_outlined,
+        message: 'Nema evidencije o prisustvu',
+      );
+    }
+
     return Column(
       children: [
         _statCard(
           title: 'Prisutnost danas',
-          value: '${summary?.todayWorkedHours.toStringAsFixed(1) ?? '-'}h',
-          subtitle: summary?.todayStatus ?? '-',
+          value: '${summary.todayWorkedHours.toStringAsFixed(1)}h',
+          subtitle: summary.todayStatus,
         ),
         const SizedBox(height: 16),
         _statCard(
           title: 'Prisutnost ovaj mjesec',
-          value: '${summary?.monthTotalHours.toStringAsFixed(1) ?? '-'}h',
+          value: '${summary.monthTotalHours.toStringAsFixed(1)}h',
           subtitle:
-              '↑ ${summary?.monthAttendanceRate.toStringAsFixed(1) ?? '-'}% prisustvo',
+              '↑ ${summary.monthAttendanceRate.toStringAsFixed(1)}% prisustvo',
         ),
       ],
     );
@@ -183,7 +192,10 @@ class HomeTab extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(subtitle, style: const TextStyle(color: Colors.green, fontSize: 14)),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.green, fontSize: 14),
+          ),
         ],
       ),
     );
@@ -277,23 +289,44 @@ class HomeTab extends StatelessWidget {
     final salarySlip = salarySlipProvider.salarySlipRecentActivityResponse;
     final leave = leaveProvider.leaveRecentActivityResponse;
 
-    final salaryTitle = salarySlip != null
-        ? _salaryStatusLabel(salarySlip.status)
-        : '-';
-    final salarySubtitle = salarySlip != null
-        ? '${bosnianMonthName(salarySlip.month)} ${salarySlip.year} - ${salarySlip.netSalary.toStringAsFixed(2)} KM'
-        : '-';
-    final salaryTime = salarySlip != null
-        ? _formatRelativeDate(salarySlip.generatedAt)
-        : '-';
+    final cards = <Widget>[];
+    if (salarySlip != null) {
+      cards.add(
+        _activityCard(
+          dotColor: Colors.green,
+          title: _salaryStatusLabel(salarySlip.status),
+          subtitle:
+              '${bosnianMonthName(salarySlip.month)} ${salarySlip.year} - ${salarySlip.netSalary.toStringAsFixed(2)} KM',
+          time: _formatRelativeDate(salarySlip.generatedAt),
+        ),
+      );
+    }
+    if (leave != null) {
+      cards.add(
+        _activityCard(
+          dotColor: Colors.blue,
+          title: _leaveStateLabel(leave.state),
+          subtitle:
+              '${leave.leaveType.name} - ${DateFormat('dd.MM').format(leave.dateFrom)} - ${DateFormat('dd.MM').format(leave.dateTo)}',
+          time: _formatRelativeDate(leave.createdAt),
+        ),
+      );
+    }
 
-    final leaveTitle = _leaveStateLabel(leave?.state);
-    final leaveSubtitle = leave != null
-        ? '${leave.leaveType.name} - ${DateFormat('dd.MM').format(leave.dateFrom)} - ${DateFormat('dd.MM').format(leave.dateTo)}'
-        : '-';
-    final leaveTime = leave != null
-        ? _formatRelativeDate(leave.createdAt)
-        : '-';
+    final content = <Widget>[];
+    if (cards.isEmpty) {
+      content.add(
+        _emptyCard(
+          icon: Icons.history_outlined,
+          message: 'Nema evidencije o nedavnoj aktivnosti',
+        ),
+      );
+    } else {
+      for (var i = 0; i < cards.length; i++) {
+        if (i > 0) content.add(const SizedBox(height: 12));
+        content.add(cards[i]);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,90 +340,77 @@ class HomeTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      salaryTitle,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      salarySubtitle,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                    Text(
-                      salaryTime,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      leaveTitle,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      leaveSubtitle,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                    Text(
-                      leaveTime,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        ...content,
       ],
+    );
+  }
+
+  Widget _activityCard({
+    required Color dotColor,
+    required String title,
+    required String subtitle,
+    required String time,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+                Text(
+                  time,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard({required IconData icon, required String message}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 36, color: AppColors.neutralFg),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.neutralFg, fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 }

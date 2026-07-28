@@ -61,5 +61,13 @@ namespace Lexor.WebAPI.Controllers
             await _accessManager.Logout(request);
             return NoContent();
         }
+
+        [AllowAnonymous]
+        [HttpPost("activate")]
+        public async Task<IActionResult> Activate([FromBody] ActivateAccountRequest request)
+        {
+            await _accessManager.Activate(request);
+            return NoContent();
+        }
     }
 }

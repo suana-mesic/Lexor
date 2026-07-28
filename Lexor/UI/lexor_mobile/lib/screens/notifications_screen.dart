@@ -79,7 +79,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       onRefresh: () => provider.fetchNotifications(reset: true),
       child: ListView.separated(
         controller: _scroll,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemCount: provider.notifications.length,
         itemBuilder: (_, i) {
           final n = provider.notifications[i];

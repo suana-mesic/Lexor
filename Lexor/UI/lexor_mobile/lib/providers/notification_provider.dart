@@ -95,6 +95,17 @@ class NotificationProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  void reset() {
+    stopPolling();
+    notifications = [];
+    unreadCount = 0;
+    isLoading = false;
+    error = null;
+    _page = 1;
+    hasMore = true;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _pollTimer?.cancel();

@@ -93,10 +93,10 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
     super.dispose();
   }
 
-  Future<DateTime?> _pickDate(DateTime? initial, {DateTime? firstDate}) {
+  Future<DateTime?> _pickDate(DateTime? initial, {DateTime? firstDate, DateTime? lastDate}) {
     final now = DateTime.now();
     final first = firstDate ?? DateTime(now.year - 100);
-    final last = DateTime(now.year + 10);
+    final last = lastDate ?? DateTime(now.year + 10);
     // showDatePicker asserts firstDate <= initialDate <= lastDate. When no date
     // is selected yet and firstDate is in the future (e.g. end date must be
     // after a future start date), `now` would fall before firstDate and the
@@ -199,8 +199,8 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
               children: [
                 _sectionTitle('Lični podaci'),
                 _twoCol(
-                  _textField(_firstName, 'Ime', required: true),
-                  _textField(_lastName, 'Prezime', required: true),
+                  _textField(_firstName, 'Ime', required: true, isName: true),
+                  _textField(_lastName, 'Prezime', required: true, isName: true),
                 ),
                 const SizedBox(height: 16),
                 _twoCol(
@@ -213,7 +213,10 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
                     'Datum rođenja',
                     _dateOfBirth,
                     () async {
-                      final v = await _pickDate(_dateOfBirth);
+                      // Employees must be at least 18 → block a more recent birth date.
+                      final now = DateTime.now();
+                      final maxBirth = DateTime(now.year - 18, now.month, now.day);
+                      final v = await _pickDate(_dateOfBirth, lastDate: maxBirth);
                       if (v != null) setState(() => _dateOfBirth = v);
                     },
                     required: true,
@@ -222,7 +225,12 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
                     'Datum zaposlenja',
                     _hireDate,
                     () async {
-                      final v = await _pickDate(_hireDate);
+                      // Hire date must be after the birth date and not in the future.
+                      final v = await _pickDate(
+                        _hireDate,
+                        firstDate: _dateOfBirth,
+                        lastDate: DateTime.now(),
+                      );
                       if (v != null) setState(() => _hireDate = v);
                     },
                     required: true,
@@ -384,6 +392,7 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
     bool required = false,
     bool isEmail = false,
     bool isPhone = false,
+    bool isName = false,
   }) {
     return TextFormField(
       controller: c,
@@ -404,8 +413,12 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
           return 'Unesite ispravan email.';
         }
         if (isPhone && t.isNotEmpty &&
-            !RegExp(r'^\+?\d{8,15}$').hasMatch(t.replaceAll(' ', ''))) {
-          return 'Unesite ispravan broj (8–15 cifara, npr. 062 123 456).';
+            !RegExp(r'^(\+387|0)\d{8,9}$').hasMatch(t.replaceAll(' ', ''))) {
+          return 'Unesite validan broj telefona (npr. 062 123 456 ili +387 62 123 456).';
+        }
+        if (isName && t.isNotEmpty &&
+            !RegExp(r'^[A-Za-zČčĆćŽžŠšĐđ -]+$').hasMatch(t)) {
+          return 'Dozvoljena su samo slova, razmak i crtica.';
         }
         return null;
       },

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +10,10 @@ import 'package:lexor_mobile/screens/login_screen.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
 import 'package:lexor_mobile/widgets/error_view.dart';
 import 'package:provider/provider.dart';
+import 'package:lexor_mobile/providers/attendance_provider.dart';
+import 'package:lexor_mobile/providers/leave_provider.dart';
+import 'package:lexor_mobile/providers/notification_provider.dart';
+import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -53,11 +56,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _save() async {
     final phone = _phoneController.text.trim();
     if (phone.isNotEmpty &&
-        !RegExp(r'^\+?\d{8,15}$').hasMatch(phone.replaceAll(' ', ''))) {
+        !RegExp(r'^(\+387|0)\d{8,9}$').hasMatch(phone.replaceAll(' ', ''))) {
       SnackbarHelper.showError(
         context,
-        'Unesite ispravan broj telefona (8–15 cifara, npr. 062 123 456).',
+        'Unesite validan broj telefona (npr. 062 123 456 ili +387 62 123 456).',
       );
+      return;
+    }
+    final email = _emailController.text.trim();
+    if (email.isNotEmpty &&
+        !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      SnackbarHelper.showError(context, 'Unesite ispravan email.');
       return;
     }
     final provider = Provider.of<ProfileProvider>(context, listen: false);
@@ -102,6 +111,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (confirmed != true || !mounted) return;
     final navigator = Navigator.of(context);
+
+    // Clear all user-scoped providers so the next login starts clean (no cross-user data).
+    context.read<SalarySlipProvider>().reset();
+    context.read<AttendanceProvider>().reset();
+    context.read<LeaveProvider>().reset();
+    context.read<NotificationProvider>().reset();
+    context.read<ProfileProvider>().reset();
+
     await Provider.of<AuthProvider>(context, listen: false).logout();
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -125,9 +142,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (provider.error != null && p == null) {
-            return ErrorView(
-              message: provider.error!,
-              onRetry: provider.fetchProfile,
+            // Keep logout reachable even when the profile fails to load, so the user is
+            // never stuck (e.g. a token issued before a role change → 403 until re-login).
+            return Column(
+              children: [
+                Expanded(
+                  child: ErrorView(
+                    message: provider.error!,
+                    onRetry: provider.fetchProfile,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _logoutButton(),
+                ),
+              ],
             );
           }
           if (p == null) return const SizedBox.shrink();

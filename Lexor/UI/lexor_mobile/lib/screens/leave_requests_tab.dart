@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lexor_mobile/widgets/header_actions.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/screens/create_leave_request.dart';
@@ -148,13 +149,7 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
               fontSize: 20,
             ),
           ),
-          Row(
-            children: [
-              Icon(Icons.notifications, color: Colors.white, size: 26),
-              SizedBox(width: 16),
-              Icon(Icons.person, color: Colors.white, size: 26),
-            ],
-          ),
+          HeaderActions(),
         ],
       ),
     );

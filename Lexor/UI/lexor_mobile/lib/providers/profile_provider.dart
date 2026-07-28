@@ -35,11 +35,7 @@ class ProfileProvider extends ChangeNotifier {
     try {
       final data = await ApiClient.put(
         '/Profile',
-        body: {
-          'email': email,
-          'phoneNumber': phoneNumber,
-          'address': address,
-        },
+        body: {'email': email, 'phoneNumber': phoneNumber, 'address': address},
       );
       profile = ProfileResponse.fromJson(data);
       return true;
@@ -50,5 +46,13 @@ class ProfileProvider extends ChangeNotifier {
       isSaving = false;
       notifyListeners();
     }
+  }
+
+  void reset() {
+    profile = null;
+    isLoading = false;
+    isSaving = false;
+    error = null;
+    notifyListeners();
   }
 }

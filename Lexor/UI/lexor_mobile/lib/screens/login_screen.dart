@@ -4,6 +4,7 @@ import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
+import 'package:lexor_mobile/screens/activation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,10 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         final message = messageFor(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppColors.error,
-          ),
+          SnackBar(content: Text(message), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -193,8 +191,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : Icons.visibility_outlined,
                             color: Colors.grey,
                           ),
-                          onPressed: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                       ),
                     ),
@@ -230,6 +229,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ActivationScreen(),
+                          ),
+                        ),
+                        child: const Text(
+                          'Aktivirajte nalog',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],

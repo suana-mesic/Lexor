@@ -12,7 +12,8 @@ namespace Lexor.Services.Validators
                 .When(x => x.User != null);
 
             RuleFor(x => x.DateOfBirth)
-                .LessThan(DateTime.UtcNow).WithMessage("Datum rođenja mora biti u prošlosti.")
+                .Must(dob => dob!.Value <= DateTime.UtcNow.AddYears(-18))
+                .WithMessage("Uposlenik mora imati najmanje 18 godina.")
                 .When(x => x.DateOfBirth.HasValue);
 
             RuleFor(x => x.Address)
@@ -40,11 +41,15 @@ namespace Lexor.Services.Validators
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("Ime ne može biti prazno.")
                 .MaximumLength(50).WithMessage("Ime ne može imati više od 50 karaktera.")
+                .Matches(@"^[A-Za-zČčĆćŽžŠšĐđ -]+$")
+                .WithMessage("Ime može sadržavati samo slova, razmak i crticu.")
                 .When(x => x.FirstName != null);
 
             RuleFor(x => x.LastName)
                 .NotEmpty().WithMessage("Prezime ne može biti prazno.")
                 .MaximumLength(50).WithMessage("Prezime ne može imati više od 50 karaktera.")
+                .Matches(@"^[A-Za-zČčĆćŽžŠšĐđ -]+$")
+                .WithMessage("Prezime može sadržavati samo slova, razmak i crticu.")
                 .When(x => x.LastName != null);
 
             RuleFor(x => x.Username)
@@ -59,11 +64,8 @@ namespace Lexor.Services.Validators
 
             RuleFor(x => x.PhoneNumber)
                 .MaximumLength(20).WithMessage("Broj telefona ne može imati više od 20 karaktera.")
-                .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
-
-            RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\+?[0-9\s]{8,20}$")
-                .WithMessage("Telefon mora biti u ispravnom formatu (npr. 062 123 456).")
+                .Matches(@"^(\+387|0)(\s*\d){8,9}$")
+                .WithMessage("Unesite validan broj telefona (npr. 062 123 456 ili +387 62 123 456).")
                 .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
         }
     }

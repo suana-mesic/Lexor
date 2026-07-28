@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_mobile/providers/chat_provider.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
+import 'package:lexor_mobile/widgets/header_actions.dart';
 import 'package:provider/provider.dart';
 
 /// Removes Android's stretch/glow overscroll so the chat content doesn't visually
@@ -135,6 +136,8 @@ class _ChatTabState extends State<ChatTab> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        Spacer(),
+        HeaderActions(),
       ],
     ),
   );

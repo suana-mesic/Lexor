@@ -68,4 +68,14 @@ class SalarySlipProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void reset() {
+    salarySlipRecentActivityResponse = null;
+    salarySlips = [];
+    isLoading = false;
+    error = null;
+    _page = 1;
+    hasMore = true;
+    notifyListeners();
+  }
 }

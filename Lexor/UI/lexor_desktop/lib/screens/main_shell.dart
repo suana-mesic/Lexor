@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
+import 'package:lexor_desktop/providers/dashboard_provider.dart';
 import 'package:lexor_desktop/screens/attendance_screen.dart';
 import 'package:lexor_desktop/screens/dashboard_screen.dart';
 import 'package:lexor_desktop/screens/employees_screen.dart';
@@ -132,7 +133,12 @@ class _MainShellState extends State<MainShell> {
                   context,
                   listen: false,
                 );
+                final dashboardProvider = Provider.of<DashboardProvider>(
+                  context,
+                  listen: false,
+                );
                 final navigator = Navigator.of(context);
+                dashboardProvider.reset();
                 await authProvider.logout();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),

@@ -94,8 +94,9 @@ class _EditContractDialogState extends State<EditContractDialog> {
   // update the active Neodređeno contract's end date on the server.
   bool get _willShiftActiveEndDate {
     if (_startDate == null) return false;
-    if (_isSameDay(_startDate!, widget.contract.startDate.toLocal()))
+    if (_isSameDay(_startDate!, widget.contract.startDate.toLocal())) {
       return false;
+    }
     final a = widget.activeContract;
     if (a == null || a.endDate == null) return false;
     // Active contract is "linked" to this upcoming contract if its EndDate is

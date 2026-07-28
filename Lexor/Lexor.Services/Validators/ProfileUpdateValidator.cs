@@ -17,8 +17,8 @@ namespace Lexor.Services.Validators
                 .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
 
             RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\+?[0-9\s]{8,20}$")
-                .WithMessage("Telefon mora biti u ispravnom formatu (npr. 062 123 456).")
+                .Matches(@"^(\+387|0)(\s*\d){8,9}$")
+                .WithMessage("Unesite validan broj telefona (npr. 062 123 456 ili +387 62 123 456).")
                 .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
 
             RuleFor(x => x.Address)

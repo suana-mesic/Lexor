@@ -133,6 +133,7 @@ builder.Services.AddScoped<IValidator<RFIDInsertRequest>, RFIDInsertValidator>()
 builder.Services.AddScoped<IValidator<PayrollSettingsInsertRequest>, PayrollSettingsInsertValidator>();
 builder.Services.AddScoped<IValidator<AttendanceInsertRequest>, AttendanceInsertValidator>();
 builder.Services.AddScoped<IValidator<LeaveInsertRequest>, LeaveInsertValidator>();
+builder.Services.AddScoped<IValidator<ActivateAccountRequest>, ActivateAccountValidator>();
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
 builder.Services.AddScoped<IValidator<CityUpdateRequest>, CityUpdateValidator>();

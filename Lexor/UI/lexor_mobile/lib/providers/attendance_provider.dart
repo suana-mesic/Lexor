@@ -53,4 +53,13 @@ class AttendanceProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void reset() {
+    summary = null;
+    attendances = [];
+    attendanceById = null;
+    isLoading = false;
+    error = null;
+    notifyListeners();
+  }
 }

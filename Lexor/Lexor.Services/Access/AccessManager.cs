@@ -5,6 +5,7 @@ using Lexor.Services.Database;
 using Lexor.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Lexor.Model.Exceptions;
 
 namespace Lexor.Services.Access
 {
@@ -15,14 +16,15 @@ namespace Lexor.Services.Access
         private readonly ICryptoService _cryptoService;
         private readonly JwtTokenOptions _jwtOptions;
         private readonly IValidator<LoginRequest> _validator;
-
-        public AccessManager(LexorDbContext dbContext, ITokenService tokenService, ICryptoService cryptoService, IOptions<JwtTokenOptions> jwtOptions, IValidator<LoginRequest> validator)
+        private readonly IValidator<ActivateAccountRequest> _activateValidator;
+        public AccessManager(LexorDbContext dbContext, ITokenService tokenService, ICryptoService cryptoService, IOptions<JwtTokenOptions> jwtOptions, IValidator<LoginRequest> validator, IValidator<ActivateAccountRequest> activateValidator)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
             _cryptoService = cryptoService;
             _jwtOptions = jwtOptions.Value;
             _validator = validator;
+            _activateValidator = activateValidator;
         }
 
         public async Task<LoginResponse?> Login(LoginRequest request)
@@ -110,6 +112,31 @@ namespace Lexor.Services.Access
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken
             };
+        }
+        public async Task Activate(ActivateAccountRequest request)
+        {
+            var validationResult = await _activateValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+                throw new ValidationException(validationResult.Errors);
+
+            var user = await _dbContext.Set<User>()
+                .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            // Deliberately vague: don't reveal whether the email exists or the code was wrong.
+            if (user == null
+                || user.IsCodeActivated
+                || string.IsNullOrEmpty(user.InvitationCode)
+                || !string.Equals(user.InvitationCode, request.InvitationCode, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BusinessException("Neispravan email ili aktivacijski kod, ili je nalog već aktiviran.");
+            }
+            var salt = _cryptoService.GenerateSalt();
+            user.PasswordSalt = salt;
+            user.PasswordHash = _cryptoService.GenerateHash(request.NewPassword, salt);
+            user.IsCodeActivated = true;
+            user.InvitationCode = null;
+
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

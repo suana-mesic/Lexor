@@ -107,11 +107,12 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
 
   Future<void> _pickDateOfBirth() async {
     final now = DateTime.now();
+    final maxBirth = DateTime(now.year - 18, now.month, now.day); // at least 18
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dateOfBirth ?? now,
+      initialDate: _dateOfBirth ?? maxBirth,
       firstDate: DateTime(now.year - 100),
-      lastDate: DateTime(now.year),
+      lastDate: maxBirth,
     );
     if (picked != null) setState(() => _dateOfBirth = picked);
   }
@@ -292,8 +293,8 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _twoCol(
-                    _text(_firstName, 'Ime', required: true),
-                    _text(_lastName, 'Prezime', required: true),
+                    _text(_firstName, 'Ime', required: true, isName: true),
+                    _text(_lastName, 'Prezime', required: true, isName: true),
                   ),
                   const SizedBox(height: 16),
                   _twoCol(
@@ -665,6 +666,7 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
     bool required = false,
     bool isEmail = false,
     bool isPhone = false,
+    bool isName = false,
   }) {
     return TextFormField(
       controller: c,
@@ -684,8 +686,13 @@ class _EmployeeEditDialogState extends State<EmployeeEditDialog> {
         }
         if (isPhone &&
             t.isNotEmpty &&
-            !RegExp(r'^\+?\d{8,15}$').hasMatch(t.replaceAll(' ', ''))) {
-          return 'Unesite ispravan broj (8–15 cifara, npr. 062 123 456).';
+            !RegExp(r'^(\+387|0)\d{8,9}$').hasMatch(t.replaceAll(' ', ''))) {
+          return 'Unesite validan broj telefona (npr. 062 123 456 ili +387 62 123 456).';
+        }
+        if (isName &&
+            t.isNotEmpty &&
+            !RegExp(r'^[A-Za-zČčĆćŽžŠšĐđ -]+$').hasMatch(t)) {
+          return 'Dozvoljena su samo slova, razmak i crtica.';
         }
         return null;
       },

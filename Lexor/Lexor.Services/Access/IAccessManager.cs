@@ -8,5 +8,6 @@ namespace Lexor.Services.Access
         Task<LoginResponse?> Login(LoginRequest request);
         Task<LoginResponse?> Refresh(RefreshTokenRequest request);
         Task Logout(RefreshTokenRequest request);
+        Task Activate(ActivateAccountRequest request);
     }
 }

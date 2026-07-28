@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lexor_mobile/widgets/header_actions.dart';
 import 'package:lexor_mobile/models/attendance_response.dart';
 import 'package:lexor_mobile/models/leave_response.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
@@ -171,13 +172,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
               fontSize: 20,
             ),
           ),
-          Row(
-            children: [
-              Icon(Icons.notifications, color: Colors.white, size: 26),
-              SizedBox(width: 16),
-              Icon(Icons.person, color: Colors.white, size: 26),
-            ],
-          ),
+          HeaderActions(),
         ],
       ),
     );

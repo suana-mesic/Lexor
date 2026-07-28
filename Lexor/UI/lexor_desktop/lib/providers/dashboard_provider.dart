@@ -44,4 +44,14 @@ class DashboardProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Clears cached dashboard data on logout so a re-login (as another admin) doesn't
+  // briefly show the previous session's figures before the fresh fetch completes.
+  void reset() {
+    dashboard = null;
+    isLoading = false;
+    error = null;
+    sessionExpired = false;
+    notifyListeners();
+  }
 }

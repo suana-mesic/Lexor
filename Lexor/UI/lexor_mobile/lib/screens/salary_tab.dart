@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lexor_mobile/widgets/header_actions.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_mobile/models/salary_slip_response.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
@@ -99,21 +100,35 @@ class _SalaryTabState extends State<SalaryTab> {
               fontSize: 20,
             ),
           ),
-          Row(
-            children: [
-              Icon(Icons.notifications, color: Colors.white, size: 26),
-              SizedBox(width: 16),
-              Icon(Icons.person, color: Colors.white, size: 26),
-            ],
-          ),
+          HeaderActions(),
         ],
       ),
     );
   }
 
   Widget _buildEmpty() {
-    return const Center(
-      child: Text('Nema platnih listi', style: TextStyle(color: Colors.grey)),
+    return Padding(
+      padding: const EdgeInsets.only(top: 80),
+      child: Column(
+        children: [
+          Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Nema platnih listi',
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Ovdje će se prikazati vaše platne liste\nkada budu obračunate.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 
