@@ -11,6 +11,9 @@ public class ApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Marks this host as a test host so startup migrations/seeding are skipped.
+        builder.UseEnvironment("Testing");
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             // Minimal config so the host passes ValidateOnStart and boots for tests.

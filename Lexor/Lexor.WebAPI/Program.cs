@@ -236,20 +236,30 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<LexorDbContext>();
-    var retries = 10;
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<LexorDbContext>();
 
-    while (true)
+    // Integration tests run in the "Testing" environment against a non-relational in-memory
+    // provider, which cannot run migrations, so we migrate and seed only outside of tests.
+    if (!app.Environment.IsEnvironment("Testing"))
     {
-        try
+        var retries = 10;
+
+        while (true)
         {
-            db.Database.Migrate();
-            break;
+            try
+            {
+                db.Database.Migrate();
+                break;
+            }
+            catch when (retries-- > 0)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(5));
+            }
         }
-        catch when(retries-- > 0)
-        {
-            Thread.Sleep(TimeSpan.FromSeconds(5));
-        }
+
+        var crypto = services.GetRequiredService<ICryptoService>();
+        await DataSeeder.SeedAsync(db, crypto);
     }
 }
 
