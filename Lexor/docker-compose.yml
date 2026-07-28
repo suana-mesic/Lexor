@@ -12,6 +12,39 @@ services:
     volumes:
       - sqlserver_data:/var/opt/mssql
 
+  lexor-api:
+    build:
+      context: .
+      dockerfile: Lexor.WebAPI/Dockerfile
+    container_name: lexor-api
+    depends_on:
+      - lexor-db
+      - lexor-rabbitmq
+    env_file:
+      - ./Lexor.WebAPI/.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=lexor-db,1433;Database=230022;User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True;"
+      RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=admin;password=admin"
+    ports:
+      - "5000:8080"
+    restart: unless-stopped
+
+  lexor-worker:
+    build:
+      context: .
+      dockerfile: Lexor.Subscriber/Dockerfile
+    container_name: lexor-worker
+    depends_on:
+      - lexor-db
+      - lexor-rabbitmq
+    env_file:
+      - ./Lexor.Subscriber/.env
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=lexor-db,1433;Database=230022;User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True;"
+      RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=admin;password=admin"
+    restart: unless-stopped
+
   lexor-rabbitmq:
     image: rabbitmq:3-management
     container_name: lexor-rabbitmq
@@ -20,8 +53,8 @@ services:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
     ports:
-      - "5672:5672"     # AMQP — aplikacija se spaja ovdje
-      - "15672:15672"   # Management UI — http://localhost:15672
+      - "5672:5672"
+      - "15672:15672"
 
 volumes:
   sqlserver_data:
