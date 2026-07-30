@@ -36,9 +36,30 @@ namespace Lexor.Services
 
         public override async Task<LegalDocumentResponse> InsertAsync(LegalDocumentInsertRequest request)
         {
+            ValidatePdf(request.FileBase64);
             var response = await base.InsertAsync(request);
             await _bus.PubSub.PublishAsync(new LegalDocumentUploaded { DocumentId = response.Id });
             return response;
+        }
+
+        private static void ValidatePdf(string fileBase64)
+        {
+            byte[] bytes;
+            try
+            {
+                bytes = Convert.FromBase64String(fileBase64);
+            }
+            catch (FormatException)
+            {
+                throw new BusinessException("Sadržaj datoteke nije validan.");
+            }
+
+            // PDF signature: 0x25 0x50 0x44 0x46  ("%PDF")
+            if (bytes.Length < 4 ||
+                bytes[0] != 0x25 || bytes[1] != 0x50 || bytes[2] != 0x44 || bytes[3] != 0x46)
+            {
+                throw new BusinessException("Dozvoljene su samo PDF datoteke.");
+            }
         }
 
         // List view never needs the file bytes — project to the DTO in the query so SQL

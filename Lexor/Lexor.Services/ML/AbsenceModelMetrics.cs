@@ -10,5 +10,7 @@
         public double Precision { get; set; }
         public double Recall { get; set; }
         public int SampleCount { get; set; }
+        public double F1 { get; set; }
+        public double BestThreshold { get; set; }
     }
 }

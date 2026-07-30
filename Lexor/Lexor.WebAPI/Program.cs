@@ -22,7 +22,6 @@ using Scalar.AspNetCore;
 using SmartComponents.LocalEmbeddings;
 using System.Text;
 using System.Threading.RateLimiting;
-using Lexor.Services.ML;
 
 Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -256,7 +255,7 @@ using (var scope = app.Services.CreateScope())
             }
             catch when (retries-- > 0)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(5));
+                await Task.Delay(TimeSpan.FromSeconds(5));  
             }
         }
 
