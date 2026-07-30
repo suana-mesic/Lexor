@@ -29,9 +29,13 @@ namespace Lexor.Subscriber
 
         private async Task HandleAsync(LegalDocumentUploaded message)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var indexer = scope.ServiceProvider.GetRequiredService<ILegalDocumentIndexer>();
-            await indexer.IndexAsync(message.DocumentId);
+            await RetryPolicy.ExecuteWithBackoffAsync(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var indexer = scope.ServiceProvider.GetRequiredService<ILegalDocumentIndexer>();
+                await indexer.IndexAsync(message.DocumentId);
+            }, _logger, $"Indeksiranje pravnog dokumenta {message.DocumentId}");
+
             _logger.LogInformation("Indeksiran pravni dokument {DocumentId}.", message.DocumentId);
         }
     }

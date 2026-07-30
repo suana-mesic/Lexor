@@ -23,9 +23,11 @@ namespace Lexor.Services.Access
         private readonly IBus _bus;
         private readonly IValidator<ForgotPasswordRequest> _forgotPasswordValidator;
         private readonly IValidator<ResetPasswordRequest> _resetPasswordValidator;
+        private readonly IAuthenticatedUserAccessor _userAccessor;
+        private readonly IValidator<ChangePasswordRequest> _changePasswordValidator;
 
         private const int MaxResetAttempts = 5;
-        public AccessManager(LexorDbContext dbContext, ITokenService tokenService, ICryptoService cryptoService, IOptions<JwtTokenOptions> jwtOptions, IValidator<LoginRequest> validator, IValidator<ActivateAccountRequest> activateValidator, IBus bus, IValidator<ForgotPasswordRequest> forgotPasswordValidator, IValidator<ResetPasswordRequest> resetPasswordValidator)
+        public AccessManager(LexorDbContext dbContext, ITokenService tokenService, ICryptoService cryptoService, IOptions<JwtTokenOptions> jwtOptions, IValidator<LoginRequest> validator, IValidator<ActivateAccountRequest> activateValidator, IBus bus, IValidator<ForgotPasswordRequest> forgotPasswordValidator, IValidator<ResetPasswordRequest> resetPasswordValidator, IAuthenticatedUserAccessor userAccessor, IValidator<ChangePasswordRequest> changePasswordValidator)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
@@ -36,6 +38,8 @@ namespace Lexor.Services.Access
             _bus = bus;
             _forgotPasswordValidator = forgotPasswordValidator;
             _resetPasswordValidator = resetPasswordValidator;
+            _userAccessor = userAccessor;
+            _changePasswordValidator = changePasswordValidator;
         }
 
         public async Task<LoginResponse?> Login(LoginRequest request)
@@ -50,7 +54,7 @@ namespace Lexor.Services.Access
             var user = await _dbContext.Set<User>()
                 .Include(u => u.UserRoles)
                     .ThenInclude(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == request.Username);
+                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Username);
 
             if (user == null || !_cryptoService.Verify(user.PasswordHash, user.PasswordSalt, request.Password) || !user.IsActive)
                 return null;
@@ -225,6 +229,35 @@ namespace Lexor.Services.Access
             user.PasswordResetExpiresAt = null;
             user.PasswordResetAttempts = 0;
 
+            var now = DateTime.UtcNow;
+            var activeTokens = await _dbContext.Set<RefreshToken>()
+                .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)
+                .ToListAsync();
+            foreach (var token in activeTokens)
+                token.RevokedAt = now;
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task ChangePasswordAsync(ChangePasswordRequest request)
+        {
+            await _changePasswordValidator.ValidateAndThrowAsync(request);
+
+            var userId = _userAccessor.GetUserId()
+                ?? throw new BusinessException("Korisnik nije autentificiran.");
+
+            var user = await _dbContext.Set<User>().FirstOrDefaultAsync(u => u.Id == userId)
+                ?? throw new BusinessException("Korisnik nije pronađen.");
+
+            // Confirm the current password before allowing a change.
+            if (!_cryptoService.Verify(user.PasswordHash, user.PasswordSalt, request.OldPassword))
+                throw new BusinessException("Trenutna lozinka nije ispravna.");
+
+            var salt = _cryptoService.GenerateSalt();
+            user.PasswordSalt = salt;
+            user.PasswordHash = _cryptoService.GenerateHash(request.NewPassword, salt);
+
+            // Revoke active refresh tokens so other sessions must re-authenticate.
             var now = DateTime.UtcNow;
             var activeTokens = await _dbContext.Set<RefreshToken>()
                 .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)

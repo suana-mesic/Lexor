@@ -2,6 +2,7 @@ using Lexor.Model.Constants;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services;
+using Lexor.Services.Access;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,10 +15,12 @@ namespace Lexor.WebAPI.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
+        private readonly IAccessManager _accessManager;
 
-        public ProfileController(IEmployeeService employeeService)
+        public ProfileController(IEmployeeService employeeService, IAccessManager accessManager)
         {
             _employeeService = employeeService;
+            _accessManager = accessManager;
         }
 
         [HttpGet]
@@ -32,6 +35,13 @@ namespace Lexor.WebAPI.Controllers
         {
             var result = await _employeeService.UpdateMyProfileAsync(request);
             return Ok(result);
+        }
+
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            await _accessManager.ChangePasswordAsync(request);
+            return NoContent();
         }
     }
 }

@@ -58,9 +58,13 @@ namespace Lexor.Subscriber
                 RelatedEntityId = message.LeaveId
             });
 
-            await db.SaveChangesAsync();
-            _logger.LogInformation("Kreirana notifikacija za odsustvo {LeaveId} ({State}).", message.LeaveId, message.NewState);
+            await RetryPolicy.ExecuteWithBackoffAsync(async () =>
+            {
+                await db.SaveChangesAsync();
 
+            }, _logger, $"Kreiranje notifikacije za odsustvo {message.LeaveId} {message.NewState}");
+
+            _logger.LogInformation("Kreirana notifikacija za odsustvo {LeaveId} ({State}).", message.LeaveId, message.NewState);
         }
     }
 }

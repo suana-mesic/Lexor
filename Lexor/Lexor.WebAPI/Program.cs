@@ -59,6 +59,7 @@ TypeAdapterConfig<RoleUpdateRequest, Role>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<CityUpdateRequest, City>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<CountryUpdateRequest, Country>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<DepartmentUpdateRequest, Department>.NewConfig().IgnoreNullValues(true);
+TypeAdapterConfig<NewsUpdateRequest, News>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<PositionUpdateRequest, Position>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<ContractTypeUpdateRequest, ContractType>.NewConfig().IgnoreNullValues(true);
 TypeAdapterConfig<LegalDocumentCategoryUpdateRequest, LegalDocumentCategory>.NewConfig().IgnoreNullValues(true);
@@ -92,6 +93,7 @@ builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<ICityService, CityService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<ISalarySlipService, SalarySlipService>();
 builder.Services.AddScoped<IContractTypeService, ContractTypeService>();
@@ -138,6 +140,9 @@ builder.Services.AddScoped<IValidator<LeaveInsertRequest>, LeaveInsertValidator>
 builder.Services.AddScoped<IValidator<ActivateAccountRequest>, ActivateAccountValidator>();
 builder.Services.AddScoped<IValidator<ForgotPasswordRequest>, ForgotPasswordValidator>();
 builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
+builder.Services.AddScoped<IValidator<ChangePasswordRequest>, ChangePasswordValidator>();
+builder.Services.AddScoped<IValidator<NewsInsertRequest>, NewsInsertValidator>();
+builder.Services.AddScoped<IValidator<NewsUpdateRequest>, NewsUpdateValidator>();
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
 builder.Services.AddScoped<IValidator<CityUpdateRequest>, CityUpdateValidator>();

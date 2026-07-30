@@ -15,7 +15,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-  bool _obscure = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _codeSent = false;
 
@@ -179,18 +180,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   _label('Nova lozinka'),
                   TextField(
                     controller: _passwordController,
-                    obscureText: _obscure,
+                    obscureText: _obscureNew,
                     textInputAction: TextInputAction.next,
                     decoration: inputDecoration.copyWith(
                       hintText: 'Najmanje 6 znakova',
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscure
+                          _obscureNew
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           color: Colors.grey,
                         ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
+                        onPressed: () =>
+                            setState(() => _obscureNew = !_obscureNew),
                       ),
                     ),
                   ),
@@ -198,11 +200,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   _label('Potvrdite lozinku'),
                   TextField(
                     controller: _confirmController,
-                    obscureText: _obscure,
+                    obscureText: _obscureConfirm,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _resetPassword(),
                     decoration: inputDecoration.copyWith(
                       hintText: 'Ponovite lozinku',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                      ),
                     ),
                   ),
                 ],

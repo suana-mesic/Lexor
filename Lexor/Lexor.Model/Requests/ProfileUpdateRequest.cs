@@ -4,8 +4,10 @@ namespace Lexor.Model.Requests
     // (no department/position/salary) so self-service can't touch HR/org data.
     public class ProfileUpdateRequest
     {
+        public string? Username { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Address { get; set; }
+        public string? ProfileImageBase64 { get; set; }
     }
 }

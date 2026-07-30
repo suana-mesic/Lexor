@@ -26,9 +26,13 @@ namespace Lexor.Subscriber
 
         private async Task HandleAsync(PasswordResetRequested message)
         {
-            const string subject = "Lexor — kod za resetovanje lozinke";
-            var body = BuildBody(message.FullName, message.Code);
-            await _emailSender.SendAsync(message.Email, subject, body);
+            await RetryPolicy.ExecuteWithBackoffAsync(async () =>
+            {
+                const string subject = "Lexor — kod za resetovanje lozinke";
+                var body = BuildBody(message.FullName, message.Code);
+                await _emailSender.SendAsync(message.Email, subject, body);
+            }, _logger, $"Slanje reset koda na {message.Email}");
+
             _logger.LogInformation("Kod za reset lozinke poslan na {Email}.", message.Email);
         }
 

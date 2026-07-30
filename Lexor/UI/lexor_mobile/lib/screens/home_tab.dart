@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_mobile/models/news_response.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
+import 'package:lexor_mobile/providers/news_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/create_leave_request.dart';
 import 'package:lexor_mobile/screens/profile_screen.dart';
@@ -51,6 +55,7 @@ class HomeTab extends StatelessWidget {
       context,
       listen: true,
     );
+    final newsProvider = Provider.of<NewsProvider>(context, listen: true);
 
     final errorMessage =
         attendanceProvider.error ??
@@ -83,11 +88,157 @@ class HomeTab extends StatelessWidget {
               _buildQuickActions(context),
               const SizedBox(height: 24),
               _buildRecentActivities(salarySlipProvider, leaveProvider),
+              const SizedBox(height: 24),
+              _buildNews(context, newsProvider),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildNews(BuildContext context, NewsProvider provider) {
+    if (provider.news.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Obavijesti kompanije',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ...provider.news.map((n) => _newsCard(context, n)),
+      ],
+    );
+  }
+
+  Widget _newsCard(BuildContext context, NewsItem n) {
+    return GestureDetector(
+      onTap: () => _showNewsDetails(context, n),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (n.imageBase64 != null && n.imageBase64!.isNotEmpty)
+              _newsImage(n.imageBase64!),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    n.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('dd.MM.yyyy').format(n.publishedAt.toLocal()),
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    n.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Detalji →',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNewsDetails(BuildContext context, NewsItem n) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (_, controller) => SingleChildScrollView(
+          controller: controller,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(sheetContext),
+                ),
+              ),
+              if (n.imageBase64 != null && n.imageBase64!.isNotEmpty)
+                _newsImage(n.imageBase64!),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      n.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      DateFormat('dd.MM.yyyy. HH:mm').format(n.publishedAt.toLocal()),
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      n.content,
+                      style: const TextStyle(fontSize: 15, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _newsImage(String base64Image) {
+    try {
+      return Image.memory(
+        base64Decode(base64Image),
+        height: 140,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
   }
 
   Widget _buildHeader(BuildContext context, AuthProvider authProvider) {

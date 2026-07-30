@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
                     const Text(
-                      'Korisničko ime',
+                      'Email ili korisničko ime',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -157,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _usernameController,
                       textInputAction: TextInputAction.next,
                       decoration: inputDecoration.copyWith(
-                        hintText: 'Unesite korisničko ime',
+                        hintText: 'Unesite email ili korisničko ime',
                         prefixIcon: const Icon(
                           Icons.person_outline,
                           color: Colors.grey,

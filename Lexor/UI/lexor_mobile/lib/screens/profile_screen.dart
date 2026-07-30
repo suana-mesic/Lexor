@@ -6,6 +6,8 @@ import 'package:lexor_mobile/helpers/snackbar_helper.dart';
 import 'package:lexor_mobile/models/profile_response.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
 import 'package:lexor_mobile/providers/profile_provider.dart';
+import 'package:lexor_mobile/screens/change_password_screen.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lexor_mobile/screens/login_screen.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
 import 'package:lexor_mobile/widgets/error_view.dart';
@@ -26,9 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final DateFormat _dateFormat = DateFormat('dd.MM.yyyy');
 
   bool _editing = false;
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
+  final _picker = ImagePicker();
+  String? _editImageBase64;
 
   @override
   void initState() {
@@ -40,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
@@ -47,10 +53,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _enterEdit(ProfileResponse p) {
+    _usernameController.text = p.user.username ?? p.user.email;
     _emailController.text = p.user.email;
     _phoneController.text = p.user.phoneNumber ?? '';
     _addressController.text = p.address;
+    _editImageBase64 = p.user.profileImageBase64;
     setState(() => _editing = true);
+  }
+
+  Future<void> _pickProfileImage() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 400,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    setState(() => _editImageBase64 = base64Encode(bytes));
   }
 
   Future<void> _save() async {
@@ -69,11 +89,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackbarHelper.showError(context, 'Unesite ispravan email.');
       return;
     }
+    final username = _usernameController.text.trim();
+    if (username.isEmpty) {
+      SnackbarHelper.showError(context, 'Korisničko ime ne može biti prazno.');
+      return;
+    }
     final provider = Provider.of<ProfileProvider>(context, listen: false);
     final ok = await provider.updateProfile(
+      username: username,
       email: _emailController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       address: _addressController.text.trim(),
+      profileImageBase64: _editImageBase64,
     );
     if (!mounted) return;
     if (ok) {
@@ -173,7 +200,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _header(p),
                   const SizedBox(height: 20),
                   if (_editing) _editForm(provider) else _details(p),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+                  _changePasswordButton(),
+                  const SizedBox(height: 12),
                   _logoutButton(),
                 ],
               ),
@@ -318,10 +347,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Uredi kontakt podatke',
+            'Uredi profil',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 16),
+          Center(child: _editAvatar()),
+          const SizedBox(height: 20),
+          _field('Korisničko ime', _usernameController),
+          const SizedBox(height: 12),
           _field(
             'Email',
             _emailController,
@@ -374,6 +407,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _editAvatar() {
+    final img = _editImageBase64;
+    ImageProvider? bg;
+    if (img != null && img.isNotEmpty) {
+      try {
+        bg = MemoryImage(base64Decode(img));
+      } catch (_) {
+        bg = null;
+      }
+    }
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 44,
+          backgroundColor: Colors.grey.shade200,
+          backgroundImage: bg,
+          child: bg == null
+              ? Icon(Icons.person, size: 44, color: Colors.grey.shade500)
+              : null,
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: _pickProfileImage,
+          icon: const Icon(Icons.photo_camera_outlined, size: 18),
+          label: Text(img == null ? 'Dodaj sliku' : 'Promijeni sliku'),
+        ),
+      ],
     );
   }
 
@@ -441,6 +504,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _changePasswordButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+        ),
+        icon: const Icon(Icons.lock_outline),
+        label: const Text('Promijeni lozinku'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
       ),
     );
   }

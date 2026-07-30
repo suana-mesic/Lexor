@@ -143,6 +143,30 @@ namespace Lexor.Services.Database
                 db.Employees.Add(employee);
             }
 
+            // ----- Company announcements (news) -----
+            db.News.AddRange(
+                new News
+                {
+                    Title = "Kolektivni godišnji odmor",
+                    Content = "Obavještavamo sve uposlenike da je kolektivni godišnji odmor planiran za period od 1. do 15. augusta. Molimo da svoje obaveze uskladite na vrijeme.",
+                    ImageBase64 = SeedNews.Images[0],
+                    PublishedAt = new DateTime(2026, 7, 20, 9, 0, 0, DateTimeKind.Utc)
+                },
+                new News
+                {
+                    Title = "Nova politika rada od kuće",
+                    Content = "Od 1. septembra uvodimo mogućnost rada od kuće do dva dana sedmično, uz prethodni dogovor sa nadređenim. Detalji su dostupni u HR odjelu.",
+                    ImageBase64 = SeedNews.Images[1],
+                    PublishedAt = new DateTime(2026, 7, 15, 9, 0, 0, DateTimeKind.Utc)
+                },
+                new News
+                {
+                    Title = "Raspored isplate plata",
+                    Content = "Isplata plata za tekući mjesec bit će izvršena 5. u narednom mjesecu. Za sva pitanja obratite se finansijskom odjelu.",
+                    ImageBase64 = SeedNews.Images[2],
+                    PublishedAt = new DateTime(2026, 7, 10, 9, 0, 0, DateTimeKind.Utc)
+                });
+
             await db.SaveChangesAsync();
         }
 

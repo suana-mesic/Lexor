@@ -7,6 +7,11 @@ namespace Lexor.Services.Validators
     {
         public ProfileUpdateValidator()
         {
+            RuleFor(x => x.Username)
+                .NotEmpty().WithMessage("Korisničko ime ne može biti prazno.")
+                .MaximumLength(100).WithMessage("Korisničko ime ne može imati više od 100 karaktera.")
+                .When(x => x.Username != null);
+
             RuleFor(x => x.Email)
                 .EmailAddress().WithMessage("Email mora biti validna email adresa.")
                 .MaximumLength(100).WithMessage("Email ne može imati više od 100 karaktera.")

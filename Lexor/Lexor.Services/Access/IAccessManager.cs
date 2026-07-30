@@ -11,5 +11,6 @@ namespace Lexor.Services.Access
         Task Activate(ActivateAccountRequest request);
         Task ForgotPassword(ForgotPasswordRequest request);
         Task ResetPassword(ResetPasswordRequest request);
+        Task ChangePasswordAsync(ChangePasswordRequest request);
     }
 }

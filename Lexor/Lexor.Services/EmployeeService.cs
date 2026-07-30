@@ -218,9 +218,19 @@ namespace Lexor.Services
                 throw new NotFoundException("Profil nije pronađen za trenutnog korisnika.");
 
             // Only contact details — never job/org fields (department, position, salary…).
+            if (request.Username != null && request.Username != employee.User.Username)
+            {
+                var taken = await _dbContext.Set<User>()
+                    .AnyAsync(u => u.Username == request.Username && u.Id != employee.UserId);
+                if (taken)
+                    throw new BusinessException("Korisničko ime je već zauzeto.");
+                employee.User.Username = request.Username;
+            }
             if (request.Email != null) employee.User.Email = request.Email;
             if (request.PhoneNumber != null) employee.User.PhoneNumber = request.PhoneNumber;
             if (request.Address != null) employee.Address = request.Address;
+            if (request.ProfileImageBase64 != null)
+                employee.User.ProfileImageBase64 = request.ProfileImageBase64;
 
             ApplyUpdateAuditFields(employee);
             await _dbContext.SaveChangesAsync();

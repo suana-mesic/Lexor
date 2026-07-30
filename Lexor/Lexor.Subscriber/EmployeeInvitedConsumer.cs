@@ -29,9 +29,13 @@ namespace Lexor.Subscriber
 
         private async Task HandleAsync(EmployeeInvited message)
         {
-            const string subject = "Dobrodošli u Lexor — aktivirajte svoj nalog";
-            var body = BuildBody(message.FullName, message.InvitationCode);
-            await _emailSender.SendAsync(message.Email, subject, body);
+            await RetryPolicy.ExecuteWithBackoffAsync(async () =>
+            {
+                const string subject = "Dobrodošli u Lexor — aktivirajte svoj nalog";
+                var body = BuildBody(message.FullName, message.InvitationCode);
+                await _emailSender.SendAsync(message.Email, subject, body);
+            }, _logger, $"Slanje pozivnice na {message.Email}");
+
             _logger.LogInformation("Pozivnica poslana na {Email}.", message.Email);
         }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
+import 'package:lexor_mobile/providers/news_provider.dart';
 import 'package:lexor_mobile/providers/notification_provider.dart';
 import 'package:lexor_mobile/providers/salary_slip_provider.dart';
 import 'package:lexor_mobile/screens/attendance_tab.dart';
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
         listen: false,
       ).fetchLatestSalarySlip();
       Provider.of<LeaveProvider>(context, listen: false).fetchLeaves();
+      Provider.of<NewsProvider>(context, listen: false).fetchNews();
       _notif = Provider.of<NotificationProvider>(context, listen: false);
       _notif!.startPolling();
     });

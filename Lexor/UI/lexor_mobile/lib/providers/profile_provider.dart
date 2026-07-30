@@ -25,9 +25,11 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   Future<bool> updateProfile({
+    required String username,
     required String email,
     required String phoneNumber,
     required String address,
+    String? profileImageBase64,
   }) async {
     isSaving = true;
     error = null;
@@ -35,7 +37,13 @@ class ProfileProvider extends ChangeNotifier {
     try {
       final data = await ApiClient.put(
         '/Profile',
-        body: {'email': email, 'phoneNumber': phoneNumber, 'address': address},
+        body: {
+          'username': username,
+          'email': email,
+          'phoneNumber': phoneNumber,
+          'address': address,
+          'profileImageBase64': profileImageBase64,
+        },
       );
       profile = ProfileResponse.fromJson(data);
       return true;
