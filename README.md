@@ -1,0 +1,119 @@
+# Lexor — HR sistem za upravljanje uposlenicima
+
+Lexor je sistem za upravljanje ljudskim resursima (HR) razvijen za predmet **Razvoj softvera II** (FIT Mostar).
+Sastoji se od REST API-ja, pomoćnog worker servisa, desktop administrativne aplikacije i mobilne aplikacije za uposlenike.
+
+## Funkcionalnosti
+
+- **Uposlenici, ugovori, odjeli, pozicije** — CRUD i referentni podaci.
+- **Prisustvo (RFID)**, **zahtjevi za odsustvo** (state machine: `Pending → Approved/Rejected → Completed/Cancelled`) i **obračun plata** (`Pending → Approved → Paid`).
+- **PDF izvještaji** (QuestPDF) u desktop aplikaciji.
+- **AI chatbot** nad pravnim dokumentima (RAG: lokalni embeddingi + Groq LLM).
+- **ML predikcija odsustva** (FastTree klasifikacija) — vidi [recommender-dokumentacija.md](recommender-dokumentacija.md).
+- **Aktivacija naloga e-mailom, reset lozinke, zaštita od brute-force napada i rate limiting.**
+
+## Tehnologije
+
+- **Backend:** .NET 9, ASP.NET Core, EF Core 9, SQL Server, RabbitMQ (EasyNetQ), ML.NET, MailKit.
+- **Desktop i mobilna aplikacija:** Flutter.
+- **Infrastruktura:** Docker / docker-compose.
+
+## Arhitektura (servisi)
+
+| Servis | Uloga |
+|---|---|
+| `Lexor.WebAPI` | Glavni REST API (desktop + mobilni klijent). Objavljuje poruke na RabbitMQ. |
+| `Lexor.Subscriber` | Pomoćni worker (zaseban kontejner) — sluša RabbitMQ i šalje e-mailove, indeksira dokumente, obrađuje notifikacije. |
+| `lexor-db` | SQL Server baza. |
+| `lexor-rabbitmq` | RabbitMQ posrednik poruka. |
+
+---
+
+## Preduslovi
+
+- [Docker Desktop](https://www.docker.com/)
+- [.NET 9 SDK](https://dotnet.microsoft.com/) (za lokalni razvoj)
+- [Flutter](https://flutter.dev/) (za desktop/mobilnu aplikaciju)
+
+## Konfiguracija (.env)
+
+Tajne se čuvaju u `.env` datotekama (nisu u gitu). Kopiraj priložene `.env.example` u `.env` i popuni vrijednosti:
+
+```bash
+cp Lexor/.env.example Lexor/.env
+cp Lexor/Lexor.WebAPI/.env.example Lexor/Lexor.WebAPI/.env
+cp Lexor/Lexor.Subscriber/.env.example Lexor/Lexor.Subscriber/.env
+```
+
+Popuni najmanje: `DB_SA_PASSWORD`, `JwtToken__SecretKey`, `Groq__ApiKey` i SMTP podatke (`Smtp__*`) u `Lexor.Subscriber/.env`.
+
+> Pri predaji je `.env` zamijenjen `.env-tajne.zip` arhivom (šifra: `fit`).
+
+---
+
+## Pokretanje
+
+### Opcija A — Cijeli sistem u Dockeru (preporučeno za pregled)
+
+Iz foldera `Lexor/`:
+
+```bash
+docker compose up -d --build
+```
+
+Ovim se dižu sva 4 servisa. API na startu automatski primjenjuje migracije i puni bazu demo podacima
+(30 uposlenika, ~3 godine historije prisustva). API je dostupan na `http://localhost:5170`.
+
+Zaustavljanje:
+
+```bash
+docker compose down          # zadržava podatke
+docker compose down -v       # briše i bazu (čist start)
+```
+
+### Opcija B — Backend lokalno, infrastruktura u Dockeru (za razvoj)
+
+```bash
+docker compose up -d lexor-db lexor-rabbitmq
+dotnet run --project Lexor.WebAPI
+dotnet run --project Lexor.Subscriber
+```
+
+### Desktop aplikacija (Windows)
+
+```bash
+cd Lexor/UI/lexor_desktop
+flutter run -d windows
+```
+API adresa se čita iz `String.fromEnvironment('API_BASE_URL')` (default `http://localhost:5170`).
+Za drugačiji port: `flutter run -d windows --dart-define=API_BASE_URL=http://localhost:5170`.
+
+### Mobilna aplikacija (Android emulator)
+
+```bash
+cd Lexor/UI/lexor_mobile
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5170
+```
+`10.0.2.2` je standardna adresa hosta iz Android emulatora.
+
+> Napomena: docker-compose izlaže API na portu **5170** (`5170:8080`), usklađeno sa default adresom aplikacija.
+
+---
+
+## Korisnički podaci za pristup
+
+| Kontekst | Korisničko ime | Lozinka |
+|---|---|---|
+| Desktop (administrator) | `admin@lexor.ba` | `Admin123!` |
+| Mobilna (uposlenik) | `ime.prezime@lexor.ba` (npr. `amina.hodzic@lexor.ba`) | `Test123!` |
+
+Primjeri uposlenika: `amina.hodzic@lexor.ba`, `emir.kovacevic@lexor.ba`, `lejla.begic@lexor.ba`, `tarik.delic@lexor.ba` — svi sa lozinkom `Test123!`.
+
+---
+
+## Testovi
+
+```bash
+dotnet test Lexor/Lexor.Tests
+```
+Integracijski test provjerava rate limiting na login endpointu (11. zahtjev u minuti vraća HTTP 429).

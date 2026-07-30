@@ -27,7 +27,7 @@ services:
       ConnectionStrings__DefaultConnection: "Server=lexor-db,1433;Database=230022;User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True;"
       RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=admin;password=admin"
     ports:
-      - "5000:8080"
+      - "5170:8080"
     restart: unless-stopped
 
   lexor-worker:
