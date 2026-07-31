@@ -78,6 +78,7 @@ namespace Lexor.Services.Database
 
             // ----- Admin (desktop) account -----
             var admin = BuildUser(crypto, "Amela", "Admin", "admin@lexor.ba", "061100100", "Admin123!");
+            admin.Username = "admin";
             admin.UserRoles.Add(new UserRole { RoleId = 1, DateAssigned = DateTime.UtcNow });
             db.Users.Add(admin);
             await db.SaveChangesAsync(); // persist so admin.Id can be used as CreatedByUserId
@@ -90,6 +91,7 @@ namespace Lexor.Services.Database
 
                 var email = $"{Asciify(first)}.{Asciify(last)}@lexor.ba";
                 var user = BuildUser(crypto, first, last, email, RandomPhone(rng), "Test123!");
+                user.Username = $"{Asciify(first)}.{Asciify(last)}";
                 user.ProfileImageBase64 = SeedAvatars.Base64[i];
                 user.UserRoles.Add(new UserRole { RoleId = 2, DateAssigned = HistoryStart.ToDateTime(TimeOnly.MinValue) });
 

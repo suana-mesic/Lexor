@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_desktop/helpers/image_decode.dart';
 import 'package:lexor_desktop/models/employee_response.dart';
 import 'package:lexor_desktop/providers/employee_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
@@ -147,6 +148,37 @@ class _EmployeeDetailsDialogState extends State<EmployeeDetailsDialog> {
     );
   }
 
+  Widget _avatar(EmployeeResponse e) {
+    final img = e.user.profileImageBase64;
+    ImageProvider? bg;
+    if (img != null && img.isNotEmpty) {
+      try {
+        bg = MemoryImage(cachedImageBytes(img));
+      } catch (_) {
+        bg = null;
+      }
+    }
+    return CircleAvatar(
+      radius: 32,
+      backgroundColor: AppColors.primary,
+      backgroundImage: bg,
+      child: bg == null
+          ? Text(
+              _initials(e.user.fullName),
+              style: const TextStyle(color: Colors.white, fontSize: 20),
+            )
+          : null,
+    );
+  }
+
+  String _initials(String fullName) {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    final first = parts.first[0];
+    final last = parts.length > 1 ? parts.last[0] : '';
+    return '$first$last'.toUpperCase();
+  }
+
   Widget _personalCard(EmployeeResponse e) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -157,14 +189,30 @@ class _EmployeeDetailsDialogState extends State<EmployeeDetailsDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            e.user.fullName,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${e.position?.name ?? '-'} • ${e.department?.name ?? '-'}',
-            style: TextStyle(color: Colors.grey[700]),
+          Row(
+            children: [
+              _avatar(e),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      e.user.fullName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${e.position?.name ?? '-'} • ${e.department?.name ?? '-'}',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Wrap(

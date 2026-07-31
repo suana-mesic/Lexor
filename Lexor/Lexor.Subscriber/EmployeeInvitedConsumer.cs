@@ -32,19 +32,21 @@ namespace Lexor.Subscriber
             await RetryPolicy.ExecuteWithBackoffAsync(async () =>
             {
                 const string subject = "Dobrodošli u Lexor — aktivirajte svoj nalog";
-                var body = BuildBody(message.FullName, message.InvitationCode);
+                var body = BuildBody(message.FullName, message.Username, message.InvitationCode);
                 await _emailSender.SendAsync(message.Email, subject, body);
             }, _logger, $"Slanje pozivnice na {message.Email}");
 
             _logger.LogInformation("Pozivnica poslana na {Email}.", message.Email);
         }
 
-        private static string BuildBody(string fullName, string code) =>
+        private static string BuildBody(string fullName, string username, string code) =>
             $@"<p>Poštovani/a {fullName},</p>
             <p>Za vas je kreiran nalog u <b>Lexor HR</b> aplikaciji.</p>
+            <p>Vaše korisničko ime za prijavu je: <b>{username}</b></p>
             <p>Vaš aktivacijski kod je:</p>
             <p style=""font-size:22px; font-weight:bold; letter-spacing:2px;"">{code}</p>
             <p>Otvorite aplikaciju, idite na <b>Aktivacija naloga</b> i unesite svoj email, ovaj kod i novu lozinku.</p>
+            <p>Za prijavu možete koristiti svoje korisničko ime ili email.</p>
             <p>Srdačan pozdrav,<br/>Lexor HR</p>";
     }
 }

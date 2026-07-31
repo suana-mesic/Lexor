@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_mobile/helpers/image_decode.dart';
 import 'package:lexor_mobile/models/news_response.dart';
 import 'package:lexor_mobile/providers/attendance_provider.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
@@ -65,32 +64,37 @@ class HomeTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, authProvider),
-              const SizedBox(height: 16),
-              if (errorMessage != null) ...[
-                ErrorBanner(
-                  message: errorMessage,
-                  onRetry: () {
-                    attendanceProvider.fetchSummary();
-                    salarySlipProvider.fetchLatestSalarySlip();
-                    leaveProvider.fetchLatestLeave();
-                  },
-                ),
+        // Disable Android 12+ stretch overscroll, which visually scales the content
+        // (making the text look huge) when pulling past the top/bottom.
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context, authProvider),
                 const SizedBox(height: 16),
+                if (errorMessage != null) ...[
+                  ErrorBanner(
+                    message: errorMessage,
+                    onRetry: () {
+                      attendanceProvider.fetchSummary();
+                      salarySlipProvider.fetchLatestSalarySlip();
+                      leaveProvider.fetchLatestLeave();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                _buildStatCards(attendanceProvider),
+                const SizedBox(height: 24),
+                _buildQuickActions(context),
+                const SizedBox(height: 24),
+                _buildRecentActivities(salarySlipProvider, leaveProvider),
+                const SizedBox(height: 24),
+                _buildNews(context, newsProvider),
               ],
-              _buildStatCards(attendanceProvider),
-              const SizedBox(height: 24),
-              _buildQuickActions(context),
-              const SizedBox(height: 24),
-              _buildRecentActivities(salarySlipProvider, leaveProvider),
-              const SizedBox(height: 24),
-              _buildNews(context, newsProvider),
-            ],
+            ),
           ),
         ),
       ),
@@ -231,7 +235,7 @@ class HomeTab extends StatelessWidget {
   Widget _newsImage(String base64Image) {
     try {
       return Image.memory(
-        base64Decode(base64Image),
+        cachedImageBytes(base64Image),
         height: 140,
         width: double.infinity,
         fit: BoxFit.cover,

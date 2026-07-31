@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_desktop/helpers/image_decode.dart';
 import 'package:lexor_desktop/models/news_response.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
@@ -208,7 +209,7 @@ class _NewsScreenState extends State<NewsScreen> {
   Widget _thumb(String base64Image) {
     try {
       return Image.memory(
-        base64Decode(base64Image),
+        cachedImageBytes(base64Image),
         width: 140,
         fit: BoxFit.cover,
       );
@@ -238,7 +239,7 @@ class _NewsScreenState extends State<NewsScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
-                      base64Decode(n.imageBase64!),
+                      cachedImageBytes(n.imageBase64!),
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
@@ -382,7 +383,7 @@ class _NewsDialogState extends State<_NewsDialog> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.memory(
-                    base64Decode(_imageBase64!),
+                    cachedImageBytes(_imageBase64!),
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,

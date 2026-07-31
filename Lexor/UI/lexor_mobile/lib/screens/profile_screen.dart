@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_mobile/helpers/image_decode.dart';
 import 'package:lexor_mobile/helpers/snackbar_helper.dart';
 import 'package:lexor_mobile/models/profile_response.dart';
 import 'package:lexor_mobile/providers/auth_provider.dart';
@@ -253,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         return CircleAvatar(
           radius: 40,
-          backgroundImage: MemoryImage(base64Decode(img)),
+          backgroundImage: MemoryImage(cachedImageBytes(img)),
         );
       } catch (_) {
         // Fall through to initials if the stored image can't be decoded.
@@ -415,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ImageProvider? bg;
     if (img != null && img.isNotEmpty) {
       try {
-        bg = MemoryImage(base64Decode(img));
+        bg = MemoryImage(cachedImageBytes(img));
       } catch (_) {
         bg = null;
       }

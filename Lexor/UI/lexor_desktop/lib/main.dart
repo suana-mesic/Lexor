@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_desktop/providers/absence_prediction_provider.dart';
+import 'package:lexor_desktop/providers/account_provider.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/dashboard_provider.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
@@ -26,6 +27,7 @@ class LexorDesktopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => AbsencePredictionProvider()),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
+        ChangeNotifierProvider(create: (_) => AccountProvider()),
       ],
       child: MaterialApp(
         title: 'Lexor HR Admin',

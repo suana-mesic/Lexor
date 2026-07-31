@@ -19,6 +19,8 @@ import 'package:lexor_desktop/screens/absence_prediction_screen.dart';
 import 'package:lexor_desktop/providers/absence_prediction_provider.dart';
 import 'package:lexor_desktop/screens/news_screen.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
+import 'package:lexor_desktop/screens/my_profile_screen.dart';
+import 'package:lexor_desktop/providers/account_provider.dart';
 
 const Color _sidebarBg = AppColors.primary;
 const Color _navActive = AppColors.navActive;
@@ -42,6 +44,7 @@ const _navItems = [
   _NavItem(Icons.storage_outlined, 'Referentni podaci'),
   _NavItem(Icons.insights_outlined, 'Predikcija odsustva'),
   _NavItem(Icons.campaign_outlined, 'Obavijesti'),
+  _NavItem(Icons.account_circle_outlined, 'Moj profil'),
 ];
 
 class MainShell extends StatefulWidget {
@@ -53,6 +56,15 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load the current admin's account so the header can show their name/avatar.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AccountProvider>(context, listen: false).fetch();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +114,8 @@ class _MainShellState extends State<MainShell> {
         return const AbsencePredictionScreen();
       case 11:
         return const NewsScreen();
+      case 12:
+        return const MyProfileScreen();
       default:
         return const Center(child: Text('Uskoro...'));
     }
@@ -154,6 +168,7 @@ class _MainShellState extends State<MainShell> {
                   listen: false,
                 ).reset();
                 Provider.of<NewsProvider>(context, listen: false).reset();
+                Provider.of<AccountProvider>(context, listen: false).reset();
                 await authProvider.logout();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),

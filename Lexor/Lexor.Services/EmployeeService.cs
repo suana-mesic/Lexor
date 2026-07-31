@@ -35,7 +35,8 @@ namespace Lexor.Services
         public override async Task<PageResult<EmployeeResponse>> GetAllAsync(EmployeeSearchObject? search = null)
         {
             var result = await base.GetAllAsync(search);
-            // List view doesn't need the (potentially large) profile image — keep payloads slim.
+            // List endpoints must not return large base64 payloads (see guideline 8.2), so the
+            // list shows initials and the profile photo is loaded only in the details view.
             foreach (var e in result.Items)
                 e.User.ProfileImageBase64 = null;
             return result;
@@ -97,7 +98,7 @@ namespace Lexor.Services
             try
             {
                 user = _mapper.Map<User>(request.User);
-                user.Username = user.Email; // employees log in with their email
+                user.Username = await GenerateUniqueUsernameAsync(user.FirstName, user.LastName);
                 user.InvitationCode = GenerateInvitationCode();
                 _dbContext.Users.Add(user);            
                 await _dbContext.SaveChangesAsync();
@@ -129,6 +130,7 @@ namespace Lexor.Services
                 await _bus.PubSub.PublishAsync(new EmployeeInvited
                 {
                     Email = user.Email,
+                    Username = user.Username,
                     FullName = $"{user.FirstName} {user.LastName}",
                     InvitationCode = user.InvitationCode!
                 });
@@ -189,6 +191,24 @@ namespace Lexor.Services
         {
             var bytes = RandomNumberGenerator.GetBytes(length);
             return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
+        }
+
+        // Builds a login username from the name ("ime.prezime"), transliterating Bosnian
+        // diacritics, and appends a number if that username is already taken.
+        private async Task<string> GenerateUniqueUsernameAsync(string firstName, string lastName)
+        {
+            static string Normalize(string value) => value.Trim().ToLowerInvariant()
+                .Replace("dž", "dz").Replace("č", "c").Replace("ć", "c")
+                .Replace("š", "s").Replace("ž", "z").Replace("đ", "dj")
+                .Replace(" ", "");
+
+            var baseName = $"{Normalize(firstName)}.{Normalize(lastName)}";
+            var username = baseName;
+            var suffix = 1;
+            while (await _dbContext.Users.AnyAsync(u => u.Username == username))
+                username = $"{baseName}{++suffix}";
+
+            return username;
         }
 
         public async Task<EmployeeResponse> GetMyProfileAsync()

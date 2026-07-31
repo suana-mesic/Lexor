@@ -94,6 +94,7 @@ builder.Services.AddScoped<ICityService, CityService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<ISalarySlipService, SalarySlipService>();
 builder.Services.AddScoped<IContractTypeService, ContractTypeService>();
@@ -143,6 +144,7 @@ builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValida
 builder.Services.AddScoped<IValidator<ChangePasswordRequest>, ChangePasswordValidator>();
 builder.Services.AddScoped<IValidator<NewsInsertRequest>, NewsInsertValidator>();
 builder.Services.AddScoped<IValidator<NewsUpdateRequest>, NewsUpdateValidator>();
+builder.Services.AddScoped<IValidator<AccountUpdateRequest>, AccountUpdateValidator>();
 
 builder.Services.AddScoped<IValidator<CountryUpdateRequest>, CountriesUpdateValidator>();
 builder.Services.AddScoped<IValidator<CityUpdateRequest>, CityUpdateValidator>();
