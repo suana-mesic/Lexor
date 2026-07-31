@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles = RoleNames.Accounting)]
     public class PayrollSettingsController : BaseCRUDController<PayrollSettingsResponse, PayrollSettingsSearchObject, IPayrollSettingsService, PayrollSettingsInsertRequest, PayrollSettingsUpdateRequest>
     {
         public PayrollSettingsController(IPayrollSettingsService service) : base(service)

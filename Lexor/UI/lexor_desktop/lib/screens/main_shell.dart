@@ -25,26 +25,32 @@ import 'package:lexor_desktop/providers/account_provider.dart';
 const Color _sidebarBg = AppColors.primary;
 const Color _navActive = AppColors.navActive;
 
+// Which role may see each screen. Employees never reach the desktop app.
+const _rHr = 'HRManager';
+const _rAcc = 'Accounting';
+const _rAdmin = 'Administrator';
+
 class _NavItem {
   final IconData icon;
   final String label;
-  const _NavItem(this.icon, this.label);
+  final Set<String> roles;
+  const _NavItem(this.icon, this.label, this.roles);
 }
 
 const _navItems = [
-  _NavItem(Icons.home_outlined, 'Dashboard'),
-  _NavItem(Icons.people_outline, 'Uposlenici'),
-  _NavItem(Icons.credit_card_outlined, 'RFID kartice'),
-  _NavItem(Icons.access_time_outlined, 'Prisustvo'),
-  _NavItem(Icons.inbox_outlined, 'Zahtjevi'),
-  _NavItem(Icons.bar_chart_outlined, 'Izvještaji'),
-  _NavItem(Icons.account_balance_wallet_outlined, 'Obračun plata'),
-  _NavItem(Icons.balance_outlined, 'Pravni dokumenti'),
-  _NavItem(Icons.settings_outlined, 'Postavke obračuna'),
-  _NavItem(Icons.storage_outlined, 'Referentni podaci'),
-  _NavItem(Icons.insights_outlined, 'Predikcija odsustva'),
-  _NavItem(Icons.campaign_outlined, 'Obavijesti'),
-  _NavItem(Icons.account_circle_outlined, 'Moj profil'),
+  _NavItem(Icons.home_outlined, 'Dashboard', {_rHr}),
+  _NavItem(Icons.people_outline, 'Uposlenici', {_rHr}),
+  _NavItem(Icons.credit_card_outlined, 'RFID kartice', {_rHr}),
+  _NavItem(Icons.access_time_outlined, 'Prisustvo', {_rHr}),
+  _NavItem(Icons.inbox_outlined, 'Zahtjevi', {_rHr}),
+  _NavItem(Icons.bar_chart_outlined, 'Izvještaji', {_rHr, _rAcc}),
+  _NavItem(Icons.account_balance_wallet_outlined, 'Obračun plata', {_rAcc}),
+  _NavItem(Icons.balance_outlined, 'Pravni dokumenti', {_rHr}),
+  _NavItem(Icons.settings_outlined, 'Postavke obračuna', {_rAcc}),
+  _NavItem(Icons.storage_outlined, 'Referentni podaci', {_rHr}),
+  _NavItem(Icons.insights_outlined, 'Predikcija odsustva', {_rHr}),
+  _NavItem(Icons.campaign_outlined, 'Obavijesti', {_rHr}),
+  _NavItem(Icons.account_circle_outlined, 'Moj profil', {_rHr, _rAcc, _rAdmin}),
 ];
 
 class MainShell extends StatefulWidget {
@@ -56,14 +62,32 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
+  late final Set<String> _roles;
 
   @override
   void initState() {
     super.initState();
-    // Load the current admin's account so the header can show their name/avatar.
+    _roles = Provider.of<AuthProvider>(context, listen: false).roles.toSet();
+    // Land on the first screen this role is allowed to open.
+    final allowed = _allowedIndices;
+    _selectedIndex = allowed.isNotEmpty ? allowed.first : 0;
+    // Load the current user's account so the header can show their name/avatar.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AccountProvider>(context, listen: false).fetch();
     });
+  }
+
+  // Global nav indices this role may see (keeps _buildContent's index switch intact).
+  List<int> get _allowedIndices => [
+    for (var i = 0; i < _navItems.length; i++)
+      if (_navItems[i].roles.any(_roles.contains)) i,
+  ];
+
+  String get _panelTitle {
+    if (_roles.contains(_rHr)) return 'HR panel';
+    if (_roles.contains(_rAcc)) return 'Računovodstvo';
+    if (_roles.contains(_rAdmin)) return 'Administracija';
+    return 'Lexor';
   }
 
   @override
@@ -130,8 +154,8 @@ class _MainShellState extends State<MainShell> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
-            child: const Text(
-              'HR Admin Panel',
+            child: Text(
+              _panelTitle,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 17,
@@ -141,10 +165,15 @@ class _MainShellState extends State<MainShell> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              itemCount: _navItems.length,
-              itemBuilder: (context, index) => _buildNavTile(index),
+            child: Builder(
+              builder: (context) {
+                final allowed = _allowedIndices;
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: allowed.length,
+                  itemBuilder: (context, i) => _buildNavTile(allowed[i]),
+                );
+              },
             ),
           ),
           Padding(

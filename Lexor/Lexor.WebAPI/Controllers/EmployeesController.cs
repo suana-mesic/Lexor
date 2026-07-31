@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles =RoleNames.HrManager)]
     public class EmployeesController : BaseCRUDController<EmployeeResponse, EmployeeSearchObject, IEmployeeService, EmployeeInsertRequest, EmployeeUpdateRequest>
     {
         public EmployeesController(IEmployeeService Employeeservice) : base(Employeeservice)

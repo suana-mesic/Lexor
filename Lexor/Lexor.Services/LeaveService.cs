@@ -36,7 +36,7 @@ namespace Lexor.Services
                 query = query.Where(l => l.State == search.State);
             }
 
-            if (_userAccessor.IsInRole(RoleNames.Administrator))
+            if (_userAccessor.IsBackOffice())
             {
                 // admin may optionally filter by any employee
                 if (search?.EmployeeId.HasValue == true)
@@ -67,7 +67,7 @@ namespace Lexor.Services
 
             response.AllowedActions = await GetAllowedActions(id);
 
-            if (!_userAccessor.IsInRole(RoleNames.Administrator))
+            if (!_userAccessor.IsBackOffice())
             {
                 var currentUserId = _userAccessor.GetUserId();
                 if (response.Employee?.User?.Id != currentUserId)
@@ -84,7 +84,7 @@ namespace Lexor.Services
             {
                 // The list query already loaded each row; derive allowed actions from the
                 // item's State instead of re-querying the DB per row (avoids N+1).
-                var isAdmin = _userAccessor.IsInRole(RoleNames.Administrator);
+                var isAdmin = _userAccessor.IsBackOffice();
                 foreach (var item in response.Items)
                 {
                     if (!isAdmin)
@@ -121,7 +121,7 @@ namespace Lexor.Services
         public async Task EmployeeIsPermitted(int id)
         {
             var currentUserId = _userAccessor.GetUserId();
-            if (!_userAccessor.IsInRole(RoleNames.Administrator))
+            if (!_userAccessor.IsBackOffice())
             {
                 // verify the leave record belongs to the employee
                 var ownerUserId = await _dbContext.Set<Leave>()

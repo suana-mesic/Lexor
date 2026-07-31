@@ -15,15 +15,15 @@ namespace Lexor.WebAPI.Controllers
         {
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<LegalDocumentCategoryResponse>> Create([FromBody] LegalDocumentCategoryInsertRequest request)
             => base.Create(request);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<LegalDocumentCategoryResponse>> Update(int id, [FromBody] LegalDocumentCategoryUpdateRequest request)
             => base.Update(id, request);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<LegalDocumentCategoryResponse>> Delete(int id)
             => base.Delete(id);
     }

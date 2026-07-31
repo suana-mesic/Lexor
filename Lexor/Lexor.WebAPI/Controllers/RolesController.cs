@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Lexor.WebAPI.Controllers
 {
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles =RoleNames.HrManager)]
     public class RolesController : BaseCRUDController<RoleResponse, RoleSearchObject, IRoleService, RoleInsertRequest, RoleUpdateRequest>
     {
         public RolesController(IRoleService RoleService) : base(RoleService)

@@ -76,23 +76,26 @@ namespace Lexor.Services.Database
             // Deterministic randomness so a fresh seed always produces the same data set.
             var rng = new Random(20260101);
 
-            // ----- Admin (desktop) account -----
-            var admin = BuildUser(crypto, "Amela", "Admin", "admin@lexor.ba", "061100100", "Admin123!");
-            admin.Username = "admin";
-            admin.UserRoles.Add(new UserRole { RoleId = 1, DateAssigned = DateTime.UtcNow });
-            db.Users.Add(admin);
-            await db.SaveChangesAsync(); // persist so admin.Id can be used as CreatedByUserId
+            // ----- Fixed role accounts: one clean login per role (password Test123!) -----
+            var hrManager  = BuildRoleUser(crypto, "HR", "Menadžer", "hrmenadzer@lexor.ba", "hr.menadzer", "061100100", roleId: 1);
+            var admin      = BuildRoleUser(crypto, "Admin", "Admin", "admin@lexor.ba", "admin", "061100200", roleId: 4);
+            var accounting = BuildRoleUser(crypto, "Accounting", "Accounting", "accounting@lexor.ba", "accounting", "061100300", roleId: 3);
+            db.Users.AddRange(hrManager, admin, accounting);
+            await db.SaveChangesAsync(); // persist so their Ids can be used as CreatedByUserId
 
-            for (var i = 0; i < EmployeeCount; i++)
+            var creatorId = hrManager.Id; // HR manager is the audit "creator" of employee records
+
+            // Builds one fully-featured demo employee (contract, RFID, three-year attendance and
+            // leave history with per-employee seasonality) for the given identity and index.
+            Employee BuildEmployee(int i, string first, string last, string email,
+                                   string username, string? avatarBase64)
             {
-                var first = FirstNames[i];
-                var last = LastNames[i];
                 var role = Roles[i % Roles.Length];
 
-                var email = $"{Asciify(first)}.{Asciify(last)}@lexor.ba";
                 var user = BuildUser(crypto, first, last, email, RandomPhone(rng), "Test123!");
-                user.Username = $"{Asciify(first)}.{Asciify(last)}";
-                user.ProfileImageBase64 = SeedAvatars.Base64[i];
+                user.Username = username;
+                if (avatarBase64 != null)
+                    user.ProfileImageBase64 = avatarBase64;
                 user.UserRoles.Add(new UserRole { RoleId = 2, DateAssigned = HistoryStart.ToDateTime(TimeOnly.MinValue) });
 
                 // Personal seasonality profile. The formulas spread months evenly across
@@ -116,7 +119,7 @@ namespace Lexor.Services.Database
                     HireDate = hire,
                     IsActive = true,
                     CreatedAt = hire,
-                    CreatedByUserId = admin.Id
+                    CreatedByUserId = creatorId
                 };
 
                 employee.Contracts.Add(new Contract
@@ -128,7 +131,7 @@ namespace Lexor.Services.Database
                     BrutoSalary = role.BaseSalary + rng.Next(-2, 4) * 100m,
                     WorkHoursPerDay = 8,
                     CreatedAt = hire,
-                    CreatedByUserId = admin.Id
+                    CreatedByUserId = creatorId
                 });
 
                 var card = new RfidCard
@@ -139,10 +142,21 @@ namespace Lexor.Services.Database
                 };
                 employee.RfidCards.Add(card);
 
-                var leaveRanges = BuildLeaves(employee, admin.Id, vacationMonth, sickPeakMonth, rng);
+                var leaveRanges = BuildLeaves(employee, creatorId, vacationMonth, sickPeakMonth, rng);
                 BuildAttendance(employee, card, leaveRanges, unexcusedBaseRate, rng);
 
-                db.Employees.Add(employee);
+                return employee;
+            }
+
+            for (var i = 0; i < EmployeeCount; i++)
+            {
+                var first = FirstNames[i];
+                var last = LastNames[i];
+                db.Employees.Add(BuildEmployee(
+                    i, first, last,
+                    $"{Asciify(first)}.{Asciify(last)}@lexor.ba",
+                    $"{Asciify(first)}.{Asciify(last)}",
+                    SeedAvatars.Base64[i]));
             }
 
             // ----- Company announcements (news) -----
@@ -190,6 +204,16 @@ namespace Lexor.Services.Database
                 IsCodeActivated = true,
                 CreatedAt = DateTime.UtcNow
             };
+        }
+
+        // Builds a fixed login account with a username and a single role (password Test123!).
+        private static User BuildRoleUser(ICryptoService crypto, string first, string last,
+                                          string email, string username, string phone, int roleId)
+        {
+            var user = BuildUser(crypto, first, last, email, phone, "Test123!");
+            user.Username = username;
+            user.UserRoles.Add(new UserRole { RoleId = roleId, DateAssigned = DateTime.UtcNow });
+            return user;
         }
 
         // Walks month by month through the history window and generates this employee's leaves:

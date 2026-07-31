@@ -12,8 +12,10 @@ namespace Lexor.Services.Database
 
             // ===== Roles =====
             modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, Name = RoleNames.Administrator, Description = "Puni pristup admin panelu", CreatedAt = seedDate, IsActive = true },
-                new Role { Id = 2, Name = RoleNames.Employee, Description = "Pristup mobilnoj aplikaciji", CreatedAt = seedDate, IsActive = true }
+                new Role { Id = 1, Name = RoleNames.HrManager,     Description = "HR menadžer - uposlenici, odsustva, izvještaji, predikcija", CreatedAt = seedDate, IsActive = true },
+                new Role { Id = 2, Name = RoleNames.Employee,      Description = "Pristup mobilnoj aplikaciji", CreatedAt = seedDate, IsActive = true },
+                new Role { Id = 3, Name = RoleNames.Accounting,    Description = "Računovodstvo - obračun plata i platni izvještaji", CreatedAt = seedDate, IsActive = true },
+                new Role { Id = 4, Name = RoleNames.Administrator, Description = "Administrator sistema", CreatedAt = seedDate, IsActive = true }
             );
 
             // ===== Country =====

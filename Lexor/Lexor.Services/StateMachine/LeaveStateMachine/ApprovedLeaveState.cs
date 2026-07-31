@@ -17,7 +17,7 @@ namespace Lexor.Services.StateMachine.LeaveStateMachine
         {
             var entity = await GetByIdAsync(id);
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var isAdmin = _userAccessor.IsInRole(RoleNames.Administrator);
+            var isAdmin = _userAccessor.IsBackOffice();
 
             if(isAdmin && entity.Employee.UserId == _userAccessor.GetUserId())
                 throw new BusinessException("Administrator ne može sam sebi poništiti odsustvo.");

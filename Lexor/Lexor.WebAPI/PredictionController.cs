@@ -8,7 +8,7 @@ namespace Lexor.WebAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles =RoleNames.HrManager)]
     public class PredictionController : ControllerBase
     {
         private readonly IAbsencePredictionService _predictionService;

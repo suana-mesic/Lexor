@@ -8,7 +8,7 @@ namespace Lexor.WebAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles =RoleNames.HrManager)]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _service;

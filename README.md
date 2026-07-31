@@ -102,10 +102,16 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5170
 
 ## Korisnički podaci za pristup
 
-| Kontekst | Korisničko ime | Lozinka |
+Sve lozinke su `Test123!`.
+
+| Kontekst | Rola | Korisničko ime |
 |---|---|---|
-| Desktop (administrator) | `admin@lexor.ba` | `Admin123!` |
-| Mobilna (uposlenik) | `ime.prezime@lexor.ba` (npr. `amina.hodzic@lexor.ba`) | `Test123!` |
+| Desktop | HR menadžer | `hrmenadzer@lexor.ba` |
+| Desktop | Računovodstvo | `accounting@lexor.ba` |
+| Desktop | Administrator | `admin@lexor.ba` |
+| Mobilna | Uposlenik | `ime.prezime@lexor.ba` (npr. `amina.hodzic@lexor.ba`) |
+
+Desktop aplikacija razdvaja ovlasti po roli: HR menadžer upravlja uposlenicima, odsustvima, izvještajima i predikcijom; Računovodstvo radi obračun plata; Administrator je rezervisan za buduće sistemske funkcije. Uposlenici pristupaju isključivo mobilnoj aplikaciji.
 
 Primjeri uposlenika: `amina.hodzic@lexor.ba`, `emir.kovacevic@lexor.ba`, `lejla.begic@lexor.ba`, `tarik.delic@lexor.ba` — svi sa lozinkom `Test123!`.
 

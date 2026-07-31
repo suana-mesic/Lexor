@@ -67,7 +67,7 @@ namespace Lexor.Services
                 query = query.Where(ss => ss.State == stateName);
             }
 
-            if (_userAccessor.IsInRole(RoleNames.Administrator))
+            if (_userAccessor.IsBackOffice())
             {
                 // admin may optionally filter by any employee
                 if (search?.EmployeeId.HasValue == true)
@@ -101,7 +101,7 @@ namespace Lexor.Services
                 ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(SalarySlip), id));
 
             // Non-admin: must be the owner of SalarySlip.
-            if (!_userAccessor.IsInRole(RoleNames.Administrator))
+            if (!_userAccessor.IsBackOffice())
             {
                 var currentUserId = _userAccessor.GetUserId();
                 if (entity.Employee.UserId != currentUserId)

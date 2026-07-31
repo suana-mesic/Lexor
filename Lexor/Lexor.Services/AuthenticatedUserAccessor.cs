@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Lexor.Model.Constants;
+using Microsoft.AspNetCore.Http;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -21,6 +22,13 @@ namespace Lexor.Services
                 _httpContextAccessor.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
                 _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return int.TryParse(sub, out var id) ? id : null;
+        }
+
+        public bool IsBackOffice()
+        {
+            return IsInRole(RoleNames.HrManager)
+               || IsInRole(RoleNames.Accounting)
+               || IsInRole(RoleNames.Administrator);
         }
 
         public bool IsInRole(string role)

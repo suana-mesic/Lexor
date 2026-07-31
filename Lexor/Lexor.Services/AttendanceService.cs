@@ -32,7 +32,7 @@ namespace Lexor.Services
             {
                 query = query.Where(a => a.Date <= search.ToDate);
             }
-            if (_userAccessor.IsInRole(RoleNames.Administrator))
+            if (_userAccessor.IsBackOffice())
             {
                 // admin may optionally filter by any employee
                 if (search?.EmployeeId.HasValue == true)
@@ -144,7 +144,7 @@ namespace Lexor.Services
         {
             var response = await base.GetByIdAsync(id);
 
-            if (!_userAccessor.IsInRole(RoleNames.Administrator))
+            if (!_userAccessor.IsBackOffice())
             {
                 var currentUserId = _userAccessor.GetUserId();
                 var ownerUserId = await _dbContext.Set<Attendance>()
@@ -205,7 +205,7 @@ namespace Lexor.Services
 
         protected override IQueryable<Attendance> IncludeRelatedEntities(AttendanceSearchObject? search, IQueryable<Attendance> query)
         {
-            if (_userAccessor.IsInRole(RoleNames.Administrator))
+            if (_userAccessor.IsBackOffice())
             {
                 return query
                     .Include(a => a.Employee)

@@ -4,5 +4,7 @@
     {
         int? GetUserId();
         bool IsInRole(string role);
+
+        bool IsBackOffice();
     }
 }

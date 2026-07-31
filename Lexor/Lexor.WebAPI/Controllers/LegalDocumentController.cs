@@ -11,7 +11,7 @@ namespace Lexor.WebAPI.Controllers
     // Cijeli kontroler je admin-only: dokumentima preko HTTP-a pristupa samo admin panel.
     // Uposlenici NE čitaju dokumente direktno — chatbot odgovara na njihova pitanja
     // čitajući LegalDocumentChunk server-side, a ne kroz ove endpointe.
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles =RoleNames.HrManager)]
     public class LegalDocumentController : BaseCRUDController<LegalDocumentResponse,
     LegalDocumentSearchObject, ILegalDocumentService, LegalDocumentInsertRequest, LegalDocumentUpdateRequest>
     {

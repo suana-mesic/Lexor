@@ -30,15 +30,15 @@ namespace Lexor.WebAPI.Controllers
         public override Task<ActionResult<AttendanceResponse>> GetByIdAsync(int id)
             => base.GetByIdAsync(id);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<AttendanceResponse>> Update(int id, [FromBody] AttendanceUpdateRequest request)
             => base.Update(id, request);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<AttendanceResponse>> Create([FromBody] AttendanceInsertRequest request)
             => base.Create(request);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<AttendanceResponse>> Delete(int id)
             => base.Delete(id);
 

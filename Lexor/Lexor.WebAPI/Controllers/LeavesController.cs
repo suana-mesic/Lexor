@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
-    // employees and administrators can call GetAll/GetById, but they see different results
-    [Authorize]
+    // employees and HR managers can call GetAll/GetById, but they see different results
+    [Authorize(Roles = $"{RoleNames.Employee},{RoleNames.HrManager}")]
     public class LeavesController : BaseCRUDController<LeaveResponse, LeaveSearchObject, ILeaveService, LeaveInsertRequest, LeaveUpdateRequest>
     {
         public LeavesController(ILeaveService leaveService) : base(leaveService)
@@ -35,14 +35,14 @@ namespace Lexor.WebAPI.Controllers
         }
 
         [HttpPut("approve/{id}")]
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public async Task<ActionResult<LeaveResponse>> Approve(int id)
         {
             var result = await _service.ApproveAsync(id);
             return result;
         }
         [HttpPut("reject/{id}")]
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public async Task<ActionResult<LeaveResponse>> Reject(int id, [FromBody] LeaveRejectRequest request)
         {
             var result = await _service.RejectAsync(id, request);

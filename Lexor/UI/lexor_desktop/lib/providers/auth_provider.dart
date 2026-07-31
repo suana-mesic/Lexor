@@ -8,12 +8,15 @@ class AuthProvider extends ChangeNotifier {
   int? userId;
 
   Future<void> login(String username, String password) async {
-    final result = await AuthService(ApiConfig.baseUrl).login(username, password);
+    final result = await AuthService(
+      ApiConfig.baseUrl,
+    ).login(username, password);
 
-    final isAdmin =
-        AuthService.rolesFromToken(result.accessToken).contains('Administrator');
-    if (!isAdmin) {
-      throw ApiException('Samo administratori mogu pristupiti admin panelu');
+    final roles = AuthService.rolesFromToken(result.accessToken);
+    const backOffice = {'HRManager', 'Accounting', 'Administrator'};
+
+    if (!roles.any(backOffice.contains)) {
+      throw ApiException('Nemate pristup desktop aplikaciji.');
     }
 
     accessToken = result.accessToken;
@@ -37,4 +40,8 @@ class AuthProvider extends ChangeNotifier {
 
   String get fullName =>
       accessToken == null ? '' : AuthService.fullNameFromToken(accessToken!);
+
+  /// Roles from the current access token (empty when logged out).
+  List<String> get roles =>
+      accessToken == null ? const [] : AuthService.rolesFromToken(accessToken!);
 }

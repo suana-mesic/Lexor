@@ -15,7 +15,7 @@ namespace Lexor.WebAPI.Controllers
         {
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("recalculate-all")]
         public async Task<ActionResult<int>> RecalculateAllSalaries(SalarySlipAllRecalculationRequest request)
         {
@@ -23,7 +23,7 @@ namespace Lexor.WebAPI.Controllers
             return Ok(count);
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("recalculate-single")]
         public async Task<ActionResult<SalarySlipResponse>> RecalculateSingleSalary(SalarySlipSingleRecalculationRequest request)
         {
@@ -31,7 +31,7 @@ namespace Lexor.WebAPI.Controllers
             return response;
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("calculate")]
         public async Task<ActionResult<int>> InsertOrRecalculateSalaries(SalarySlipCalculationRequest request)
         {
@@ -39,7 +39,7 @@ namespace Lexor.WebAPI.Controllers
             return Ok(count);
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("mark-all-paid")]
         public async Task<ActionResult<int>> MarkAllAsPaid(SalarySlipPayAllRequest request)
         {
@@ -47,7 +47,7 @@ namespace Lexor.WebAPI.Controllers
             return Ok(count);
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("mark-single-paid")]
         public async Task<ActionResult<SalarySlipResponse>> MarkSingleAsPaid(SalarySlipPaySingleRequest request)
         {
@@ -55,7 +55,7 @@ namespace Lexor.WebAPI.Controllers
             return response;
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("mark-all-approved")]
         public async Task<ActionResult<int>> MarkAllAsApproved(SalarySlipApproveAllRequest request)
         {
@@ -63,7 +63,7 @@ namespace Lexor.WebAPI.Controllers
             return Ok(count);
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Accounting)]
         [HttpPost("mark-single-approved")]
         public async Task<ActionResult<SalarySlipResponse>> MarkSingleAsApproved(SalarySlipApproveSingleRequest request)
         {
@@ -71,7 +71,7 @@ namespace Lexor.WebAPI.Controllers
             return response;
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = $"{RoleNames.Accounting},{RoleNames.HrManager}")]
         [HttpGet("{id}/pdf")]
         public async Task<IActionResult> GetSlipPdf(int id)
         {
@@ -79,7 +79,7 @@ namespace Lexor.WebAPI.Controllers
             return File(bytes, "application/pdf", fileName);
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = $"{RoleNames.Accounting},{RoleNames.HrManager}")]
         [HttpGet("report/pdf")]
         public async Task<IActionResult> GetMonthlyReportPdf([FromQuery] int year, [FromQuery] int month)
         {

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
-    [Authorize(Roles = RoleNames.Administrator)]
+    [Authorize(Roles =RoleNames.HrManager)]
     public class RFIDController : BaseCRUDController<RFIDResponse, RFIDSearchObject, IRFIDService, RFIDInsertRequest, RFIDUpdateRequest>
     {
 

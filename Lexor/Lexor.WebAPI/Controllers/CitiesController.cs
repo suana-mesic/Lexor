@@ -16,15 +16,15 @@ namespace Lexor.WebAPI.Controllers
 
         }
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<CityResponse>> Create([FromBody] CityInsertRequest request)
             => base.Create(request);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<CityResponse>> Update(int id, [FromBody] CityUpdateRequest request)
             => base.Update(id, request);
 
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles =RoleNames.HrManager)]
         public override Task<ActionResult<CityResponse>> Delete(int id)
             => base.Delete(id);
     }
