@@ -16,15 +16,15 @@ namespace Lexor.WebAPI.Controllers
 
         }
 
-        [Authorize(Roles =RoleNames.HrManager)]
+        [Authorize(Roles =RoleNames.Administrator)]
         public override Task<ActionResult<LeaveTypeResponse>> Create([FromBody] LeaveTypeInsertRequest request)
             => base.Create(request);
 
-        [Authorize(Roles =RoleNames.HrManager)]
+        [Authorize(Roles =RoleNames.Administrator)]
         public override Task<ActionResult<LeaveTypeResponse>> Update(int id, [FromBody] LeaveTypeUpdateRequest request)
             => base.Update(id, request);
 
-        [Authorize(Roles =RoleNames.HrManager)]
+        [Authorize(Roles =RoleNames.Administrator)]
         public override Task<ActionResult<LeaveTypeResponse>> Delete(int id)
             => base.Delete(id);
     }

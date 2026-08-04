@@ -15,15 +15,15 @@ namespace Lexor.WebAPI.Controllers
         {
         }
 
-        [Authorize(Roles =RoleNames.HrManager)]
+        [Authorize(Roles =RoleNames.Administrator)]
         public override Task<ActionResult<ContractTypeResponse>> Create([FromBody] ContractTypeInsertRequest request)
             => base.Create(request);
 
-        [Authorize(Roles =RoleNames.HrManager)]
+        [Authorize(Roles =RoleNames.Administrator)]
         public override Task<ActionResult<ContractTypeResponse>> Update(int id, [FromBody] ContractTypeUpdateRequest request)
             => base.Update(id, request);
 
-        [Authorize(Roles =RoleNames.HrManager)]
+        [Authorize(Roles =RoleNames.Administrator)]
         public override Task<ActionResult<ContractTypeResponse>> Delete(int id)
             => base.Delete(id);
     }

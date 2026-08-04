@@ -4,6 +4,7 @@ import 'package:lexor_desktop/providers/account_provider.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/dashboard_provider.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
+import 'package:lexor_desktop/providers/admin_provider.dart';
 import 'package:lexor_desktop/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
@@ -28,6 +29,7 @@ class LexorDesktopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AbsencePredictionProvider()),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: MaterialApp(
         title: 'Lexor HR Admin',

@@ -92,8 +92,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Administrativni panel za upravljanje\nuposlenicima, ugovorima i platama.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16, height: 1.5),
+            'Panel za upravljanje uposlenicima,\nugovorima i platama.',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 16,
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -128,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Prijavite se na svoj administratorski nalog',
+              'Prijavite se na svoj nalog',
               style: TextStyle(color: Colors.grey, fontSize: 14),
             ),
             const SizedBox(height: 28),
@@ -165,7 +169,9 @@ class _LoginScreenState extends State<LoginScreen> {
               child: TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const ForgotPasswordScreen(),
+                  ),
                 ),
                 child: const Text('Zaboravljena lozinka?'),
               ),
@@ -199,7 +205,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     )
                   : const Text(
                       'Prijavi se',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
             ),
           ],

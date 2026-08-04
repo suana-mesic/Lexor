@@ -5,6 +5,7 @@ using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
 using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 namespace Lexor.Services
 {
     public class RoleService : BaseCRUDService<Role, RoleResponse, RoleSearchObject, RoleInsertRequest, RoleUpdateRequest>, IRoleService
@@ -32,6 +33,22 @@ namespace Lexor.Services
                 };
             }
             return query;
+        }
+
+        // Enriches each role with how many users currently hold it (for the admin "Uloge" view).
+        public override async Task<PageResult<RoleResponse>> GetAllAsync(RoleSearchObject? search = null)
+        {
+            var result = await base.GetAllAsync(search);
+
+            var counts = await _dbContext.Set<UserRole>()
+                .GroupBy(ur => ur.RoleId)
+                .Select(g => new { RoleId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.RoleId, x => x.Count);
+
+            foreach (var role in result.Items)
+                role.UserCount = counts.TryGetValue(role.Id, out var c) ? c : 0;
+
+            return result;
         }
     }
 }

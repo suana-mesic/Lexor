@@ -86,12 +86,14 @@ TypeAdapterConfig<PayrollSettings, PayrollSettingsResponse>.NewConfig()
     .Map(dest => dest.WorkDaysDescription, src => PayrollSettingsService.MaskToDescription(src.WorkDaysMask));
 
 TypeAdapterConfig<LegalDocument, LegalDocumentResponse>.NewConfig().Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.Name : null);
+TypeAdapterConfig<User, UserResponse>.NewConfig().Map(dest => dest.RoleName, src => src.UserRoles.Select(ur => ur.Role.Name).FirstOrDefault());
 
 builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<ICityService, CityService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
