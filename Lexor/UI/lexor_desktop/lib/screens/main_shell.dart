@@ -17,8 +17,6 @@ import 'package:lexor_desktop/screens/rfid_cards_screen.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:lexor_desktop/widgets/app_header.dart';
 import 'package:provider/provider.dart';
-import 'package:lexor_desktop/screens/absence_prediction_screen.dart';
-import 'package:lexor_desktop/providers/absence_prediction_provider.dart';
 import 'package:lexor_desktop/screens/news_screen.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
 import 'package:lexor_desktop/screens/my_profile_screen.dart';
@@ -64,9 +62,6 @@ const _navItems = [
   _NavItem(Icons.settings_outlined, 'Postavke obračuna', {
     _rAcc,
   }, PayrollSettingsScreen()),
-  _NavItem(Icons.insights_outlined, 'Predikcija odsustva', {
-    _rHr,
-  }, AbsencePredictionScreen()),
   _NavItem(Icons.campaign_outlined, 'Obavijesti', {_rHr, _rAcc}, NewsScreen()),
   _NavItem(Icons.dashboard_outlined, 'Nadzorna ploča', {
     _rAdmin,
@@ -196,10 +191,6 @@ class _MainShellState extends State<MainShell> {
                 );
                 final navigator = Navigator.of(context);
                 Provider.of<DashboardProvider>(context, listen: false).reset();
-                Provider.of<AbsencePredictionProvider>(
-                  context,
-                  listen: false,
-                ).reset();
                 Provider.of<NewsProvider>(context, listen: false).reset();
                 Provider.of<AccountProvider>(context, listen: false).reset();
                 Provider.of<AdminProvider>(context, listen: false).reset();

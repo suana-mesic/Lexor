@@ -7,7 +7,6 @@ using Lexor.Services;
 using Lexor.Services.Access;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
-using Lexor.Services.ML;
 using Lexor.Services.StateMachine.LeaveStateMachine;
 using Lexor.Services.StateMachine.SalarySlipStateMachine;
 using Lexor.Services.Validators;
@@ -184,7 +183,6 @@ builder.Services.AddScoped<IValidator<LegalDocumentInsertRequest>, LegalDocument
 builder.Services.AddSingleton<EasyNetQ.IBus>(_ => EasyNetQ.RabbitHutch.CreateBus(builder.Configuration["RabbitMQ:ConnectionString"]));
 builder.Services.AddSingleton(new LocalEmbedder());
 builder.Services.AddScoped<ILegalDocumentIndexer, LegalDocumentIndexer>();
-builder.Services.AddSingleton<IAbsencePredictionService, AbsencePredictionService>();
 
 //adds Bearer in Scalar
 //adds requirement on each endpoint (Scalar shows it as padlock icon)
@@ -284,9 +282,6 @@ using (var scope = app.Services.CreateScope())
         // Seed and index the legal-document corpus the HR chatbot answers from.
         var legalDocumentIndexer = services.GetRequiredService<ILegalDocumentIndexer>();
         await LegalDocumentSeeder.SeedAsync(db, legalDocumentIndexer);
-        // Train the absence-prediction model from the seeded/real attendance history.
-        var predictor = services.GetRequiredService<IAbsencePredictionService>();
-        await predictor.TrainAsync();
     }
 }
 
