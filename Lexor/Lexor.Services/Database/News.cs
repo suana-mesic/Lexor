@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lexor.Services.Database
 {
     // Company announcement shown to employees on the mobile home screen and managed by
-    // the admin in the desktop app.
+    // back-office roles in the desktop app.
     public class News
     {
         [Key]
@@ -20,5 +21,12 @@ namespace Lexor.Services.Database
         public string? ImageBase64 { get; set; }
 
         public DateTime PublishedAt { get; set; } = DateTime.UtcNow;
+
+        // Author of the announcement. Nullable so pre-existing rows stay valid; a null author
+        // means only an administrator may edit or delete it (see NewsService).
+        public int? PublishedByUserId { get; set; }
+
+        [ForeignKey(nameof(PublishedByUserId))]
+        public User? PublishedBy { get; set; }
     }
 }

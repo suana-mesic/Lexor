@@ -1,4 +1,5 @@
-﻿using Lexor.Model.Responses;
+﻿using Lexor.Model.Enums;
+using Lexor.Model.Responses;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -9,6 +10,10 @@ namespace Lexor.Services.Reports
     {
         static SalarySlipPdf() => QuestPDF.Settings.License = LicenseType.Community;
         static string Km(decimal v) => $"{v:N2} KM";
+
+        // Amount the employee earned from overtime this period (0 if there were no overtime items).
+        static decimal Overtime(SalarySlipResponse s) =>
+            s.Items?.Where(i => i.ItemType == SalarySlipItemType.Overtime).Sum(i => i.Amount) ?? 0m;
         static readonly string[] Months = { "", "Januar", "Februar", "Mart", "April", "Maj",
             "Juni", "Juli", "August", "Septembar", "Oktobar", "Novembar", "Decembar" };
 
@@ -60,13 +65,14 @@ namespace Lexor.Services.Reports
                 {
                     t.ColumnsDefinition(cd =>
                     {
-                        cd.RelativeColumn(3); cd.RelativeColumn(2);
+                        cd.RelativeColumn(3); cd.RelativeColumn(2); cd.RelativeColumn(2);
                         cd.RelativeColumn(2); cd.RelativeColumn(2); cd.RelativeColumn(2);
                     });
                     t.Header(h =>
                     {
                         h.Cell().Text("Uposlenik").Bold();
                         h.Cell().AlignRight().Text("Bruto").Bold();
+                        h.Cell().AlignRight().Text("Prekovremeni").Bold();
                         h.Cell().AlignRight().Text("Doprinosi").Bold();
                         h.Cell().AlignRight().Text("Porez").Bold();
                         h.Cell().AlignRight().Text("Neto").Bold();
@@ -75,12 +81,14 @@ namespace Lexor.Services.Reports
                     {
                         t.Cell().Text($"{s.Employee.User.FirstName} {s.Employee.User.LastName}");
                         t.Cell().AlignRight().Text(Km(s.BrutoSalary));
+                        t.Cell().AlignRight().Text(Km(Overtime(s)));
                         t.Cell().AlignRight().Text(Km(s.TotalContributions));
                         t.Cell().AlignRight().Text(Km(s.Tax));
                         t.Cell().AlignRight().Text(Km(s.NetSalary));
                     }
                     t.Cell().PaddingTop(6).Text("UKUPNO").Bold();
                     t.Cell().PaddingTop(6).AlignRight().Text(Km(slips.Sum(x => x.BrutoSalary))).Bold();
+                    t.Cell().PaddingTop(6).AlignRight().Text(Km(slips.Sum(Overtime))).Bold();
                     t.Cell().PaddingTop(6).AlignRight().Text(Km(slips.Sum(x => x.TotalContributions))).Bold();
                     t.Cell().PaddingTop(6).AlignRight().Text(Km(slips.Sum(x => x.Tax))).Bold();
                     t.Cell().PaddingTop(6).AlignRight().Text(Km(slips.Sum(x => x.NetSalary))).Bold();

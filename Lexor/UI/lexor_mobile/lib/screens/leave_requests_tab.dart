@@ -74,6 +74,11 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
         AppColors.neutralBg,
         AppColors.neutralFg,
       ),
+      LeaveStateType.completed => (
+        'Završeno',
+        AppColors.infoBg,
+        AppColors.info,
+      ),
       _ => ('Nepoznato', AppColors.neutralBg, AppColors.neutralFg),
     };
     return Container(

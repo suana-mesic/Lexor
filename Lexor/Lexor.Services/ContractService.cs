@@ -154,7 +154,7 @@ namespace Lexor.Services
                                  (c.EndDate == null || c.EndDate.Value.Date >= newStart)
                                  // Gap recovery: indefinite contract whose EndDate was artificially
                                  // capped by a ReplaceActiveAsync for an upstream contract that was
-                                 // since deleted, leaving a gap. Recognised by: Neodređeno type,
+                                 // since deleted, leaving a gap. Recognised by: indefinite type,
                                  // EndDate is set but hasn't passed yet, and it falls before newStart.
                                  || (!c.ContractType.EndDateRequired
                                      && c.EndDate.HasValue
@@ -168,7 +168,7 @@ namespace Lexor.Services
                 {
                     if (active.ContractType.EndDateRequired && active.EndDate.HasValue)
                     {
-                        // Scenario B — fixed-term ("Određeno") contract: legally immutable.
+                        // Scenario B — fixed-term contract: legally immutable.
                         // The new contract must start strictly after the fixed-term expires;
                         // any gap between them is intentional (a break in employment).
                         if (request.StartDate.Date <= active.EndDate.Value.Date)
@@ -179,7 +179,7 @@ namespace Lexor.Services
                     }
                     else
                     {
-                        // Scenario A — indefinite ("Neodređeno") contract: close it the day before
+                        // Scenario A — indefinite contract: close it the day before
                         // the new contract starts. No gap in employment history.
                         if (request.StartDate.Date <= active.StartDate.Date)
                             throw new ValidationException("Datum početka novog ugovora mora biti nakon datuma početka trenutnog ugovora.");
@@ -270,32 +270,45 @@ namespace Lexor.Services
             if (contractType.EndDateRequired && !request.EndDate.HasValue)
                 throw new ValidationException("Datum završetka je obavezan za ovaj tip ugovora.");
 
-            // If the start date changed, keep the preceding Neodređeno contract's EndDate in sync.
-            // That contract was closed (artificially) when this upcoming contract was created;
-            // moving the start date must move that closing date with it.
             var oldStart = contract.StartDate.Date;
             var newStart = request.StartDate.Date;
+
+            // The indefinite contract that was artificially closed to make room for this
+            // upcoming contract (its EndDate was set to oldStart - 1). It is re-synced below,
+            // so it is excluded from the overlap check.
+            var preceding = await _dbContext.Contracts
+                .Include(c => c.ContractType)
+                .Where(c => c.EmployeeId == contract.EmployeeId
+                         && c.EndDate.HasValue
+                         && c.EndDate.Value.Date == oldStart.AddDays(-1)
+                         && c.StartDate.Date < newStart
+                         && !c.ContractType.EndDateRequired)
+                .OrderByDescending(c => c.StartDate)
+                .FirstOrDefaultAsync();
+            var precedingId = preceding?.Id;
+
+            // Reject a period that overlaps any other contract of the employee (e.g. moving the
+            // start date back into the currently active contract). The preceding indefinite
+            // contract is excluded because it gets shrunk to end the day before the new start.
+            var overlaps = await _dbContext.Contracts.AnyAsync(c =>
+                c.EmployeeId == contract.EmployeeId
+                && c.Id != id
+                && (precedingId == null || c.Id != precedingId)
+                && (request.EndDate == null || c.StartDate.Date <= request.EndDate.Value.Date)
+                && (c.EndDate == null || c.EndDate.Value.Date >= newStart));
+            if (overlaps)
+                throw new ValidationException(
+                    "Period ugovora se preklapa s postojećim ugovorom uposlenika. " +
+                    "Datum početka mora biti nakon završetka prethodnog ugovora.");
 
             _mapper.Map(request, contract);
             ApplyUpdateAuditFields(contract);
 
-            if (oldStart != newStart)
+            // Moving the start date must move the preceding indefinite contract's closing date with it.
+            if (oldStart != newStart && preceding != null)
             {
-                var preceding = await _dbContext.Contracts
-                    .Include(c => c.ContractType)
-                    .Where(c => c.EmployeeId == contract.EmployeeId
-                             && c.EndDate.HasValue
-                             && c.EndDate.Value.Date == oldStart.AddDays(-1)
-                             && c.StartDate.Date < newStart
-                             && !c.ContractType.EndDateRequired)
-                    .OrderByDescending(c => c.StartDate)
-                    .FirstOrDefaultAsync();
-
-                if (preceding != null)
-                {
-                    preceding.EndDate = newStart.AddDays(-1);
-                    ApplyUpdateAuditFields(preceding);
-                }
+                preceding.EndDate = newStart.AddDays(-1);
+                ApplyUpdateAuditFields(preceding);
             }
 
             await _dbContext.SaveChangesAsync();

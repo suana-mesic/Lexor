@@ -330,7 +330,7 @@ class _SalaryDetailsScreenState extends State<SalaryDetailsScreen> {
   Widget _buildSeparatorRow(String label, double value, {bool isNet = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      color: Colors.grey[50],
+      color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

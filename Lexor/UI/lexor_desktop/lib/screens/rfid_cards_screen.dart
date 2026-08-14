@@ -120,6 +120,40 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
     }
   }
 
+  Future<void> _reactivate(RfidResponse rfidCard) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reaktivacija kartice'),
+        content: Text(
+          'Ponovo aktivirati karticu za "${rfidCard.employeeFullName}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Otkaži'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reaktiviraj'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _provider.reactivate(rfidCard.id);
+      _snack('Kartica reaktivirana');
+      await _load();
+    } catch (e) {
+      _snack(messageFor(e), error: true);
+    }
+  }
+
   Future<void> _openAddDialog() async {
     List<RefOption> employees;
     try {
@@ -478,7 +512,15 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
                   ),
                   onPressed: () => _deactivate(card),
                 )
-              : const SizedBox(width: 40, height: 40),
+              : IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Reaktiviraj',
+                  icon: const Icon(
+                    Icons.power_settings_new,
+                    color: AppColors.success,
+                  ),
+                  onPressed: () => _reactivate(card),
+                ),
           isLast: true,
         ),
       ],

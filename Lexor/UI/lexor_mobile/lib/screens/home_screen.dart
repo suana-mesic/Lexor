@@ -58,7 +58,14 @@ class _HomeScreenState extends State<HomeScreen> {
       body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => {setState(() => _selectedIndex = index)},
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+          // Refresh the home feed each time it is opened so newly published announcements
+          // appear without having to log out and back in.
+          if (index == 0) {
+            Provider.of<NewsProvider>(context, listen: false).fetchNews();
+          }
+        },
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Početna'),

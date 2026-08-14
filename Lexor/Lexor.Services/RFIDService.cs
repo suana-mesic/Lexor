@@ -62,6 +62,39 @@ namespace Lexor.Services
             return await GetByIdAsync(id);
         }
 
+        public async Task<RFIDResponse> ReactivateAsync(int id)
+        {
+            var card = await _dbContext.Set<RfidCard>().FindAsync(id)
+                ?? throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(RfidCard), id));
+
+            if (card.IsActive)
+                return await GetByIdAsync(id);
+
+            // Preserve the invariant that an employee has at most one active card.
+            var activeCard = await _dbContext.Set<RfidCard>()
+                .Include(c => c.Employee).ThenInclude(e => e.User)
+                .FirstOrDefaultAsync(c => c.EmployeeId == card.EmployeeId && c.IsActive && c.Id != id);
+            if (activeCard != null)
+            {
+                var name = $"{activeCard.Employee.User.FirstName} {activeCard.Employee.User.LastName}";
+                throw new ValidationException(
+                    $"Uposlenik {name} već ima aktivnu karticu. " +
+                    "Potrebno je prvo deaktivirati aktivnu karticu prije reaktivacije ove.");
+            }
+
+            // And that no other active card shares this UID.
+            var uidClash = await _dbContext.Set<RfidCard>()
+                .AnyAsync(c => c.Uid == card.Uid && c.IsActive && c.Id != id);
+            if (uidClash)
+                throw new ValidationException("Već postoji aktivna kartica sa ovim UID-om.");
+
+            card.IsActive = true;
+            card.DeactivatedAt = null;
+
+            await _dbContext.SaveChangesAsync();
+            return await GetByIdAsync(id);
+        }
+
         protected override IQueryable<RfidCard> ApplyFilters(IQueryable<RfidCard> query, RFIDSearchObject? search)
         {
             if (search != null)

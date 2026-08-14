@@ -124,7 +124,7 @@ class _PayrollSettingsScreenState extends State<PayrollSettingsScreen> {
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
-              // Više kolona na širem ekranu → manje redova → niža kartica.
+              // More columns on a wider screen → fewer rows → a shorter card.
               final cols = constraints.maxWidth >= 1000
                   ? 4
                   : constraints.maxWidth >= 550
@@ -267,7 +267,7 @@ class _PayrollSettingsScreenState extends State<PayrollSettingsScreen> {
         key: _formKey,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // 2 kolone na širokom ekranu (4 polja po koloni), 1 na uskom.
+            // 2 columns on a wide screen (4 fields per column), 1 on a narrow one.
             final cols = constraints.maxWidth >= 550 ? 2 : 1;
             final fieldWidth =
                 (constraints.maxWidth - 16 * (cols - 1)) / cols;

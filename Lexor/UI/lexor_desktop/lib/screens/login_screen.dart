@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const Icon(Icons.groups_2_outlined, color: Colors.white, size: 64),
           const SizedBox(height: 24),
           const Text(
-            'Lexor HR',
+            'Lexor',
             style: TextStyle(
               color: Colors.white,
               fontSize: 40,

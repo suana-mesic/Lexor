@@ -181,6 +181,29 @@ namespace Lexor.Services
             var currentUserId = _userAccessor.GetUserId();
             var now = DateTime.UtcNow;
 
+            var approvedTotal = await _dbContext.Set<SalarySlip>()
+                .CountAsync(ss => ss.Month == request.Month
+                               && ss.Year == request.Year
+                               && ss.State == approvedStateName);
+
+            if (approvedTotal == 0)
+                throw new NotFoundException(
+                    $"Ne postoje plate za mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year} u statusu čekanja na plaćanje.");
+
+            // Separation of duties (four-eyes): the payer must not have approved any of these slips.
+            // Only enforced for an authenticated user (the seeder pays as the system with no user id).
+            if (currentUserId != null)
+            {
+                var selfApproved = await _dbContext.Set<SalarySlip>()
+                    .AnyAsync(ss => ss.Month == request.Month
+                                 && ss.Year == request.Year
+                                 && ss.State == approvedStateName
+                                 && ss.MarkedAsApprovedByAdminId == currentUserId);
+                if (selfApproved)
+                    throw new BusinessException(
+                        "Ne možete isplatiti plate koje ste sami odobrili. Isplatu mora izvršiti druga osoba (princip četvoro očiju).");
+            }
+
             var updatedCount = await _dbContext.Set<SalarySlip>()
                 .Where(ss => ss.Month == request.Month
                           && ss.Year == request.Year
@@ -189,10 +212,6 @@ namespace Lexor.Services
                     .SetProperty(s => s.State, paidStateName)
                     .SetProperty(s => s.PaidAt, now)
                     .SetProperty(s => s.MarkedAsPaidByAdminId, currentUserId));
-
-            if (updatedCount == 0)
-                throw new NotFoundException(
-                    $"Ne postoje plate za mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year} u statusu čekanja na plaćanje.");
 
             return updatedCount;
         }
@@ -328,6 +347,65 @@ namespace Lexor.Services
             _ => throw new BusinessException("Nevažeći status platne liste.")
         };
 
+        // Finance overview for the accounting dashboard, over the most recent fully PAID month.
+        public async Task<PayrollDashboardResponse> GetPayrollDashboardAsync()
+        {
+            var paidState = MapStatusToStateName(SalarySlipStatus.Paid);
+
+            var latest = await _dbContext.Set<SalarySlip>()
+                .Where(ss => ss.State == paidState)
+                .OrderByDescending(ss => ss.Year).ThenByDescending(ss => ss.Month)
+                .Select(ss => new { ss.Year, ss.Month })
+                .FirstOrDefaultAsync();
+
+            if (latest == null)
+                return new PayrollDashboardResponse { HasData = false };
+
+            var slips = await _dbContext.Set<SalarySlip>()
+                .Where(ss => ss.State == paidState && ss.Year == latest.Year && ss.Month == latest.Month)
+                .Include(ss => ss.Employee).ThenInclude(e => e.User)
+                .Include(ss => ss.Items)
+                .ToListAsync();
+
+            decimal Overtime(SalarySlip s) =>
+                s.Items.Where(i => i.ItemType == SalarySlipItemType.Overtime).Sum(i => i.Amount);
+            decimal OvertimeHrs(SalarySlip s) =>
+                s.Items.Where(i => i.ItemType == SalarySlipItemType.Overtime).Sum(i => i.Quantity ?? 0m);
+
+            var response = new PayrollDashboardResponse
+            {
+                HasData = true,
+                Year = latest.Year,
+                Month = latest.Month,
+                SlipCount = slips.Count,
+                TotalGross = slips.Sum(s => s.AdjustedBruto),
+                TotalNet = slips.Sum(s => s.NetSalary),
+                TotalContributions = slips.Sum(s => s.TotalContributions),
+                TotalTax = slips.Sum(s => s.Tax),
+                TotalOvertime = slips.Sum(Overtime),
+                TotalOvertimeHours = slips.Sum(OvertimeHrs),
+                EmployeesWithOvertime = slips.Count(s => Overtime(s) > 0),
+            };
+            response.AverageNet = slips.Count > 0 ? Math.Round(response.TotalNet / slips.Count, 2) : 0m;
+            response.BurdenRate = response.TotalGross > 0
+                ? Math.Round((response.TotalContributions + response.TotalTax) / response.TotalGross * 100m, 1)
+                : 0m;
+
+            response.TopOvertime = slips
+                .Select(s => new PayrollDashboardResponse.OvertimeLeaderItem
+                {
+                    FullName = $"{s.Employee.User.FirstName} {s.Employee.User.LastName}",
+                    Hours = OvertimeHrs(s),
+                    Amount = Overtime(s),
+                })
+                .Where(x => x.Amount > 0)
+                .OrderByDescending(x => x.Amount)
+                .Take(5)
+                .ToList();
+
+            return response;
+        }
+
         public async Task<(byte[]Bytes, string FileName)> GetSlipPdfAsync(int id)
         {
             var slip = await GetByIdAsync(id);
@@ -340,16 +418,19 @@ namespace Lexor.Services
             return (SalarySlipPdf.SingleSlip(slip), fileName);
         }
 
-        public async Task<byte[]> GetMonthlyReportPdfAsync(int year, int month)
+        public async Task<byte[]> GetMonthlyReportPdfAsync(int year, int month, int? employeeId = null)
         {
             if (month < 1 || month > 12)
                 throw new BusinessException("Mjesec mora biti u rasponu od januara do decembra.");
 
-            var query = IncludeRelatedEntities(null, _dbContext.Set<SalarySlip>());
+            // Items are needed here (unlike the list view) so the report can show the overtime amount.
+            IQueryable<SalarySlip> query = IncludeRelatedEntities(null, _dbContext.Set<SalarySlip>())
+                .Include(ss => ss.Items);
             query = ApplyFilters(query, new SalarySlipCalculationSearchObject
             {
                 Year = year,
                 Month = month,
+                EmployeeId = employeeId,
                 Status = SalarySlipStatus.Paid
             });
 

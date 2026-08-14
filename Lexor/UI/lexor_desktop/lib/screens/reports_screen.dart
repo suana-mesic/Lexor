@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/models/salary_slip_response.dart';
 import 'package:lexor_desktop/models/search_result.dart';
+import 'package:lexor_desktop/providers/base_provider.dart';
+import 'package:lexor_desktop/providers/employee_provider.dart';
 import 'package:lexor_desktop/providers/salary_slip_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
@@ -31,6 +33,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   int? _year;
   int? _month;
+  int? _employeeId; // null = all employees
+  List<RefOption> _employees = const [];
 
   static const double _kHeaderRowHeight = 48;
   static const double _kDataRowHeight = 64;
@@ -51,8 +55,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _generated = true;
+      _loadEmployees();
       _load();
     });
+  }
+
+  Future<void> _loadEmployees() async {
+    try {
+      final list = await fetchEmployeeOptions();
+      if (mounted) setState(() => _employees = list);
+    } catch (_) {
+      // Employee filter is optional UX — silently fall back to "all employees".
+    }
   }
 
   @override
@@ -90,6 +104,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           'year': _year,
           'month': _month,
           'status': 2, // Paid
+          if (_employeeId != null) 'employeeId': _employeeId,
         },
       );
     } catch (e) {
@@ -129,7 +144,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
       return;
     }
     try {
-      final path = await _provider.downloadMonthlyReport(_year!, _month!);
+      final path = await _provider.downloadMonthlyReport(
+        _year!,
+        _month!,
+        employeeId: _employeeId,
+      );
       if (!mounted || path == null) return;
       showSnack(context, 'Sačuvano: $path');
     } catch (e) {
@@ -187,6 +206,47 @@ class _ReportsScreenState extends State<ReportsScreen> {
         onChanged: (v) => setState(() => _month = v),
       ),
     );
+    final employeeField = _labeled(
+      'Uposlenik',
+      Autocomplete<RefOption>(
+        displayStringForOption: (o) => o.name,
+        optionsBuilder: (value) {
+          final q = value.text.trim().toLowerCase();
+          if (q.isEmpty) return _employees;
+          return _employees.where((e) => e.name.toLowerCase().contains(q));
+        },
+        onSelected: (o) => setState(() => _employeeId = o.id),
+        fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+          return TextField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              isDense: true,
+              hintText: 'Svi uposlenici',
+              suffixIcon: controller.text.isEmpty
+                  ? const Icon(Icons.search, size: 18)
+                  : IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      tooltip: 'Poništi',
+                      onPressed: () {
+                        controller.clear();
+                        setState(() => _employeeId = null);
+                      },
+                    ),
+            ),
+            // Only an exact name match selects an employee; anything else (partial or
+            // empty text) falls back to "all employees" so a stale id is never used.
+            onChanged: (v) {
+              final match = _employees.where(
+                (e) => e.name.toLowerCase() == v.trim().toLowerCase(),
+              );
+              setState(() => _employeeId = match.isEmpty ? null : match.first.id);
+            },
+          );
+        },
+      ),
+    );
     final generateBtn = ElevatedButton(
       onPressed: _generate,
       style: ElevatedButton.styleFrom(
@@ -195,16 +255,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
       child: const Text('Prikaži plate'),
-    );
-    final reportBtn = OutlinedButton.icon(
-      onPressed: _generated ? _downloadMonthlyReport : null,
-      icon: const Icon(Icons.download),
-      label: const Text('Zbirni PDF'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      ),
     );
 
     return Container(
@@ -223,44 +273,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, c) {
-              final wide = c.maxWidth >= 720;
-              if (wide) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    SizedBox(width: 200, child: yearField),
-                    const SizedBox(width: 16),
-                    SizedBox(width: 200, child: monthField),
-                    const SizedBox(width: 16),
-                    generateBtn,
-                    const SizedBox(width: 12),
-                    reportBtn,
-                  ],
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  yearField,
-                  const SizedBox(height: 12),
-                  monthField,
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: generateBtn),
-                      const SizedBox(width: 12),
-                      Expanded(child: reportBtn),
-                    ],
-                  ),
-                ],
-              );
-            },
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              SizedBox(width: 180, child: yearField),
+              SizedBox(width: 180, child: monthField),
+              SizedBox(width: 240, child: employeeField),
+              generateBtn,
+            ],
           ),
           const SizedBox(height: 10),
           Text(
-            'Prikazuju se samo plate sa statusom Plaćen.',
+            'Prikazuju se samo realizovane isplate.',
             style: TextStyle(color: Colors.grey[600], fontSize: 13),
           ),
         ],
@@ -293,19 +319,49 @@ class _ReportsScreenState extends State<ReportsScreen> {
           const Divider(height: 1),
           Expanded(child: _buildBody()),
           const Divider(height: 1),
-          PaginationBar(
-            shownCount: _items.length,
-            totalCount: _totalCount,
-            hasPrev: _page > 1,
-            hasNext: _page < _totalPages,
-            onPrev: () {
-              _page--;
-              _load();
-            },
-            onNext: () {
-              _page++;
-              _load();
-            },
+          Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Tooltip(
+                  message: _employeeId != null
+                      ? 'Dostupno samo za pregled svih uposlenika. '
+                            'Za pojedinca koristite PDF u redu tabele.'
+                      : 'Preuzmi zbirni izvještaj za odabrani period. '
+                            'Zbirni izvještaji nisu dostupni kada je odabran uposlenik.',
+                  child: OutlinedButton.icon(
+                    // Aggregate report only makes sense for the whole workforce; when a single
+                    // employee is filtered, their individual payslip PDF (row action) is used.
+                    onPressed:
+                        (_generated && _totalCount > 0 && _employeeId == null)
+                        ? _downloadMonthlyReport
+                        : null,
+                    icon: const Icon(Icons.download, size: 18),
+                    label: const Text('Zbirni PDF'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: PaginationBar(
+                  shownCount: _items.length,
+                  totalCount: _totalCount,
+                  hasPrev: _page > 1,
+                  hasNext: _page < _totalPages,
+                  onPrev: () {
+                    _page--;
+                    _load();
+                  },
+                  onNext: () {
+                    _page++;
+                    _load();
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -328,7 +384,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (_items.isEmpty) {
       return const Center(
         child: Text(
-          'Nema plata za odabrani period.',
+          'Nema realizovanih isplata za odabrani period.',
           style: TextStyle(color: Colors.grey),
         ),
       );

@@ -64,16 +64,45 @@ class _EditContractDialogState extends State<EditContractDialog> {
     return t.endDateRequired;
   }
 
+  // Whether the active contract is a fixed-term type, resolved from
+  // the loaded contract types by the active contract's type id.
+  bool get _activeIsFixedTerm {
+    final a = widget.activeContract;
+    if (a == null) return false;
+    final t = widget.contractTypes.firstWhere(
+      (c) => c.id == a.contractTypeId,
+      orElse: () =>
+          const ContractTypeOption(id: 0, name: '', endDateRequired: false),
+    );
+    return t.endDateRequired;
+  }
+
+  // Earliest start date allowed so this contract's period can't overlap the active
+  // one: after a fixed-term contract ends, or after an open/linked (indefinite)
+  // contract's start. Never earlier than tomorrow.
+  DateTime get _minStartDate {
+    final now = DateTime.now();
+    final tomorrow =
+        DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final a = widget.activeContract;
+    if (a == null) return tomorrow;
+    final floor = (_activeIsFixedTerm && a.endDate != null)
+        ? a.endDate!.toLocal().add(const Duration(days: 1))
+        : a.startDate.toLocal().add(const Duration(days: 1));
+    return floor.isAfter(tomorrow) ? floor : tomorrow;
+  }
+
   Future<void> _pick(bool isStart) async {
     final now = DateTime.now();
+    final minStart = _minStartDate;
     final picked = await showDatePicker(
       context: context,
       initialDate: isStart
-          ? (_startDate ?? now.add(const Duration(days: 1)))
+          ? ((_startDate == null || _startDate!.isBefore(minStart))
+                ? minStart
+                : _startDate!)
           : (_endDate ?? _startDate ?? now.add(const Duration(days: 1))),
-      firstDate: isStart
-          ? now.add(const Duration(days: 1))
-          : (_startDate ?? now.add(const Duration(days: 1))),
+      firstDate: isStart ? minStart : (_startDate ?? minStart),
       lastDate: DateTime(now.year + 10),
     );
     if (picked != null) {
@@ -91,7 +120,7 @@ class _EditContractDialogState extends State<EditContractDialog> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   // Returns true if changing this contract's start date will automatically
-  // update the active Neodređeno contract's end date on the server.
+  // update the active indefinite contract's end date on the server.
   bool get _willShiftActiveEndDate {
     if (_startDate == null) return false;
     if (_isSameDay(_startDate!, widget.contract.startDate.toLocal())) {
@@ -99,6 +128,10 @@ class _EditContractDialogState extends State<EditContractDialog> {
     }
     final a = widget.activeContract;
     if (a == null || a.endDate == null) return false;
+    // Only an indefinite active contract is auto-closed. A fixed-term contract is
+    // immutable, so its end date is never shifted — even if it happens to end the
+    // day before this contract starts.
+    if (_activeIsFixedTerm) return false;
     // Active contract is "linked" to this upcoming contract if its EndDate is
     // exactly one day before this contract's current StartDate.
     final linkedDate = widget.contract.startDate.toLocal().subtract(
@@ -107,8 +140,8 @@ class _EditContractDialogState extends State<EditContractDialog> {
     return _isSameDay(a.endDate!.toLocal(), linkedDate);
   }
 
-  // Gap exists when the active contract has a defined EndDate (Određeno, or
-  // an unlinked Neodređeno) and the selected start date leaves a break in
+  // Gap exists when the active contract has a defined EndDate (fixed-term, or
+  // an unlinked indefinite) and the selected start date leaves a break in
   // employment. Suppressed when the backend will auto-shift the EndDate.
   bool get _hasGap {
     final a = widget.activeContract;
@@ -128,6 +161,13 @@ class _EditContractDialogState extends State<EditContractDialog> {
     if (_needsEndDate && _endDate == null) {
       setState(
         () => _error = 'Datum kraja je obavezan za odabrani tip ugovora.',
+      );
+      return;
+    }
+    if (_startDate!.isBefore(_minStartDate)) {
+      setState(
+        () => _error =
+            'Datum početka mora biti nakon završetka prethodnog ugovora.',
       );
       return;
     }

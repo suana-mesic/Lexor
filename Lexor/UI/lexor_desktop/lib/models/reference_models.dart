@@ -1,5 +1,5 @@
-// Modeli za referentne (šifarničke) tabele. Svi dijele `id` preko `ReferenceItem`
-// kako bi generički `BaseProvider` mogao raditi nad bilo kojim od njih.
+// Models for reference (lookup) tables. They all share `id` via `ReferenceItem`
+// so the generic `BaseProvider` can work over any of them.
 
 abstract class ReferenceItem {
   int get id;

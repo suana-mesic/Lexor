@@ -6,7 +6,7 @@ import 'package:lexor_desktop/providers/base_provider.dart'; // BaseProvider + R
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
 
-/// Definicija kolone u tabeli — naziv i kako se izvlači vrijednost iz modela.
+/// Definition of a table column — its label and how the value is pulled from the model.
 class RefColumn<T> {
   final String label;
   final String Function(T item) value;
@@ -17,15 +17,15 @@ class RefColumn<T> {
 
 enum RefFieldKind { text, boolSwitch, fkDropdown }
 
-/// Definicija polja u formi za unos/izmjenu.
+/// Definition of a field in the add/edit form.
 class RefField {
-  final String key; // ključ u request body (npr. 'name', 'countryId')
+  final String key; // key in the request body (e.g. 'name', 'countryId')
   final String label;
   final RefFieldKind kind;
   final bool required;
   final int? maxLength;
-  final String? fkEndpoint; // za fkDropdown, npr. '/Countries'
-  final String? fkPrereqLabel; // npr. 'Države' — poruka kada nedostaju preduslovi
+  final String? fkEndpoint; // for fkDropdown, e.g. '/Countries'
+  final String? fkPrereqLabel; // e.g. 'Države' — message shown when prerequisites are missing
 
   const RefField.text(
     this.key,
@@ -53,16 +53,16 @@ class RefField {
         maxLength = null;
 }
 
-/// Generička CRUD kartica za jednu referentnu tabelu (tabela + Dodaj/Uredi/Obriši).
-/// Podatke dohvata preko proslijeđenog [BaseProvider]-a.
+/// Generic CRUD card for a single reference table (table + Add/Edit/Delete).
+/// Loads its data through the provided [BaseProvider].
 class ReferenceTab<T extends ReferenceItem> extends StatefulWidget {
-  final String title; // npr. 'Gradovi'
-  final String singular; // npr. 'grad' — za naslov dijaloga
+  final String title; // e.g. 'Gradovi'
+  final String singular; // e.g. 'grad' — used in the dialog title
   final BaseProvider<T> provider;
   final List<RefColumn<T>> columns;
   final List<RefField> fields;
   final Map<String, Object?> Function(T item) toFormValues;
-  final String Function(T item) nameOf; // za poruku potvrde brisanja
+  final String Function(T item) nameOf; // used in the delete confirmation message
   final String? footnote;
 
   const ReferenceTab({
@@ -142,7 +142,7 @@ class _ReferenceTabState<T extends ReferenceItem>
   }
 
   Future<void> _openForm(T? item) async {
-    // Učitaj opcije za sve FK dropdown-e i provjeri preduslove (za unos).
+    // Load options for all FK dropdowns and check prerequisites (for inserts).
     final fkFields =
         widget.fields.where((f) => f.kind == RefFieldKind.fkDropdown).toList();
     final fkOptions = <String, List<RefOption>>{};
@@ -216,7 +216,7 @@ class _ReferenceTabState<T extends ReferenceItem>
       _snack('Zapis obrisan.');
       await _load();
     } catch (e) {
-      // Npr. FK ograničenje — backend vraća jasnu poruku da se zapis koristi.
+      // E.g. an FK constraint — the backend returns a clear message that the record is in use.
       _snack(messageFor(e), error: true);
     }
   }
@@ -280,8 +280,8 @@ class _ReferenceTabState<T extends ReferenceItem>
         child: Text('Nema zapisa.', style: TextStyle(color: Colors.grey)),
       );
     }
-    // Na uskom ekranu ne stiskaj kolone — garantuj minimalnu širinu i daj
-    // horizontalni scroll sa vidljivim klizačem.
+    // On a narrow screen don't squeeze the columns — guarantee a minimum width and give
+    // a horizontal scroll with a visible scrollbar.
     return LayoutBuilder(
       builder: (context, constraints) {
         const minTableWidth = 600.0;

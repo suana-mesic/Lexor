@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
 
-/// Kompaktni inline banner za greške na ekranima koji prikazuju više sekcija
-/// (npr. početna, prisustvo) — ne sakriva ostatak sadržaja, samo upozorava.
+/// Compact inline error banner for screens that show several sections
+/// (e.g. home, attendance) — it does not hide the rest of the content, only warns.
 class ErrorBanner extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;

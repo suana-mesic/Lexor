@@ -294,7 +294,7 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
                           dateTo: _dateTo,
                           reason: _reasonController.text,
                         );
-                    var result = await Provider.of<LeaveProvider>(
+                    await Provider.of<LeaveProvider>(
                       context,
                       listen: false,
                     ).updateLeave(leaveUpdateRequest, widget.leave!.id);

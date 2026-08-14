@@ -27,9 +27,12 @@ class PaginationBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Prikazano $shownCount od $totalCount rezultata',
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          Flexible(
+            child: Text(
+              'Prikazano $shownCount od $totalCount rezultata',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
           ),
           Row(
             children: [

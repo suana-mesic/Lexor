@@ -18,11 +18,15 @@ class SalarySlipProvider extends BaseProvider<SalarySlipResponse> {
   Future<String?> downloadSlipPdf(int id, String defaultName) =>
       downloadPdf('/SalarySlips/$id/pdf', defaultName);
 
-  /// Report 2: the monthly summary PDF for all paid salaries.
-  Future<String?> downloadMonthlyReport(int year, int month) => downloadPdf(
-    '/SalarySlips/report/pdf?year=$year&month=$month',
-    'izvjestaj-plata-$year-${month.toString().padLeft(2, '0')}.pdf',
-  );
+  /// Report 2: the summary PDF for paid salaries in a period, optionally scoped to a
+  /// single employee (matches whatever the reports table is currently showing).
+  Future<String?> downloadMonthlyReport(int year, int month, {int? employeeId}) {
+    final employeeParam = employeeId == null ? '' : '&employeeId=$employeeId';
+    return downloadPdf(
+      '/SalarySlips/report/pdf?year=$year&month=$month$employeeParam',
+      'izvjestaj-plata-$year-${month.toString().padLeft(2, '0')}.pdf',
+    );
+  }
 
   /// Runs payroll for the whole period (all active employees) -> Pending.
   /// Returns the number of payslips actually generated (0 = no eligible contracts).

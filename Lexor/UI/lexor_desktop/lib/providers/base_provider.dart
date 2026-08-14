@@ -121,15 +121,15 @@ abstract class BaseProvider<T> with ChangeNotifier {
   }
 }
 
-/// Opcija za FK dropdown (npr. država pri dodavanju grada).
+/// Option for an FK dropdown (e.g. a country when adding a city).
 class RefOption {
   final int id;
   final String name;
   const RefOption(this.id, this.name);
 }
 
-/// Dohvata sve zapise referentne tabele kao opcije za FK dropdown (id + name).
-/// `endpoint` ovdje uključuje vodeću kosu crtu (npr. '/Countries').
+/// Fetches all rows of a reference table as FK-dropdown options (id + name).
+/// `endpoint` here includes the leading slash (e.g. '/Countries').
 Future<List<RefOption>> fetchRefOptions(String endpoint) async {
   final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint').replace(
     queryParameters: {'page': '1', 'pageSize': '1000', 'sortBy': 'Name'},

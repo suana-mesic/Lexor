@@ -28,10 +28,11 @@ class EmployeeProvider extends BaseProvider<EmployeeResponse> {
   }
 }
 
+/// Employee id + name list for autocomplete pickers. Uses the dedicated lookup endpoint
+/// (not the HR-only Employees CRUD) so back-office roles other than HR — accounting on the
+/// reports screen, admin on the RFID screen — can populate the picker too.
 Future<List<RefOption>> fetchEmployeeOptions() async {
-  final uri = Uri.parse(
-    '${ApiConfig.baseUrl}/Employees',
-  ).replace(queryParameters: {'page': '1', 'pageSize': '1000', 'sortBy': 'Id'});
+  final uri = Uri.parse('${ApiConfig.baseUrl}/EmployeeLookup');
   final res = await http.get(
     uri,
     headers: {
@@ -42,11 +43,8 @@ Future<List<RefOption>> fetchEmployeeOptions() async {
   if (res.statusCode != 200) {
     throw ApiException(ApiError.fromResponse(res));
   }
-  final data = jsonDecode(res.body);
-  return (data['items'] as List).map((e) {
-    final user = e['user'] as Map<String, dynamic>?;
-    final name = '${user?['firstName'] ?? ''} ${user?['lastName'] ?? ''}'
-        .trim();
-    return RefOption(e['id'] as int, name);
-  }).toList();
+  final data = jsonDecode(res.body) as List;
+  return data
+      .map((e) => RefOption(e['id'] as int, (e['fullName'] as String?) ?? ''))
+      .toList();
 }

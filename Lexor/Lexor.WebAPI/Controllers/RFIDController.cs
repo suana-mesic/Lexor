@@ -23,5 +23,12 @@ namespace Lexor.WebAPI.Controllers
             var result = await _service.DeactivateAsync(id);
             return result;
         }
+
+        [HttpPatch("{id}/reactivate")]
+        public async Task<ActionResult<RFIDResponse>> Reactivate(int id)
+        {
+            var result = await _service.ReactivateAsync(id);
+            return result;
+        }
     }
 }

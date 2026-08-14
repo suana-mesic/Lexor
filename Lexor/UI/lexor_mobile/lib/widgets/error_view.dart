@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_mobile/theme/app_colors.dart';
 
-/// Prikaz greške sa ikonom, porukom i dugmetom za ponovni pokušaj.
-/// Poruka treba biti razumljiva korisniku (vidi `ApiError` iz lexor_shared).
+/// Error view with an icon, a message and a retry button.
+/// The message should be user-friendly (see `ApiError` from lexor_shared).
 class ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;

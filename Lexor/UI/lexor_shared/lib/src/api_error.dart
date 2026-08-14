@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-/// Pretvara HTTP greške i izuzetke sa backenda u poruke razumljive korisniku.
-/// Dijeli se između mobilne i desktop aplikacije preko `lexor_shared` paketa.
+/// Turns backend HTTP errors and exceptions into user-friendly messages.
+/// Shared between the mobile and desktop apps via the `lexor_shared` package.
 class ApiError {
-  /// Poruka za neuspješan HTTP odgovor (status != 2xx).
-  /// Prvo pokušava iskoristiti poruku koju je vratio backend (npr. validacija),
-  /// a ako je nema, vraća generičku poruku prema status kodu.
+  /// Message for a failed HTTP response (status != 2xx).
+  /// Prefers the message returned by the backend (e.g. validation); if there is
+  /// none, falls back to a generic message based on the status code.
   static String fromResponse(http.Response response) {
     final backendMessage = _extractMessage(response.body);
 
@@ -36,7 +36,7 @@ class ApiError {
     }
   }
 
-  /// Poruka za izuzetak nastao tokom slanja zahtjeva (mreža, timeout, parsiranje).
+  /// Message for an exception raised while sending the request (network, timeout, parsing).
   static String fromException(Object e) {
     if (e is SocketException) {
       return 'Nije moguće povezati se sa serverom. Provjerite internet konekciju.';
@@ -50,11 +50,11 @@ class ApiError {
     return 'Došlo je do greške. Pokušajte ponovo.';
   }
 
-  /// Da li je odgovor istek sesije (401) — koristi se da se korisnik preusmjeri na prijavu.
+  /// Whether the response is a session expiry (401) — used to redirect the user to login.
   static bool isSessionExpired(http.Response response) =>
       response.statusCode == 401;
 
-  /// Pokušava izvući poruku iz tijela odgovora (ASP.NET ProblemDetails / { message } / { errors }).
+  /// Tries to extract a message from the response body (ASP.NET ProblemDetails / { message } / { errors }).
   static String? _extractMessage(String body) {
     if (body.isEmpty) return null;
     try {
@@ -77,7 +77,7 @@ class ApiError {
         }
       }
     } catch (_) {
-      // tijelo nije JSON — ignoriši
+      // body is not JSON — ignore
     }
     return null;
   }

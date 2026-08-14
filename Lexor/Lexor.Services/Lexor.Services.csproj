@@ -4,6 +4,11 @@
     <ProjectReference Include="..\Lexor.Model\Lexor.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Legal documents shipped with the app so the chatbot has a corpus to answer from on a fresh database. -->
+    <Content Include="SeedData\LegalDocuments\*.pdf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>

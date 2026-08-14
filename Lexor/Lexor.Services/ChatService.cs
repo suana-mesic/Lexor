@@ -178,7 +178,7 @@ namespace Lexor.Services
             {
                 response = await client.PostAsJsonAsync("chat/completions", payload);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw new BusinessException("Chatbot trenutno nije dostupan. Pokušajte ponovo kasnije.");
             }

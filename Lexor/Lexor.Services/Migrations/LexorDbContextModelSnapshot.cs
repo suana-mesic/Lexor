@@ -627,17 +627,17 @@ namespace Lexor.Services.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Zakon o radu"
+                            Name = "Zakon"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Zakon o zaštiti na radu"
+                            Name = "Pravilnik"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Pravilnik o radu"
+                            Name = "Dopuna/izmjena"
                         });
                 });
 
@@ -688,12 +688,17 @@ namespace Lexor.Services.Migrations
                     b.Property<DateTime>("PublishedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("PublishedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PublishedByUserId");
 
                     b.ToTable("News");
                 });
@@ -1411,6 +1416,15 @@ namespace Lexor.Services.Migrations
                         .IsRequired();
 
                     b.Navigation("LegalDocument");
+                });
+
+            modelBuilder.Entity("Lexor.Services.Database.News", b =>
+                {
+                    b.HasOne("Lexor.Services.Database.User", "PublishedBy")
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId");
+
+                    b.Navigation("PublishedBy");
                 });
 
             modelBuilder.Entity("Lexor.Services.Database.Notification", b =>

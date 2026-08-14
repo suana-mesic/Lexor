@@ -8,7 +8,8 @@ namespace Lexor.WebAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    [Authorize(Roles =RoleNames.HrManager)]
+    // Company overview is available to back-office roles that plan around it (HR and accounting).
+    [Authorize(Roles = $"{RoleNames.HrManager},{RoleNames.Accounting}")]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _service;

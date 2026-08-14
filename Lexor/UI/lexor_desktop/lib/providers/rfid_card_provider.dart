@@ -24,4 +24,18 @@ class RfidCardProvider extends BaseProvider<RfidResponse> {
       throw ApiException(ApiError.fromResponse(res));
     }
   }
+
+  Future<void> reactivate(int id) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/RFID/$id/reactivate'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${AuthProvider.accessToken}',
+      },
+    );
+
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw ApiException(ApiError.fromResponse(res));
+    }
+  }
 }

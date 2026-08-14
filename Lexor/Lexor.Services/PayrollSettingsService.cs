@@ -59,10 +59,10 @@ namespace Lexor.Services
         {
             "Pon-Sub" => 63,
             "Pon-Ned" => 127,
-            _ => 31, // Pon-Pet (default)
+            _ => 31, // Mon-Fri (default)
         };
 
-        // Pretvara bitmask nazad u čitljiv opis (za response).
+        // Converts the bitmask back into a human-readable description (for the response).
         public static string MaskToDescription(int mask) => mask switch
         {
             63 => "Pon-Sub",

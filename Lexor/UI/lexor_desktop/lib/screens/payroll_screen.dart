@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/models/salary_slip_response.dart';
 import 'package:lexor_desktop/models/search_result.dart';
+import 'package:lexor_desktop/providers/base_provider.dart';
+import 'package:lexor_desktop/providers/employee_provider.dart';
 import 'package:lexor_desktop/providers/salary_slip_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
@@ -32,6 +34,10 @@ class _PayrollScreenState extends State<PayrollScreen> {
   int? _year;
   int? _month;
 
+  // Employee view filter (table only — never scopes the calculation or bulk actions).
+  int? _employeeId;
+  List<RefOption> _employees = const [];
+
   static const double _kHeaderRowHeight = 48;
   static const double _kDataRowHeight = 64;
   final NumberFormat _money = NumberFormat('#,##0.00');
@@ -48,7 +54,19 @@ class _PayrollScreenState extends State<PayrollScreen> {
       _year = now.year;
       _month = now.month - 1;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+      _loadEmployees();
+    });
+  }
+
+  Future<void> _loadEmployees() async {
+    try {
+      final list = await fetchEmployeeOptions();
+      if (mounted) setState(() => _employees = list);
+    } catch (_) {
+      // Filter is optional UX — silently fall back to "no filter".
+    }
   }
 
   @override
@@ -79,7 +97,8 @@ class _PayrollScreenState extends State<PayrollScreen> {
       _month != null &&
       _loaded &&
       _items.isEmpty &&
-      _periodEnded;
+      _periodEnded &&
+      _employeeId == null; // an empty FILTERED list must not read as "not yet calculated"
   bool get _hasPending => _items.any((s) => s.status == SalarySlipStatus.pending.code);
   bool get _hasApproved => _items.any((s) => s.status == SalarySlipStatus.approved.code);
 
@@ -104,6 +123,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
           'sortBy': 'Id desc',
           'year': _year,
           'month': _month,
+          if (_employeeId != null) 'employeeId': _employeeId,
         },
       );
     } catch (e) {
@@ -293,6 +313,67 @@ class _PayrollScreenState extends State<PayrollScreen> {
     );
   }
 
+  // Table-only view filter, visually set apart from the "Pokreni obračun" card so it is never
+  // mistaken for running payroll for a single employee. Clearing the field auto-removes the filter.
+  Widget _filterBar() {
+    return Container(
+      color: Colors.grey[50],
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.filter_alt_outlined, size: 18, color: Colors.grey[700]),
+              const SizedBox(width: 10),
+              // Expanded so the field shrinks with the window instead of forcing an overflow.
+              Expanded(
+                child: Autocomplete<RefOption>(
+                  optionsBuilder: (value) {
+                    final q = value.text.toLowerCase();
+                    if (q.isEmpty) return _employees;
+                    return _employees.where((e) => e.name.toLowerCase().contains(q));
+                  },
+                  displayStringForOption: (o) => o.name,
+                  onSelected: (o) {
+                    setState(() => _employeeId = o.id);
+                    _page = 1;
+                    _load();
+                  },
+                  fieldViewBuilder: (context, controller, focusNode, _) {
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      onChanged: (v) {
+                        // Emptying the field removes an active filter automatically.
+                        if (v.isEmpty && _employeeId != null) {
+                          setState(() => _employeeId = null);
+                          _page = 1;
+                          _load();
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        labelText: 'Filtriraj po uposleniku',
+                        prefixIcon: Icon(Icons.search, size: 18),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Filtrira samo prikaz platnih lista — ne pokreće obračun.',
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _labeled(String label, Widget child) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [Text(label), const SizedBox(height: 6), child],
@@ -315,14 +396,14 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 const Text('Platne liste',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const Spacer(),
-                if (_hasPending)
+                if (_employeeId == null && _hasPending)
                   OutlinedButton.icon(
                     onPressed: _busy ? null : _approveAll,
                     icon: const Icon(Icons.done_all, size: 18),
                     label: const Text('Odobri sve'),
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
                   ),
-                if (_hasApproved || _hasPending) ...[
+                if (_employeeId == null && (_hasApproved || _hasPending)) ...[
                   const SizedBox(width: 8),
                   Tooltip(
                     message: _hasPending
@@ -342,6 +423,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
               ],
             ),
           ),
+          _filterBar(),
           const Divider(height: 1),
           Expanded(child: _buildBody()),
           const Divider(height: 1),
@@ -388,17 +470,29 @@ class _PayrollScreenState extends State<PayrollScreen> {
     }
     if (_error != null && _items.isEmpty) return Center(child: Text(_error!));
     if (_items.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.description_outlined, size: 48, color: Colors.grey),
-              SizedBox(height: 12),
-              Text('Pokrenite obračun za odabrani period\nda biste vidjeli platne liste.',
-                  textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-            ],
+      // Scrollable so the placeholder centers when there is room but never overflows a short viewport.
+      return LayoutBuilder(
+        builder: (context, c) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: c.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.description_outlined, size: 48, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    Text(
+                        _employeeId != null
+                            ? 'Nema platnih lista za odabranog uposlenika u ovom periodu.'
+                            : 'Pokrenite obračun za odabrani period\nda biste vidjeli platne liste.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       );

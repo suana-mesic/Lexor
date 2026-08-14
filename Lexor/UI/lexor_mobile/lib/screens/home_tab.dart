@@ -24,6 +24,7 @@ String _leaveStateLabel(String? state) =>
       LeaveStateType.approved => 'Zahtjev odobren',
       LeaveStateType.rejected => 'Zahtjev odbijen',
       LeaveStateType.cancelled => 'Zahtjev otkazan',
+      LeaveStateType.completed => 'Zahtjev završen',
       _ => 'Zahtjev',
     };
 

@@ -16,6 +16,7 @@ namespace Lexor.Services
         public Task<int> MarkAllSalariesAsPaid(SalarySlipPayAllRequest request);
         public Task<SalarySlipResponse> MarkSingleSalaryAsPaid(SalarySlipPaySingleRequest request);
         public Task<(byte[] Bytes, string FileName)> GetSlipPdfAsync(int id);
-        public Task<byte[]> GetMonthlyReportPdfAsync(int year, int month);
+        public Task<byte[]> GetMonthlyReportPdfAsync(int year, int month, int? employeeId = null);
+        public Task<PayrollDashboardResponse> GetPayrollDashboardAsync();
     }
 }

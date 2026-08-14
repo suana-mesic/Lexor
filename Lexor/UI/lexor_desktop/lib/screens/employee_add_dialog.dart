@@ -299,9 +299,9 @@ class _EmployeeAddDialogState extends State<EmployeeAddDialog> {
                 ),
                 const SizedBox(height: 16),
                 // Second row of the contract section.
-                // - For fixed-term ("Na određeno"): EndDate + BrutoSalary;
+                // - For fixed-term: EndDate + BrutoSalary;
                 //   WorkHours goes on its own line below.
-                // - For "Na neodređeno": no EndDate, so we pair Bruto with
+                // - For indefinite: no EndDate, so we pair gross salary with
                 //   WorkHours to keep a clean 2x2 grid (no orphan field).
                 if (_needsEndDate) ...[
                   _twoCol(

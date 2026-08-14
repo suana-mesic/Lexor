@@ -172,10 +172,16 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
                 var bruto = contract.BrutoSalary;
 
                 // 6) Overtime: only on WORKING days, hours above WorkHoursPerDay (e.g. stayed 9h instead of 8h).
+                // A 30-minute daily grace period applies (common payroll practice): a day counts as
+                // overtime only if the extra time exceeds it, so a few stray minutes past the end of the
+                // day are not paid as overtime. Once past the grace, the full extra time is counted.
+                const decimal overtimeGraceHours = 0.5m;
                 var attendances = attendancesByEmployee.GetValueOrDefault(employee.Id, new List<Attendance>());
                 var overtimeHours = attendances
                     .Where(a => settings.IsWorkDay(a.Date.DayOfWeek))
-                    .Sum(a => Math.Max(0m, (a.WorkedHours ?? 0m) - workHoursPerDay));
+                    .Select(a => Math.Max(0m, (a.WorkedHours ?? 0m) - workHoursPerDay))
+                    .Where(extra => extra > overtimeGraceHours)
+                    .Sum();
                 var overtimeAmount = Math.Round(overtimeHours * hourlyRate * settings.OvertimeMultiplier, 2);
 
                 // 7) Unpaid leave days in this period

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/helpers/image_decode.dart';
 import 'package:lexor_desktop/models/news_response.dart';
+import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:provider/provider.dart';
 
 class NewsScreen extends StatefulWidget {
@@ -104,6 +106,15 @@ class _NewsScreenState extends State<NewsScreen> {
           ),
           const SizedBox(height: 20),
           Expanded(child: _buildBody(provider)),
+          if (provider.news.isNotEmpty || provider.page > 1)
+            PaginationBar(
+              shownCount: provider.news.length,
+              totalCount: provider.totalCount,
+              hasPrev: provider.hasPrev,
+              hasNext: provider.hasNext,
+              onPrev: provider.prevPage,
+              onNext: provider.nextPage,
+            ),
         ],
       ),
     );
@@ -129,6 +140,10 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Widget _newsCard(NewsResponse n) {
+    // Edit/delete only on your own announcements; administrators may manage any.
+    final auth = context.read<AuthProvider>();
+    final canModify = auth.roles.contains('Administrator') ||
+        (n.publishedByUserId != null && n.publishedByUserId == auth.userId);
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -136,7 +151,10 @@ class _NewsScreenState extends State<NewsScreen> {
         border: Border.all(color: Colors.grey[200]!),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Row(
+      // IntrinsicHeight gives the row a concrete height from the text column (the image
+      // contributes no intrinsic height), so stretch no longer collapses the card to zero.
+      child: IntrinsicHeight(
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (n.imageBase64 != null && n.imageBase64!.isNotEmpty)
@@ -183,25 +201,27 @@ class _NewsScreenState extends State<NewsScreen> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  color: AppColors.primary,
-                  onPressed: () => _openDialog(existing: n),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  color: AppColors.error,
-                  onPressed: () => _delete(n),
-                ),
-              ],
+          if (canModify)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    color: AppColors.primary,
+                    onPressed: () => _openDialog(existing: n),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    color: AppColors.error,
+                    onPressed: () => _delete(n),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
+        ),
       ),
     );
   }

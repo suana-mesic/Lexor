@@ -4,6 +4,8 @@ import 'package:lexor_desktop/providers/dashboard_provider.dart';
 import 'package:lexor_desktop/screens/attendance_screen.dart';
 import 'package:lexor_desktop/screens/dashboard_screen.dart';
 import 'package:lexor_desktop/screens/employees_screen.dart';
+import 'package:lexor_desktop/screens/employees_readonly_screen.dart';
+import 'package:lexor_desktop/screens/payroll_dashboard_screen.dart';
 import 'package:lexor_desktop/screens/leaves_screen.dart';
 import 'package:lexor_desktop/screens/legal_document_screen.dart';
 import 'package:lexor_desktop/screens/login_screen.dart';
@@ -44,22 +46,51 @@ class _NavItem {
 
 // Ordered so each role's first visible item is a sensible landing page.
 const _navItems = [
-  _NavItem(Icons.home_outlined, 'Dashboard', {_rHr}, DashboardScreen()),
+  _NavItem(Icons.home_outlined, 'Nadzorna ploča', {_rHr}, DashboardScreen()),
+  // Accounting gets a finance/payroll dashboard instead of the HR one.
+  _NavItem(Icons.home_outlined, 'Nadzorna ploča', {_rAcc}, PayrollDashboardScreen()),
   _NavItem(Icons.people_outline, 'Uposlenici', {_rHr}, EmployeesScreen()),
+  // Read-only employee directory for accounting (separate screen, no write actions).
+  _NavItem(Icons.people_outline, 'Uposlenici', {_rAcc}, EmployeesReadonlyScreen()),
   _NavItem(Icons.access_time_outlined, 'Prisustvo', {_rHr}, AttendanceScreen()),
   _NavItem(Icons.inbox_outlined, 'Zahtjevi', {_rHr}, LeavesScreen()),
-  _NavItem(Icons.bar_chart_outlined, 'Izvještaji', {_rHr, _rAcc}, ReportsScreen()),
-  _NavItem(Icons.account_balance_wallet_outlined, 'Obračun plata', {_rAcc}, PayrollScreen()),
-  _NavItem(Icons.settings_outlined, 'Postavke obračuna', {_rAcc}, PayrollSettingsScreen()),
-  _NavItem(Icons.insights_outlined, 'Predikcija odsustva', {_rHr}, AbsencePredictionScreen()),
-  _NavItem(Icons.campaign_outlined, 'Obavijesti', {_rHr}, NewsScreen()),
-  _NavItem(Icons.dashboard_outlined, 'Admin pregled', {_rAdmin}, AdminDashboardScreen()),
-  _NavItem(Icons.manage_accounts_outlined, 'Korisnici', {_rAdmin}, UsersScreen()),
+  _NavItem(Icons.bar_chart_outlined, 'Izvještaji', {
+    _rHr,
+    _rAcc,
+  }, ReportsScreen()),
+  _NavItem(Icons.account_balance_wallet_outlined, 'Obračun plata', {
+    _rAcc,
+  }, PayrollScreen()),
+  _NavItem(Icons.settings_outlined, 'Postavke obračuna', {
+    _rAcc,
+  }, PayrollSettingsScreen()),
+  _NavItem(Icons.insights_outlined, 'Predikcija odsustva', {
+    _rHr,
+  }, AbsencePredictionScreen()),
+  _NavItem(Icons.campaign_outlined, 'Obavijesti', {_rHr, _rAcc}, NewsScreen()),
+  _NavItem(Icons.dashboard_outlined, 'Nadzorna ploča', {
+    _rAdmin,
+  }, AdminDashboardScreen()),
+  _NavItem(Icons.manage_accounts_outlined, 'Korisnici', {
+    _rAdmin,
+  }, UsersScreen()),
   _NavItem(Icons.badge_outlined, 'Uloge', {_rAdmin}, RolesScreen()),
-  _NavItem(Icons.credit_card_outlined, 'RFID kartice', {_rAdmin}, RfidCardsScreen()),
-  _NavItem(Icons.storage_outlined, 'Referentni podaci', {_rAdmin}, ReferenceDataScreen()),
-  _NavItem(Icons.balance_outlined, 'Pravni dokumenti', {_rAdmin}, LegalDocumentScreen()),
-  _NavItem(Icons.account_circle_outlined, 'Moj profil', {_rHr, _rAcc, _rAdmin}, MyProfileScreen()),
+  _NavItem(Icons.credit_card_outlined, 'RFID kartice', {
+    _rAdmin,
+  }, RfidCardsScreen()),
+  _NavItem(Icons.storage_outlined, 'Referentni podaci', {
+    _rAdmin,
+  }, ReferenceDataScreen()),
+  _NavItem(Icons.balance_outlined, 'Pravni dokumenti', {
+    _rAdmin,
+  }, LegalDocumentScreen()),
+  // Separate entry for admin so it lands on the admin dashboard, not on news.
+  _NavItem(Icons.campaign_outlined, 'Obavijesti', {_rAdmin}, NewsScreen()),
+  _NavItem(Icons.account_circle_outlined, 'Moj profil', {
+    _rHr,
+    _rAcc,
+    _rAdmin,
+  }, MyProfileScreen()),
 ];
 
 class MainShell extends StatefulWidget {
@@ -84,8 +115,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   // Items this role may see, in declaration order (index 0 is the landing page).
-  List<_NavItem> get _visibleItems =>
-      [for (final item in _navItems) if (item.roles.any(_roles.contains)) item];
+  List<_NavItem> get _visibleItems => [
+    for (final item in _navItems)
+      if (item.roles.any(_roles.contains)) item,
+  ];
 
   String get _panelTitle {
     if (_roles.contains(_rHr)) return 'HR panel';
@@ -98,7 +131,9 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final items = _visibleItems;
     if (items.isEmpty) {
-      return const Scaffold(body: Center(child: Text('Nema dostupnih ekrana.')));
+      return const Scaffold(
+        body: Center(child: Text('Nema dostupnih ekrana.')),
+      );
     }
     final index = _selectedIndex.clamp(0, items.length - 1);
 
@@ -145,7 +180,8 @@ class _MainShellState extends State<MainShell> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               itemCount: items.length,
-              itemBuilder: (context, i) => _buildNavTile(items[i], i, selectedIndex),
+              itemBuilder: (context, i) =>
+                  _buildNavTile(items[i], i, selectedIndex),
             ),
           ),
           Padding(
@@ -154,10 +190,16 @@ class _MainShellState extends State<MainShell> {
               icon: Icons.logout_outlined,
               label: 'Odjava',
               onTap: () async {
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                );
                 final navigator = Navigator.of(context);
                 Provider.of<DashboardProvider>(context, listen: false).reset();
-                Provider.of<AbsencePredictionProvider>(context, listen: false).reset();
+                Provider.of<AbsencePredictionProvider>(
+                  context,
+                  listen: false,
+                ).reset();
                 Provider.of<NewsProvider>(context, listen: false).reset();
                 Provider.of<AccountProvider>(context, listen: false).reset();
                 Provider.of<AdminProvider>(context, listen: false).reset();

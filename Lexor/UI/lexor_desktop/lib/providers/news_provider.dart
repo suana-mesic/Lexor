@@ -9,29 +9,45 @@ import 'package:lexor_shared/lexor_shared.dart';
 class NewsProvider extends ChangeNotifier {
   static const String _baseUrl = ApiConfig.baseUrl;
 
+  static const int pageSize = 6;
+
   List<NewsResponse> news = [];
   bool isLoading = false;
   String? error;
+  int page = 1;
+  int totalCount = 0;
+
+  int get totalPages => totalCount <= 0 ? 1 : ((totalCount + pageSize - 1) ~/ pageSize);
+  bool get hasPrev => page > 1;
+  bool get hasNext => page < totalPages;
 
   Map<String, String> _headers() => {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer ${AuthProvider.accessToken}',
   };
 
-  Future<void> fetch() async {
+  Future<void> fetch({int? goToPage}) async {
+    if (goToPage != null) page = goToPage;
     isLoading = true;
     error = null;
     notifyListeners();
     try {
       final uri = Uri.parse('$_baseUrl/News').replace(
-        queryParameters: {'sortBy': 'PublishedAt desc', 'pageSize': '100'},
+        queryParameters: {
+          'sortBy': 'PublishedAt desc',
+          'page': '$page',
+          'pageSize': '$pageSize',
+          'includeTotalCount': 'true',
+        },
       );
       final res = await http.get(uri, headers: _headers());
       if (res.statusCode == 200) {
-        final items = (jsonDecode(res.body)['items'] as List?) ?? [];
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final items = (body['items'] as List?) ?? [];
         news = items
             .map((e) => NewsResponse.fromJson(e as Map<String, dynamic>))
             .toList();
+        totalCount = (body['totalCount'] as int?) ?? news.length;
       } else {
         error = ApiError.fromResponse(res);
       }
@@ -41,6 +57,14 @@ class NewsProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> nextPage() async {
+    if (hasNext) await fetch(goToPage: page + 1);
+  }
+
+  Future<void> prevPage() async {
+    if (hasPrev) await fetch(goToPage: page - 1);
   }
 
   // Returns null on success, or an error message to show the user.
@@ -68,7 +92,9 @@ class NewsProvider extends ChangeNotifier {
               body: body,
             );
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        await fetch();
+        // A newly created announcement is newest, so jump to the first page; an edit
+        // keeps the current page.
+        await fetch(goToPage: id == null ? 1 : page);
         return null;
       }
       return ApiError.fromResponse(res);
@@ -85,6 +111,8 @@ class NewsProvider extends ChangeNotifier {
       );
       if (res.statusCode >= 200 && res.statusCode < 300) {
         await fetch();
+        // Deleting the last item on a page leaves it empty — step back one page.
+        if (news.isEmpty && page > 1) await fetch(goToPage: page - 1);
         return null;
       }
       return ApiError.fromResponse(res);
@@ -97,6 +125,8 @@ class NewsProvider extends ChangeNotifier {
     news = [];
     isLoading = false;
     error = null;
+    page = 1;
+    totalCount = 0;
     notifyListeners();
   }
 }

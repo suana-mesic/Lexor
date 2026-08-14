@@ -417,10 +417,10 @@ class _LeavesScreenState extends State<LeavesScreen> {
     final actions = l.allowedActions;
     final canApprove = actions.contains('ApproveAsync');
     final canReject = actions.contains('RejectAsync');
-    // Poništi se na panelu prikazuje samo za Odobreno (admin override), ne za Na čekanju.
+    // Cancel is shown on the panel only for Approved requests (admin override), not for Pending.
     final canCancel = actions.contains('CancelAsync') && !canApprove;
 
-    // Vlastiti zahtjev na čekanju → objašnjenje umjesto Odobri/Odbij.
+    // Own pending request → show an explanation instead of Approve/Reject.
     if (isOwnRequest && (canApprove || canReject || canCancel)) {
       return Tooltip(
         message: 'Ne možete odlučivati o vlastitom zahtjevu za odsustvo.',

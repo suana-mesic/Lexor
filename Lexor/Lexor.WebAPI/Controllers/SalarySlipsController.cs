@@ -81,9 +81,9 @@ namespace Lexor.WebAPI.Controllers
 
         [Authorize(Roles = $"{RoleNames.Accounting},{RoleNames.HrManager}")]
         [HttpGet("report/pdf")]
-        public async Task<IActionResult> GetMonthlyReportPdf([FromQuery] int year, [FromQuery] int month)
+        public async Task<IActionResult> GetMonthlyReportPdf([FromQuery] int year, [FromQuery] int month, [FromQuery] int? employeeId = null)
         {
-            var bytes = await _service.GetMonthlyReportPdfAsync(year, month);
+            var bytes = await _service.GetMonthlyReportPdfAsync(year, month, employeeId);
             return File(bytes, "application/pdf", $"izvjestaj-plata-{year}-{month:D2}.pdf");
         }
     }

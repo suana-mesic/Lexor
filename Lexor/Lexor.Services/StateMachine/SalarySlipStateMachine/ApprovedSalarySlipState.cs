@@ -27,6 +27,14 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
             if (approvedSalary == null)
                 throw new BusinessException("Evidencija o plati ne postoji.");
 
+            // Separation of duties (four-eyes): the person who approved a payslip must not be the
+            // one who pays it out. Only enforced for an authenticated user (the seeder pays as the
+            // system with no user id, so it is exempt).
+            var payerId = _userAccessor.GetUserId();
+            if (payerId != null && approvedSalary.MarkedAsApprovedByAdminId == payerId)
+                throw new BusinessException(
+                    "Ne možete isplatiti platu koju ste sami odobrili. Isplatu mora izvršiti druga osoba.");
+
             approvedSalary.State = nameof(PaidSalarySlipState);
             approvedSalary.PaidAt = DateTime.UtcNow;
             approvedSalary.MarkedAsPaidByAdminId = _userAccessor.GetUserId();

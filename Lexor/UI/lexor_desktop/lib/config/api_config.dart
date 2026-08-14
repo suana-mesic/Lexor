@@ -1,4 +1,4 @@
-/// Centralna konfiguracija za pristup backend API-ju (desktop aplikacija).
+/// Central configuration for reaching the backend API (desktop app).
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',

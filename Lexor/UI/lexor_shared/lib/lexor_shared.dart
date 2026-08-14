@@ -1,4 +1,4 @@
-/// Zajednički kod koji dijele lexor_mobile i lexor_desktop aplikacije.
+/// Shared code used by both the lexor_mobile and lexor_desktop apps.
 library;
 
 export 'src/api_error.dart';

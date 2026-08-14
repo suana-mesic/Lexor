@@ -118,6 +118,29 @@ namespace Lexor.Services
             }
             return actions;
         }
+        // An employee may not request a new leave that overlaps one they already have PENDING or
+        // APPROVED. Rejected or cancelled leaves do NOT block — that period can be requested again.
+        private async Task EnsureNoActiveOverlapAsync(int employeeId, DateOnly from, DateOnly to, int? excludeId = null)
+        {
+            var pending = nameof(PendingLeaveState);
+            var approved = nameof(ApprovedLeaveState);
+            var clash = await _dbContext.Set<Leave>()
+                .Where(l => l.EmployeeId == employeeId
+                         && (l.State == pending || l.State == approved)
+                         && (excludeId == null || l.Id != excludeId)
+                         && l.DateFrom <= to && l.DateTo >= from)
+                .Select(l => new { l.State, l.DateFrom, l.DateTo })
+                .FirstOrDefaultAsync();
+
+            if (clash != null)
+            {
+                var what = clash.State == approved ? "odobreno odsustvo" : "zahtjev za odsustvo na čekanju";
+                throw new BusinessException(
+                    $"Već imate {what} u periodu {clash.DateFrom:dd.MM.yyyy} – {clash.DateTo:dd.MM.yyyy}. " +
+                    "Ne možete zatražiti novo odsustvo koje se preklapa s tim periodom.");
+            }
+        }
+
         public async Task EmployeeIsPermitted(int id)
         {
             var currentUserId = _userAccessor.GetUserId();
@@ -148,6 +171,8 @@ namespace Lexor.Services
                 .FirstOrDefaultAsync()
                 ?? throw new ValidationException("Trenutni korisnik nije povezan sa zaposlenikom.");
 
+            await EnsureNoActiveOverlapAsync(employeeId, request.DateFrom, request.DateTo);
+
             BaseLeaveState state = _baseLeaveState.GetLeaveState(nameof(InitialLeaveState));
             var result = await state.InsertAsync(request, employeeId);
             result.Employee = null;
@@ -166,6 +191,12 @@ namespace Lexor.Services
             var entity = await _dbContext.Set<Leave>().FindAsync(id);
             if (entity == null)
                 throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
+
+            await EnsureNoActiveOverlapAsync(
+                entity.EmployeeId,
+                request.DateFrom ?? entity.DateFrom,
+                request.DateTo ?? entity.DateTo,
+                excludeId: id);
 
             BaseLeaveState state = _baseLeaveState.GetLeaveState(entity.State);
             var result = await state.UpdateAsync(id, request);

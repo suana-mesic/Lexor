@@ -98,6 +98,7 @@ namespace Lexor.Services
         {
             var total = await _dbContext.Set<User>().CountAsync();
             var active = await _dbContext.Set<User>().CountAsync(u => u.IsActive);
+            var notActivated = await _dbContext.Set<User>().CountAsync(u => !u.IsCodeActivated);
 
             // Count per role via a subquery so roles with zero users are still listed.
             var perRole = await _dbContext.Set<Role>()
@@ -109,12 +110,32 @@ namespace Lexor.Services
                 })
                 .ToListAsync();
 
+            var today = DateTime.UtcNow.Date;
+            var soon = today.AddDays(30);
+
             return new AdminStatsResponse
             {
                 TotalUsers = total,
                 ActiveUsers = active,
                 InactiveUsers = total - active,
-                UsersPerRole = perRole
+                NotActivatedUsers = notActivated,
+                UsersPerRole = perRole,
+
+                Departments = await _dbContext.Set<Department>().CountAsync(),
+                Positions = await _dbContext.Set<Position>().CountAsync(),
+                Cities = await _dbContext.Set<City>().CountAsync(),
+                ContractTypes = await _dbContext.Set<ContractType>().CountAsync(),
+                LeaveTypes = await _dbContext.Set<LeaveType>().CountAsync(),
+
+                LegalDocuments = await _dbContext.Set<LegalDocument>().CountAsync(),
+                ActiveRfidCards = await _dbContext.Set<RfidCard>().CountAsync(c => c.IsActive),
+
+                ActiveContracts = await _dbContext.Set<Contract>()
+                    .CountAsync(c => c.StartDate <= today && (c.EndDate == null || c.EndDate >= today)),
+                ExpiredContracts = await _dbContext.Set<Contract>()
+                    .CountAsync(c => c.EndDate != null && c.EndDate < today),
+                ExpiringSoonContracts = await _dbContext.Set<Contract>()
+                    .CountAsync(c => c.EndDate != null && c.EndDate >= today && c.EndDate <= soon),
             };
         }
 

@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lexor.WebAPI.Controllers
 {
-    // Cijeli kontroler je admin-only: dokumentima preko HTTP-a pristupa samo admin panel.
-    // Uposlenici NE čitaju dokumente direktno — chatbot odgovara na njihova pitanja
-    // čitajući LegalDocumentChunk server-side, a ne kroz ove endpointe.
+    // The whole controller is admin-only: documents are reached over HTTP only from the admin panel.
+    // Employees do NOT read documents directly — the chatbot answers their questions by reading
+    // LegalDocumentChunk server-side, not through these endpoints.
     [Authorize(Roles =RoleNames.Administrator)]
     public class LegalDocumentController : BaseCRUDController<LegalDocumentResponse,
     LegalDocumentSearchObject, ILegalDocumentService, LegalDocumentInsertRequest, LegalDocumentUpdateRequest>

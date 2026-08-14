@@ -24,7 +24,7 @@ namespace Lexor.Services.Database
     {
         // Three-year history window ending close to "today" so the app looks alive.
         private static readonly DateOnly HistoryStart = new(2023, 7, 1);
-        private static readonly DateOnly HistoryEnd = new(2026, 7, 24);
+        private static readonly DateOnly HistoryEnd = new(2026, 7, 31);
 
         private const int EmployeeCount = 30;
 
@@ -39,16 +39,20 @@ namespace Lexor.Services.Database
         private const double OtherLeaveChancePerMonth = 0.40;
         private const double MiniVacationChancePerMonth = 0.12;
 
+        // Overtime model: employees always work at least their contracted hours; on some days
+        // they stay 1-3 hours longer (deliberate overtime blocks, never a stray few minutes).
+        private const double OvertimeChancePerDay = 0.15;
+
         // Each position belongs to exactly one department (must match LexorSeed reference data).
         private static readonly (int DeptId, int PosId, decimal BaseSalary)[] Roles =
         {
-            (1, 1, 3200m), // HR menadžer
-            (1, 2, 1900m), // Specijalista za zapošljavanje
-            (2, 3, 2600m), // Programer
-            (2, 4, 2800m), // DevOps inženjer
-            (3, 5, 2000m), // Predstavnik prodaje
-            (4, 6, 2900m), // Menadžer proizvodnje
-            (5, 7, 2400m), // Računovođa
+            (1, 1, 3200m), // HR manager
+            (1, 2, 1900m), // Recruitment specialist
+            (2, 3, 2600m), // Programmer
+            (2, 4, 2800m), // DevOps engineer
+            (3, 5, 2000m), // Sales representative
+            (4, 6, 2900m), // Production manager
+            (5, 7, 2400m), // Accountant
         };
 
         private static readonly string[] FirstNames =
@@ -67,20 +71,35 @@ namespace Lexor.Services.Database
             "Pirić", "Salkić", "Mehić", "Đurić", "Hasić", "Burić"
         };
 
+        // Real reader UIDs for the first employees (for scanning demos); the rest get a random UID.
+        private static readonly string[] SeededRfidUids =
+        {
+            "F38C1422", "13577C21", "C3C99B21", "53531822", "03EC1D22",
+            "43747722", "73D11F22", "13AD8421", "F32B2E22"
+        };
+
         public static async Task SeedAsync(LexorDbContext db, ICryptoService crypto)
         {
             // Business data is generated only for a fresh database; reference data lives in HasData.
             if (await db.Employees.AnyAsync())
                 return;
 
+            // Wrap the whole seed in one transaction: the role users are saved early (their Ids are
+            // needed as CreatedByUserId), so without this an interrupted/failed run would leave those
+            // users behind while the guard above still sees no employees — the next run would then try
+            // to insert the same users again and fail on the unique email index.
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
             // Deterministic randomness so a fresh seed always produces the same data set.
             var rng = new Random(20260101);
 
             // ----- Fixed role accounts: one clean login per role (password Test123!) -----
-            var hrManager  = BuildRoleUser(crypto, "HR", "Menadžer", "hrmenadzer@lexor.ba", "hr.menadzer", "061100100", roleId: 1);
+            var hrManager  = BuildRoleUser(crypto, "HR", "Menadžer", "hr.menadzer@lexor.ba", "hr.menadzer", "061100100", roleId: 1);
             var admin      = BuildRoleUser(crypto, "Admin", "Admin", "admin@lexor.ba", "admin", "061100200", roleId: 4);
-            var accounting = BuildRoleUser(crypto, "Accounting", "Accounting", "accounting@lexor.ba", "accounting", "061100300", roleId: 3);
-            db.Users.AddRange(hrManager, admin, accounting);
+            var accounting = BuildRoleUser(crypto, "Računovodstvo", "Računovodstvo", "racunovodstvo@lexor.ba", "racunovodstvo", "061100300", roleId: 3);
+            // Second accounting account so separation of duties can be shown: one approves, the other pays.
+            var accounting2 = BuildRoleUser(crypto, "Računovodstvo", "Kontrola", "racunovodstvo2@lexor.ba", "racunovodstvo2", "061100400", roleId: 3);
+            db.Users.AddRange(hrManager, admin, accounting, accounting2);
             await db.SaveChangesAsync(); // persist so their Ids can be used as CreatedByUserId
 
             var creatorId = hrManager.Id; // HR manager is the audit "creator" of employee records
@@ -107,6 +126,7 @@ namespace Lexor.Services.Database
                 // Hired before the history window so every employee has full 3-year history.
                 var hire = new DateTime(rng.Next(2019, 2023), rng.Next(1, 13), rng.Next(1, 28));
                 var contractTypeId = i % 5 == 0 ? 2 : 1; // every fifth employee is on a fixed-term contract
+                var workHoursPerDay = first == "Amina" && last == "Hodžić" ? 9 : 8;
 
                 var employee = new Employee
                 {
@@ -129,21 +149,25 @@ namespace Lexor.Services.Database
                     // Fixed-term contracts end after the seeded history so payroll stays simple.
                     EndDate = contractTypeId == 1 ? null : new DateTime(2027, 12, 31),
                     BrutoSalary = role.BaseSalary + rng.Next(-2, 4) * 100m,
-                    WorkHoursPerDay = 8,
+                    WorkHoursPerDay = workHoursPerDay,
                     CreatedAt = hire,
                     CreatedByUserId = creatorId
                 });
 
+                // First employees get real reader UIDs; the rest get a random 8-hex UID.
+                var uid = i < SeededRfidUids.Length
+                    ? SeededRfidUids[i]
+                    : $"{rng.Next(0x10000):X4}{rng.Next(0x10000):X4}";
                 var card = new RfidCard
                 {
-                    Uid = $"RFID-{i + 1:D4}",
+                    Uid = uid,
                     AssignedAt = hire,
                     IsActive = true
                 };
                 employee.RfidCards.Add(card);
 
                 var leaveRanges = BuildLeaves(employee, creatorId, vacationMonth, sickPeakMonth, rng);
-                BuildAttendance(employee, card, leaveRanges, unexcusedBaseRate, rng);
+                BuildAttendance(employee, card, leaveRanges, unexcusedBaseRate, workHoursPerDay, rng);
 
                 return employee;
             }
@@ -166,24 +190,28 @@ namespace Lexor.Services.Database
                     Title = "Kolektivni godišnji odmor",
                     Content = "Obavještavamo sve uposlenike da je kolektivni godišnji odmor planiran za period od 1. do 15. augusta. Molimo da svoje obaveze uskladite na vrijeme.",
                     ImageBase64 = SeedNews.Images[0],
-                    PublishedAt = new DateTime(2026, 7, 20, 9, 0, 0, DateTimeKind.Utc)
+                    PublishedAt = new DateTime(2026, 7, 20, 9, 0, 0, DateTimeKind.Utc),
+                    PublishedByUserId = creatorId
                 },
                 new News
                 {
                     Title = "Nova politika rada od kuće",
                     Content = "Od 1. septembra uvodimo mogućnost rada od kuće do dva dana sedmično, uz prethodni dogovor sa nadređenim. Detalji su dostupni u HR odjelu.",
                     ImageBase64 = SeedNews.Images[1],
-                    PublishedAt = new DateTime(2026, 7, 15, 9, 0, 0, DateTimeKind.Utc)
+                    PublishedAt = new DateTime(2026, 7, 15, 9, 0, 0, DateTimeKind.Utc),
+                    PublishedByUserId = creatorId
                 },
                 new News
                 {
                     Title = "Raspored isplate plata",
                     Content = "Isplata plata za tekući mjesec bit će izvršena 5. u narednom mjesecu. Za sva pitanja obratite se finansijskom odjelu.",
                     ImageBase64 = SeedNews.Images[2],
-                    PublishedAt = new DateTime(2026, 7, 10, 9, 0, 0, DateTimeKind.Utc)
+                    PublishedAt = new DateTime(2026, 7, 10, 9, 0, 0, DateTimeKind.Utc),
+                    PublishedByUserId = creatorId
                 });
 
             await db.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
 
         // Builds a user with a freshly salted PBKDF2 password hash and an already-activated account.
@@ -324,7 +352,7 @@ namespace Lexor.Services.Database
         // by a leave or hit by an unexcused absence (small noise with weekday/streak effects).
         private static void BuildAttendance(Employee employee, RfidCard card,
                                             List<(DateOnly From, DateOnly To)> leaves,
-                                            double baseRate, Random rng)
+                                            double baseRate, int workHoursPerDay, Random rng)
         {
             var absentPreviousWorkday = false;
 
@@ -353,8 +381,15 @@ namespace Lexor.Services.Database
 
                 absentPreviousWorkday = false;
 
-                var enter = day.ToDateTime(new TimeOnly(8, rng.Next(0, 20)));
-                var left = day.ToDateTime(new TimeOnly(16, rng.Next(0, 30)));
+                // Everyone works at LEAST their contracted hours. Most days they leave within ~20
+                // minutes of the contracted end (natural variance, below the 30-min overtime grace,
+                // so unpaid). On ~15% of days they put in a real overtime block of varied length
+                // (45 min to 3 h, in 5-minute steps) — never a flat round number, so it looks realistic.
+                var extraMinutes = rng.Next(0, 21); // 0-20 min: ordinary daily variance, not overtime
+                if (rng.NextDouble() < OvertimeChancePerDay)
+                    extraMinutes = rng.Next(9, 37) * 5; // 45-180 min overtime block
+                var enter = day.ToDateTime(new TimeOnly(8, rng.Next(0, 16)));
+                var left = enter.AddMinutes(workHoursPerDay * 60 + extraMinutes);
 
                 employee.Attendances.Add(new Attendance
                 {

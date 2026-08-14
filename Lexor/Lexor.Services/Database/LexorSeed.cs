@@ -68,10 +68,12 @@ namespace Lexor.Services.Database
             );
 
             // ===== LegalDocumentCategories =====
+            // Categories describe the TYPE of document, not its subject, so any legal document
+            // fits one of them regardless of topic.
             modelBuilder.Entity<LegalDocumentCategory>().HasData(
-                new LegalDocumentCategory { Id = 1, Name = "Zakon o radu" },
-                new LegalDocumentCategory { Id = 2, Name = "Zakon o zaštiti na radu" },
-                new LegalDocumentCategory { Id = 3, Name = "Pravilnik o radu" }
+                new LegalDocumentCategory { Id = 1, Name = "Zakon" },
+                new LegalDocumentCategory { Id = 2, Name = "Pravilnik" },
+                new LegalDocumentCategory { Id = 3, Name = "Dopuna/izmjena" }
             );
 
             // ===== PayrollSettings (FBiH default rates 2026) =====

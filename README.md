@@ -106,10 +106,13 @@ Sve lozinke su `Test123!`.
 
 | Kontekst | Rola | Korisničko ime |
 |---|---|---|
-| Desktop | HR menadžer | `hrmenadzer@lexor.ba` |
-| Desktop | Računovodstvo | `accounting@lexor.ba` |
+| Desktop | HR menadžer | `hr.menadzer@lexor.ba` |
+| Desktop | Računovodstvo | `racunovodstvo@lexor.ba` |
+| Desktop | Računovodstvo (druga osoba) | `racunovodstvo2@lexor.ba` |
 | Desktop | Administrator | `admin@lexor.ba` |
 | Mobilna | Uposlenik | `ime.prezime@lexor.ba` (npr. `amina.hodzic@lexor.ba`) |
+
+> Dva računovodstvena naloga postoje zbog segregacije dužnosti (maker-checker): istu platu ne mogu odobriti i isplatiti ista osoba — jedan odobrava, drugi isplaćuje.
 
 Desktop aplikacija razdvaja ovlasti po roli: HR menadžer upravlja uposlenicima, odsustvima, izvještajima i predikcijom; Računovodstvo radi obračun plata; Administrator je rezervisan za buduće sistemske funkcije. Uposlenici pristupaju isključivo mobilnoj aplikaciji.
 

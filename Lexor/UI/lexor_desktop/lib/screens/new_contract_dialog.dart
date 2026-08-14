@@ -107,7 +107,7 @@ class _NewContractDialogState extends State<NewContractDialog> {
       return;
     }
 
-    // Scenario A: active contract is indefinite (Neodređeno) — confirm automatic closure.
+    // Scenario A: active contract is indefinite — confirm automatic closure.
     final active = widget.currentActive;
     if (active != null && active.endDate == null) {
       final dayBefore = _startDate!.subtract(const Duration(days: 1));
@@ -255,7 +255,7 @@ class _NewContractDialogState extends State<NewContractDialog> {
                 ),
               ],
               // End date shown only when the contract type requires it
-              // (e.g. fixed-term). Hidden for "Na neodređeno" so the form
+              // (e.g. fixed-term). Hidden for indefinite so the form
               // doesn't suggest an unused field.
               if (_needsEndDate) ...[
                 const SizedBox(height: 12),

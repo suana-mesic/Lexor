@@ -340,6 +340,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
+            horizontalInterval: _yInterval(maxY),
             getDrawingHorizontalLine: (value) =>
                 FlLine(color: Colors.grey[200]!, strokeWidth: 1),
           ),
@@ -347,7 +348,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                interval: 1,
+                interval: _yInterval(maxY),
                 reservedSize: 32,
                 getTitlesWidget: (value, meta) => Text(
                   value.toInt().toString(),
@@ -413,6 +414,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // A "nice" Y-axis step that keeps ~5-6 labels regardless of the data range,
+  // so labels don't overlap into an unreadable smear on large counts.
+  double _yInterval(double maxY) {
+    final raw = maxY / 5;
+    return raw <= 1 ? 1 : raw.ceilToDouble();
+  }
+
   Widget _buildBarChart(DashboardResponse data, {bool flexible = false}) {
     final maxCount = data.leavesByType
         .map((t) => t.count)
@@ -438,6 +446,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
+            horizontalInterval: _yInterval(maxY),
             getDrawingHorizontalLine: (value) =>
                 FlLine(color: Colors.grey[200]!, strokeWidth: 1),
           ),
@@ -445,7 +454,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                interval: 1,
+                interval: _yInterval(maxY),
                 reservedSize: 32,
                 getTitlesWidget: (value, meta) => Text(
                   value.toInt().toString(),
@@ -533,7 +542,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             flex: 2,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Radijus se računa iz dostupnog prostora da donut nikad ne iskoči iz okvira.
+                // The radius is derived from the available space so the donut never overflows its box.
                 final outer = constraints.biggest.shortestSide / 2;
                 final centerRadius = outer * 0.42;
                 final sectionRadius = outer * 0.50;

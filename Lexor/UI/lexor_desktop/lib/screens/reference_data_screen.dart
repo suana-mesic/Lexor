@@ -4,7 +4,7 @@ import 'package:lexor_desktop/providers/reference_providers.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:lexor_desktop/widgets/reference_tab.dart';
 
-/// Ekran "Referentni podaci" — kartice sa CRUD-om za sve šifarničke tabele.
+/// "Reference data" screen — CRUD cards for all lookup tables.
 class ReferenceDataScreen extends StatefulWidget {
   const ReferenceDataScreen({super.key});
 

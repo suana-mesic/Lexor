@@ -46,10 +46,24 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'Lexor',
+      // App-wide: no Android 12+ stretch overscroll on any (current or future) screen.
+      scrollBehavior: const _NoOverscrollBehavior(),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: loggedIn ? const HomeScreen() : const LoginScreen(),
     );
+  }
+}
+
+/// Disables the Android 12+ stretch overscroll effect globally, so pulling past the top or
+/// bottom of any scrollable never visually scales the content.
+class _NoOverscrollBehavior extends MaterialScrollBehavior {
+  const _NoOverscrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
   }
 }

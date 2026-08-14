@@ -12,6 +12,7 @@ using Lexor.Services.StateMachine.LeaveStateMachine;
 using Lexor.Services.StateMachine.SalarySlipStateMachine;
 using Lexor.Services.Validators;
 using Lexor.WebAPI;
+using Lexor.WebAPI.Json;
 using Lexor.WebAPI.Auth;
 using Lexor.WebAPI.Filters;
 using Mapster;
@@ -30,6 +31,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExceptionFilter>();
+})
+.AddJsonOptions(o =>
+{
+    // Emit all timestamps as UTC with a 'Z' suffix so clients convert them to local time correctly.
+    o.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+    o.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
 });
 
 builder.Services.AddOptions<GroqOptions>()
@@ -176,6 +183,7 @@ builder.Services.AddScoped<IValidator<LegalDocumentInsertRequest>, LegalDocument
 
 builder.Services.AddSingleton<EasyNetQ.IBus>(_ => EasyNetQ.RabbitHutch.CreateBus(builder.Configuration["RabbitMQ:ConnectionString"]));
 builder.Services.AddSingleton(new LocalEmbedder());
+builder.Services.AddScoped<ILegalDocumentIndexer, LegalDocumentIndexer>();
 builder.Services.AddSingleton<IAbsencePredictionService, AbsencePredictionService>();
 
 //adds Bearer in Scalar
@@ -270,6 +278,12 @@ using (var scope = app.Services.CreateScope())
 
         var crypto = services.GetRequiredService<ICryptoService>();
         await DataSeeder.SeedAsync(db, crypto);
+        // Seed a payroll history using the real calculation (respects contracts and settings).
+        var salarySlipService = services.GetRequiredService<ISalarySlipService>();
+        await PayrollSeeder.SeedAsync(salarySlipService, db);
+        // Seed and index the legal-document corpus the HR chatbot answers from.
+        var legalDocumentIndexer = services.GetRequiredService<ILegalDocumentIndexer>();
+        await LegalDocumentSeeder.SeedAsync(db, legalDocumentIndexer);
         // Train the absence-prediction model from the seeded/real attendance history.
         var predictor = services.GetRequiredService<IAbsencePredictionService>();
         await predictor.TrainAsync();

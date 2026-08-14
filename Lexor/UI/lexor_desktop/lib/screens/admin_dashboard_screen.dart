@@ -25,77 +25,94 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final provider = Provider.of<AdminProvider>(context);
     final stats = provider.stats;
 
-    return Padding(
+    if (provider.isLoading && stats == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (provider.error != null && stats == null) {
+      return Center(
+        child: Text(provider.error!, style: const TextStyle(color: Colors.red)),
+      );
+    }
+    if (stats == null) {
+      return const SizedBox.shrink();
+    }
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Pregled sistema',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          const Text('Pregled sistema',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-          if (provider.isLoading && stats == null)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
-          else if (provider.error != null && stats == null)
-            Expanded(
-              child: Center(
-                child: Text(provider.error!, style: const TextStyle(color: Colors.red)),
-              ),
-            )
-          else if (stats != null) ...[
-            Row(
-              children: [
-                _statCard('Ukupno korisnika', stats.totalUsers, AppColors.primary),
-                const SizedBox(width: 16),
-                _statCard('Aktivni', stats.activeUsers, AppColors.success),
-                const SizedBox(width: 16),
-                _statCard('Neaktivni', stats.inactiveUsers, AppColors.error),
-              ],
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Korisnici po ulozi',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView(
-                children: [
-                  for (final r in stats.usersPerRole) _roleRow(r.roleName, r.count),
-                ],
-              ),
-            ),
-          ],
+
+          _section('Nalozi'),
+          Wrap(spacing: 16, runSpacing: 16, children: [
+            _mini('Ukupno korisnika', stats.totalUsers, AppColors.primary),
+            _mini('Aktivni', stats.activeUsers, AppColors.success),
+            _mini('Neaktivni', stats.inactiveUsers, AppColors.error),
+            _mini('Nisu aktivirali pristup', stats.notActivatedUsers, AppColors.warning),
+          ]),
+
+          const SizedBox(height: 24),
+          _section('Korisnici po ulozi'),
+          for (final r in stats.usersPerRole) _roleRow(r.roleName, r.count),
+
+          const SizedBox(height: 24),
+          _section('Ugovori'),
+          Wrap(spacing: 16, runSpacing: 16, children: [
+            _mini('Aktivni ugovori', stats.activeContracts, AppColors.success),
+            _mini('Uskoro ističu (30 dana)', stats.expiringSoonContracts, AppColors.warning),
+            _mini('Istekli ugovori', stats.expiredContracts, AppColors.error),
+          ]),
+
+          const SizedBox(height: 24),
+          _section('Konfiguracija sistema'),
+          Wrap(spacing: 16, runSpacing: 16, children: [
+            _mini('Odjeli', stats.departments, AppColors.info),
+            _mini('Pozicije', stats.positions, AppColors.info),
+            _mini('Gradovi', stats.cities, AppColors.info),
+            _mini('Tipovi ugovora', stats.contractTypes, AppColors.info),
+            _mini('Tipovi odsustva', stats.leaveTypes, AppColors.info),
+          ]),
+
+          const SizedBox(height: 24),
+          _section('Sadržaj i uređaji'),
+          Wrap(spacing: 16, runSpacing: 16, children: [
+            _mini('Pravni dokumenti', stats.legalDocuments, AppColors.info),
+            _mini('RFID kartice (aktivne)', stats.activeRfidCards, AppColors.primary),
+          ]),
         ],
       ),
     );
   }
 
-  Widget _statCard(String label, int value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-            const SizedBox(height: 8),
-            Text(
-              '$value',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
+  Widget _section(String title) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      );
+
+  Widget _mini(String label, int value, Color color) {
+    return Container(
+      width: 190,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+          const SizedBox(height: 8),
+          Text('$value',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
   }
@@ -119,13 +136,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              '$count',
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: Text('$count',
+                style: const TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
