@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'salary_slip_recent_activity_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class SalarySlipRecentActivityResponse {
   final int year;
   final int month;

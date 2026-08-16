@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'legal_document_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LegalDocumentResponse {
   final int id;
   final String name;

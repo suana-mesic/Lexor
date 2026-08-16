@@ -30,22 +30,6 @@ DashboardResponse _$DashboardResponseFromJson(Map<String, dynamic> json) =>
       ),
     );
 
-Map<String, dynamic> _$DashboardResponseToJson(DashboardResponse instance) =>
-    <String, dynamic>{
-      'totalEmployees': instance.totalEmployees,
-      'newEmployeesThisMonth': instance.newEmployeesThisMonth,
-      'activeContracts': instance.activeContracts,
-      'expiringContractsSoon': instance.expiringContractsSoon,
-      'attendanceRate': instance.attendanceRate,
-      'attendanceRateChange': instance.attendanceRateChange,
-      'pendingLeaves': instance.pendingLeaves,
-      'pendingVacationLeaves': instance.pendingVacationLeaves,
-      'leavesByDay': instance.leavesByDay,
-      'leavesByType': instance.leavesByType,
-      'leavesByStatus': instance.leavesByStatus,
-      'hrMetrics': instance.hrMetrics,
-    };
-
 LeavesByDayItem _$LeavesByDayItemFromJson(Map<String, dynamic> json) =>
     LeavesByDayItem(
       date: DateTime.parse(json['date'] as String),
@@ -53,30 +37,17 @@ LeavesByDayItem _$LeavesByDayItemFromJson(Map<String, dynamic> json) =>
       count: (json['count'] as num).toInt(),
     );
 
-Map<String, dynamic> _$LeavesByDayItemToJson(LeavesByDayItem instance) =>
-    <String, dynamic>{
-      'date': instance.date.toIso8601String(),
-      'dayLabel': instance.dayLabel,
-      'count': instance.count,
-    };
-
 LeavesByTypeItem _$LeavesByTypeItemFromJson(Map<String, dynamic> json) =>
     LeavesByTypeItem(
       typeName: json['typeName'] as String,
       count: (json['count'] as num).toInt(),
     );
 
-Map<String, dynamic> _$LeavesByTypeItemToJson(LeavesByTypeItem instance) =>
-    <String, dynamic>{'typeName': instance.typeName, 'count': instance.count};
-
 LeavesByStatusItem _$LeavesByStatusItemFromJson(Map<String, dynamic> json) =>
     LeavesByStatusItem(
       status: json['status'] as String,
       count: (json['count'] as num).toInt(),
     );
-
-Map<String, dynamic> _$LeavesByStatusItemToJson(LeavesByStatusItem instance) =>
-    <String, dynamic>{'status': instance.status, 'count': instance.count};
 
 HrMetricsItem _$HrMetricsItemFromJson(Map<String, dynamic> json) =>
     HrMetricsItem(
@@ -86,12 +57,3 @@ HrMetricsItem _$HrMetricsItemFromJson(Map<String, dynamic> json) =>
       salaryPaymentRate: (json['salaryPaymentRate'] as num).toDouble(),
       activeEmployeeRate: (json['activeEmployeeRate'] as num).toDouble(),
     );
-
-Map<String, dynamic> _$HrMetricsItemToJson(HrMetricsItem instance) =>
-    <String, dynamic>{
-      'attendanceRate': instance.attendanceRate,
-      'contractFillRate': instance.contractFillRate,
-      'leaveApprovalRate': instance.leaveApprovalRate,
-      'salaryPaymentRate': instance.salaryPaymentRate,
-      'activeEmployeeRate': instance.activeEmployeeRate,
-    };

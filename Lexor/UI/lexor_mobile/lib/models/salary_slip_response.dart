@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'salary_slip_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class SalarySlipUserResponse {
   final String firstName;
   final String lastName;
@@ -13,7 +13,7 @@ class SalarySlipUserResponse {
       _$SalarySlipUserResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class SalarySlipEmployeeResponse {
   final SalarySlipUserResponse user;
 
@@ -23,7 +23,7 @@ class SalarySlipEmployeeResponse {
       _$SalarySlipEmployeeResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class SalarySlipItemResponse {
   final int itemType;
   final String name;
@@ -47,7 +47,7 @@ class SalarySlipItemResponse {
       _$SalarySlipItemResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class SalarySlipResponse {
   final int id;
   final int year;

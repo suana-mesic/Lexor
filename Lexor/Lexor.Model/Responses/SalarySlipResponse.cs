@@ -42,6 +42,8 @@ namespace Lexor.Model.Responses
         {
             public int Id { get; set; }
             public UserResponse User { get; set; } = null!;
+            // Filled only where Department is loaded (monthly report); null in list views.
+            public string? DepartmentName { get; set; }
         }
 
         public class UserResponse

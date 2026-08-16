@@ -3,7 +3,7 @@ import 'package:lexor_shared/lexor_shared.dart';
 
 part 'employee_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeUserResponse {
   final int id;
   final String firstName;
@@ -31,7 +31,7 @@ class EmployeeUserResponse {
       _$EmployeeUserResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeCountryResponse {
   final int id;
   final String name;
@@ -42,7 +42,7 @@ class EmployeeCountryResponse {
       _$EmployeeCountryResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeCityResponse {
   final int id;
   final String name;
@@ -58,7 +58,7 @@ class EmployeeCityResponse {
       _$EmployeeCityResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeDepartmentResponse {
   final int id;
   final String name;
@@ -69,7 +69,7 @@ class EmployeeDepartmentResponse {
       _$EmployeeDepartmentResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeePositionResponse {
   final int id;
   final String name;
@@ -83,7 +83,7 @@ class EmployeePositionResponse {
 /// Contract shape as embedded inside EmployeeResponse (flat — contractTypeName,
 /// no employeeId, no nested contractType). Distinct from the top-level
 /// ContractResponse returned by /Contracts.
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeContractResponse {
   final int id;
   final int contractTypeId;
@@ -115,7 +115,7 @@ class EmployeeContractResponse {
       _$EmployeeContractResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeResponse {
   final int id;
   final int userId;

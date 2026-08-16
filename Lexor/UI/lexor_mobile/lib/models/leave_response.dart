@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'leave_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeaveResponse {
   final int id;
   final LeaveTypeResponse leaveType;
@@ -28,7 +28,7 @@ class LeaveResponse {
       _$LeaveResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeaveTypeResponse {
   final int id;
   final String name;

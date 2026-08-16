@@ -34,11 +34,9 @@ class DashboardProvider extends ChangeNotifier {
       } else {
         error = ApiError.fromResponse(response);
         sessionExpired = ApiError.isSessionExpired(response);
-        print('Dashboard HTTP error: ${response.statusCode} ${response.body}');
       }
-    } catch (e, stack) {
+    } catch (e) {
       error = ApiError.fromException(e);
-      print('Dashboard exception: $e\n$stack');
     } finally {
       isLoading = false;
       notifyListeners();

@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'notification_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class NotificationResponse {
   final int id;
   final String title;

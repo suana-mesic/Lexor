@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'dashboard_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class DashboardResponse {
   final int totalEmployees;
   final int newEmployeesThisMonth;
@@ -36,7 +36,7 @@ class DashboardResponse {
       _$DashboardResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeavesByDayItem {
   final DateTime date;
   final String dayLabel;
@@ -52,7 +52,7 @@ class LeavesByDayItem {
       _$LeavesByDayItemFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeavesByTypeItem {
   final String typeName;
   final int count;
@@ -63,7 +63,7 @@ class LeavesByTypeItem {
       _$LeavesByTypeItemFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeavesByStatusItem {
   final String status;
   final int count;
@@ -74,7 +74,7 @@ class LeavesByStatusItem {
       _$LeavesByStatusItemFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class HrMetricsItem {
   final double attendanceRate;
   final double contractFillRate;

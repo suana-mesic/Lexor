@@ -87,7 +87,7 @@ class AuthService {
           data['refreshToken'],
         );
       }
-    } catch (_e) {
+    } catch (_) {
       // Network/parse error → treat as failed refresh.
     }
     return null;

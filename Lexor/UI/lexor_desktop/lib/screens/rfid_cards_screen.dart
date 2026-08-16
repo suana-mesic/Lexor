@@ -658,15 +658,17 @@ class _AddRfidDialogState extends State<_AddRfidDialog> {
                 controller: _uidController,
                 decoration: InputDecoration(
                   labelText: 'UID kartice',
-                  hintText: 'npr. A3:F2:91:BC',
+                  hintText: 'npr. A3F291BC',
                   border: OutlineInputBorder(),
                   counterText: '',
                 ),
                 validator: (v) {
                   final value = (v ?? '').trim();
                   if (value.isEmpty) return 'UID je obavezno polje.';
-                  if (!RegExp(r'[0-9A-Fa-f:]+$').hasMatch(value)) {
-                    return 'UID može sadržavati samo hex znakove (0-9, A-F) i dvotačke.';
+                  // Anchored at both ends (same rule as the server), so a UID with
+                  // invalid leading characters cannot slip through client validation.
+                  if (!RegExp(r'^[0-9A-Fa-f]+$').hasMatch(value)) {
+                    return 'UID može sadržavati samo hex znakove (0-9, A-F).';
                   }
                   return null;
                 },

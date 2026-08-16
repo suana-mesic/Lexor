@@ -10,8 +10,8 @@ namespace Lexor.Services.Validators
             RuleFor(x => x.Uid)
                 .NotEmpty().WithMessage("UID je obavezan.")
                 .MaximumLength(50).WithMessage("UID ne može imati više od 50 karaktera.")
-                .Matches("^[0-9A-Fa-f:]+$")
-                .WithMessage("UID kartice može sadržavati samo cifre, slova A-F i dvotačke.");
+                .Matches("^[0-9A-Fa-f]+$")
+                .WithMessage("UID kartice može sadržavati samo cifre i slova A-F.");
 
             RuleFor(x => x.EmployeeId)
                 .GreaterThan(0).WithMessage("Uposlenik je obavezan.");

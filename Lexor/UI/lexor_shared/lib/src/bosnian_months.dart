@@ -1,5 +1,5 @@
-/// Nazivi mjeseci na bosanskom — indeks 0 = Januar.
-/// Za mjesec iz backenda (1–12) koristi `bosnianMonths[month - 1]`.
+/// Bosnian month names — index 0 = January ("Januar").
+/// For a backend month (1–12) use `bosnianMonths[month - 1]`.
 const List<String> bosnianMonths = [
   'Januar',
   'Februar',

@@ -42,7 +42,6 @@ namespace Lexor.Services
                 .Include(l => l.LeaveType)
                 .CountAsync(l => l.State == nameof(PendingLeaveState) && l.LeaveType.IsPaid);
 
-            // Attendance rate
             var workingDaysThisMonth = GetWorkingDays(firstDayOfMonth, now);
             var expectedAttendance = totalEmployees * workingDaysThisMonth;
             var actualAttendance = await _dbContext.Attendances.CountAsync(

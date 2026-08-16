@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'attendance_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class AttendanceUserResponse {
   final int id;
   final String firstName;
@@ -18,7 +18,7 @@ class AttendanceUserResponse {
       _$AttendanceUserResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class AttendanceDepartmentResponse {
   final int id;
   final String name;
@@ -29,7 +29,7 @@ class AttendanceDepartmentResponse {
       _$AttendanceDepartmentResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class AttendanceEmployeeResponse {
   final int id;
   final AttendanceUserResponse? user;
@@ -43,7 +43,7 @@ class AttendanceEmployeeResponse {
 
 /// An attendance record as returned by the API. For admin clients [employee]
 /// is populated; for employees it stays null (they only see their own).
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class AttendanceResponse {
   final int id;
   final AttendanceEmployeeResponse? employee;

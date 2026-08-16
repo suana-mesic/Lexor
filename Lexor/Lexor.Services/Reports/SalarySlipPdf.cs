@@ -77,14 +77,31 @@ namespace Lexor.Services.Reports
                         h.Cell().AlignRight().Text("Porez").Bold();
                         h.Cell().AlignRight().Text("Neto").Bold();
                     });
-                    foreach (var s in slips)
+                    // Rows are grouped by department with a per-department subtotal, so the
+                    // report doubles as the "contributions by department" summary.
+                    var byDepartment = slips
+                        .GroupBy(s => s.Employee.DepartmentName ?? "Nepoznat odjel")
+                        .OrderBy(g => g.Key)
+                        .ToList();
+                    foreach (var dept in byDepartment)
                     {
-                        t.Cell().Text($"{s.Employee.User.FirstName} {s.Employee.User.LastName}");
-                        t.Cell().AlignRight().Text(Km(s.BrutoSalary));
-                        t.Cell().AlignRight().Text(Km(Overtime(s)));
-                        t.Cell().AlignRight().Text(Km(s.TotalContributions));
-                        t.Cell().AlignRight().Text(Km(s.Tax));
-                        t.Cell().AlignRight().Text(Km(s.NetSalary));
+                        t.Cell().ColumnSpan(6).PaddingTop(8)
+                            .Text(dept.Key).Bold().FontColor(Colors.Grey.Darken2);
+                        foreach (var s in dept)
+                        {
+                            t.Cell().PaddingLeft(8).Text($"{s.Employee.User.FirstName} {s.Employee.User.LastName}");
+                            t.Cell().AlignRight().Text(Km(s.BrutoSalary));
+                            t.Cell().AlignRight().Text(Km(Overtime(s)));
+                            t.Cell().AlignRight().Text(Km(s.TotalContributions));
+                            t.Cell().AlignRight().Text(Km(s.Tax));
+                            t.Cell().AlignRight().Text(Km(s.NetSalary));
+                        }
+                        t.Cell().PaddingLeft(8).PaddingTop(2).Text($"Ukupno — {dept.Key}").Italic();
+                        t.Cell().PaddingTop(2).AlignRight().Text(Km(dept.Sum(x => x.BrutoSalary))).Italic();
+                        t.Cell().PaddingTop(2).AlignRight().Text(Km(dept.Sum(Overtime))).Italic();
+                        t.Cell().PaddingTop(2).AlignRight().Text(Km(dept.Sum(x => x.TotalContributions))).Italic();
+                        t.Cell().PaddingTop(2).AlignRight().Text(Km(dept.Sum(x => x.Tax))).Italic();
+                        t.Cell().PaddingTop(2).AlignRight().Text(Km(dept.Sum(x => x.NetSalary))).Italic();
                     }
                     t.Cell().PaddingTop(6).Text("UKUPNO").Bold();
                     t.Cell().PaddingTop(6).AlignRight().Text(Km(slips.Sum(x => x.BrutoSalary))).Bold();

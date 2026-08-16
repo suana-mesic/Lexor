@@ -423,9 +423,11 @@ namespace Lexor.Services
             if (month < 1 || month > 12)
                 throw new BusinessException("Mjesec mora biti u rasponu od januara do decembra.");
 
-            // Items are needed here (unlike the list view) so the report can show the overtime amount.
+            // Items are needed here (unlike the list view) so the report can show the overtime
+            // amount, and Department so the report can group employees by department.
             IQueryable<SalarySlip> query = IncludeRelatedEntities(null, _dbContext.Set<SalarySlip>())
-                .Include(ss => ss.Items);
+                .Include(ss => ss.Items)
+                .Include(ss => ss.Employee).ThenInclude(e => e.Department);
             query = ApplyFilters(query, new SalarySlipCalculationSearchObject
             {
                 Year = year,

@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'rfid_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class RfidResponse {
   final int id;
   final EmployeeResponse employee;
@@ -27,7 +27,7 @@ class RfidResponse {
       _$RfidResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class EmployeeResponse {
   final int id;
   final UserResponse user;
@@ -38,7 +38,7 @@ class EmployeeResponse {
       _$EmployeeResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class UserResponse {
   final int id;
   final String firstName;

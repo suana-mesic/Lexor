@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lexor_desktop/providers/account_provider.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/dashboard_provider.dart';
+import 'package:lexor_desktop/providers/fraud_detection_provider.dart';
 import 'package:lexor_desktop/providers/payroll_dashboard_provider.dart';
 import 'package:lexor_desktop/providers/news_provider.dart';
 import 'package:lexor_desktop/providers/admin_provider.dart';
@@ -27,6 +28,7 @@ class LexorDesktopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => PayrollDashboardProvider()),
+        ChangeNotifierProvider(create: (_) => FraudDetectionProvider()),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),

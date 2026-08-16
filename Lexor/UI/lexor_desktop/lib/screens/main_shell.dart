@@ -5,6 +5,8 @@ import 'package:lexor_desktop/screens/attendance_screen.dart';
 import 'package:lexor_desktop/screens/dashboard_screen.dart';
 import 'package:lexor_desktop/screens/employees_screen.dart';
 import 'package:lexor_desktop/screens/employees_readonly_screen.dart';
+import 'package:lexor_desktop/screens/fraud_detection_screen.dart';
+import 'package:lexor_desktop/providers/fraud_detection_provider.dart';
 import 'package:lexor_desktop/screens/payroll_dashboard_screen.dart';
 import 'package:lexor_desktop/screens/leaves_screen.dart';
 import 'package:lexor_desktop/screens/legal_document_screen.dart';
@@ -51,6 +53,9 @@ const _navItems = [
   // Read-only employee directory for accounting (separate screen, no write actions).
   _NavItem(Icons.people_outline, 'Uposlenici', {_rAcc}, EmployeesReadonlyScreen()),
   _NavItem(Icons.access_time_outlined, 'Prisustvo', {_rHr}, AttendanceScreen()),
+  _NavItem(Icons.gpp_maybe_outlined, 'Detekcija prevara', {
+    _rHr,
+  }, FraudDetectionScreen()),
   _NavItem(Icons.inbox_outlined, 'Zahtjevi', {_rHr}, LeavesScreen()),
   _NavItem(Icons.bar_chart_outlined, 'Izvještaji', {
     _rHr,
@@ -79,6 +84,10 @@ const _navItems = [
   _NavItem(Icons.balance_outlined, 'Pravni dokumenti', {
     _rAdmin,
   }, LegalDocumentScreen()),
+  // Separate entry for admin so the fraud screen never becomes the admin landing page.
+  _NavItem(Icons.gpp_maybe_outlined, 'Detekcija prevara', {
+    _rAdmin,
+  }, FraudDetectionScreen()),
   // Separate entry for admin so it lands on the admin dashboard, not on news.
   _NavItem(Icons.campaign_outlined, 'Obavijesti', {_rAdmin}, NewsScreen()),
   _NavItem(Icons.account_circle_outlined, 'Moj profil', {
@@ -191,6 +200,10 @@ class _MainShellState extends State<MainShell> {
                 );
                 final navigator = Navigator.of(context);
                 Provider.of<DashboardProvider>(context, listen: false).reset();
+                Provider.of<FraudDetectionProvider>(
+                  context,
+                  listen: false,
+                ).reset();
                 Provider.of<NewsProvider>(context, listen: false).reset();
                 Provider.of<AccountProvider>(context, listen: false).reset();
                 Provider.of<AdminProvider>(context, listen: false).reset();

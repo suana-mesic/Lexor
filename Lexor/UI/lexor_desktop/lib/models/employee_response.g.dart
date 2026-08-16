@@ -19,29 +19,12 @@ EmployeeUserResponse _$EmployeeUserResponseFromJson(
   isCodeActivated: json['isCodeActivated'] as bool,
 );
 
-Map<String, dynamic> _$EmployeeUserResponseToJson(
-  EmployeeUserResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'firstName': instance.firstName,
-  'lastName': instance.lastName,
-  'username': instance.username,
-  'email': instance.email,
-  'phoneNumber': instance.phoneNumber,
-  'profileImageBase64': instance.profileImageBase64,
-  'isCodeActivated': instance.isCodeActivated,
-};
-
 EmployeeCountryResponse _$EmployeeCountryResponseFromJson(
   Map<String, dynamic> json,
 ) => EmployeeCountryResponse(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
 );
-
-Map<String, dynamic> _$EmployeeCountryResponseToJson(
-  EmployeeCountryResponse instance,
-) => <String, dynamic>{'id': instance.id, 'name': instance.name};
 
 EmployeeCityResponse _$EmployeeCityResponseFromJson(
   Map<String, dynamic> json,
@@ -53,14 +36,6 @@ EmployeeCityResponse _$EmployeeCityResponseFromJson(
   ),
 );
 
-Map<String, dynamic> _$EmployeeCityResponseToJson(
-  EmployeeCityResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'name': instance.name,
-  'country': instance.country,
-};
-
 EmployeeDepartmentResponse _$EmployeeDepartmentResponseFromJson(
   Map<String, dynamic> json,
 ) => EmployeeDepartmentResponse(
@@ -68,20 +43,12 @@ EmployeeDepartmentResponse _$EmployeeDepartmentResponseFromJson(
   name: json['name'] as String,
 );
 
-Map<String, dynamic> _$EmployeeDepartmentResponseToJson(
-  EmployeeDepartmentResponse instance,
-) => <String, dynamic>{'id': instance.id, 'name': instance.name};
-
 EmployeePositionResponse _$EmployeePositionResponseFromJson(
   Map<String, dynamic> json,
 ) => EmployeePositionResponse(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
 );
-
-Map<String, dynamic> _$EmployeePositionResponseToJson(
-  EmployeePositionResponse instance,
-) => <String, dynamic>{'id': instance.id, 'name': instance.name};
 
 EmployeeContractResponse _$EmployeeContractResponseFromJson(
   Map<String, dynamic> json,
@@ -97,19 +64,6 @@ EmployeeContractResponse _$EmployeeContractResponseFromJson(
   workHoursPerDay: (json['workHoursPerDay'] as num).toInt(),
   statusCode: (json['status'] as num).toInt(),
 );
-
-Map<String, dynamic> _$EmployeeContractResponseToJson(
-  EmployeeContractResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'contractTypeId': instance.contractTypeId,
-  'contractTypeName': instance.contractTypeName,
-  'startDate': instance.startDate.toIso8601String(),
-  'endDate': instance.endDate?.toIso8601String(),
-  'brutoSalary': instance.brutoSalary,
-  'workHoursPerDay': instance.workHoursPerDay,
-  'status': instance.statusCode,
-};
 
 EmployeeResponse _$EmployeeResponseFromJson(Map<String, dynamic> json) =>
     EmployeeResponse(
@@ -139,18 +93,3 @@ EmployeeResponse _$EmployeeResponseFromJson(Map<String, dynamic> json) =>
           )
           .toList(),
     );
-
-Map<String, dynamic> _$EmployeeResponseToJson(EmployeeResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'userId': instance.userId,
-      'user': instance.user,
-      'dateOfBirth': instance.dateOfBirth.toIso8601String(),
-      'address': instance.address,
-      'city': instance.city,
-      'department': instance.department,
-      'position': instance.position,
-      'hireDate': instance.hireDate.toIso8601String(),
-      'isActive': instance.isActive,
-      'contracts': instance.contracts,
-    };

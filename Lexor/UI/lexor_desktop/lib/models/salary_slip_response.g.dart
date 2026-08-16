@@ -12,20 +12,11 @@ SalarySlipUser _$SalarySlipUserFromJson(Map<String, dynamic> json) =>
       lastName: json['lastName'] as String,
     );
 
-Map<String, dynamic> _$SalarySlipUserToJson(SalarySlipUser instance) =>
-    <String, dynamic>{
-      'firstName': instance.firstName,
-      'lastName': instance.lastName,
-    };
-
 SalarySlipEmployee _$SalarySlipEmployeeFromJson(Map<String, dynamic> json) =>
     SalarySlipEmployee(
       id: (json['id'] as num).toInt(),
       user: SalarySlipUser.fromJson(json['user'] as Map<String, dynamic>),
     );
-
-Map<String, dynamic> _$SalarySlipEmployeeToJson(SalarySlipEmployee instance) =>
-    <String, dynamic>{'id': instance.id, 'user': instance.user};
 
 SalarySlipItem _$SalarySlipItemFromJson(Map<String, dynamic> json) =>
     SalarySlipItem(
@@ -33,13 +24,6 @@ SalarySlipItem _$SalarySlipItemFromJson(Map<String, dynamic> json) =>
       rate: (json['rate'] as num?)?.toDouble(),
       amount: (json['amount'] as num).toDouble(),
     );
-
-Map<String, dynamic> _$SalarySlipItemToJson(SalarySlipItem instance) =>
-    <String, dynamic>{
-      'name': instance.name,
-      'rate': instance.rate,
-      'amount': instance.amount,
-    };
 
 SalarySlipResponse _$SalarySlipResponseFromJson(Map<String, dynamic> json) =>
     SalarySlipResponse(
@@ -59,18 +43,3 @@ SalarySlipResponse _$SalarySlipResponseFromJson(Map<String, dynamic> json) =>
           ?.map((e) => SalarySlipItem.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
-
-Map<String, dynamic> _$SalarySlipResponseToJson(SalarySlipResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'employee': instance.employee,
-      'year': instance.year,
-      'month': instance.month,
-      'brutoSalary': instance.brutoSalary,
-      'totalContributions': instance.totalContributions,
-      'taxBase': instance.taxBase,
-      'tax': instance.tax,
-      'netSalary': instance.netSalary,
-      'status': instance.status,
-      'items': instance.items,
-    };

@@ -15,13 +15,3 @@ SalarySlipRecentActivityResponse _$SalarySlipRecentActivityResponseFromJson(
   generatedAt: DateTime.parse(json['generatedAt'] as String),
   status: (json['status'] as num).toInt(),
 );
-
-Map<String, dynamic> _$SalarySlipRecentActivityResponseToJson(
-  SalarySlipRecentActivityResponse instance,
-) => <String, dynamic>{
-  'year': instance.year,
-  'month': instance.month,
-  'netSalary': instance.netSalary,
-  'generatedAt': instance.generatedAt.toIso8601String(),
-  'status': instance.status,
-};

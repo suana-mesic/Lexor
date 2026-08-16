@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Centralna paleta boja desktop aplikacije — bez hardkodiranih hex vrijednosti po ekranima.
+/// Central color palette of the desktop app — no hardcoded hex values per screen.
 class AppColors {
-  // Brend / navigacija
+  // Brand / navigation
   static const Color primary = Color(0xFF1A2744);
   static const Color navActive = Color(0xFF2A3D6E);
   static const Color background = Color(0xFFF5F7FA);
@@ -20,7 +20,7 @@ class AppColors {
   static const Color errorBright = Color(0xFFF44336);
   static const Color errorBg = Color(0xFFFFEBEE);
 
-  // Akcenti / grafikoni
+  // Accents / charts
   static const Color indigo = Color(0xFF3F51B5);
   static const Color indigoBg = Color(0xFFE8EEF9);
   static const Color purple = Color(0xFF9C27B0);

@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'attendance_summary.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class AttendanceSummary {
   final double todayWorkedHours;
   final double monthTotalHours;

@@ -54,7 +54,7 @@ namespace Lexor.Services
             }
         }
 
-        // Pretvara opis radnih dana u bitmask (Pon=bit0 ... Ned=bit6).
+        // Converts a work-days description into a bitmask (Mon=bit0 ... Sun=bit6).
         public static int DescriptionToMask(string? description) => description?.Trim() switch
         {
             "Pon-Sub" => 63,

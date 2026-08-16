@@ -200,7 +200,7 @@ class _PayrollSettingsScreenState extends State<PayrollSettingsScreen> {
   String _maskToLabel(int mask) {
     if (mask == 31) return 'Pon-Pet'; // Pon-Pet
     if (mask == 63) return 'Pon-Sub'; // Pon-Sub
-    if (mask == 127) return 'Pon-Ned'; // svi dani
+    if (mask == 127) return 'Pon-Ned'; // all days
     const days = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
     final active = <String>[];
     for (var i = 0; i < 7; i++) {

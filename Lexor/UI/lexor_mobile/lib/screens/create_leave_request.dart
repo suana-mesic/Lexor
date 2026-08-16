@@ -273,12 +273,14 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
                       dateTo: _dateTo!,
                       reason: _reasonController.text,
                     );
+                    if (!mounted) return; // screen closed while the request ran
                     SnackbarHelper.showSuccess(
                       context,
                       "Uspješno ste kreirali odsustvo!",
                     );
                     Navigator.pop(context, 'reload');
                   } catch (e) {
+                    if (!mounted) return;
                     final message = e.toString().replaceFirst(
                       'Exception: ',
                       '',
@@ -298,6 +300,7 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
                       context,
                       listen: false,
                     ).updateLeave(leaveUpdateRequest, widget.leave!.id);
+                    if (!mounted) return; // screen closed while the request ran
 
                     SnackbarHelper.showSuccess(
                       context,
@@ -305,6 +308,7 @@ class _CreateLeaveRequestState extends State<CreateLeaveRequest> {
                     );
                     Navigator.pop(context, 'reload');
                   } catch (e) {
+                    if (!mounted) return;
                     final message = e.toString().replaceFirst(
                       "Exception: ",
                       "",

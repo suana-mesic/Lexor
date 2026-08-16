@@ -56,13 +56,11 @@ namespace Lexor.Services
 
         public async Task<ScanResponse> ScanAsync(ScanRequest request)
         {
-            // find card in database
             var card = await _dbContext.Set<RfidCard>()
                 .Include(c => c.Employee)
                     .ThenInclude(e => e.User)
                 .FirstOrDefaultAsync(c => c.Uid == request.Uid);
 
-            // validate card
             if (card == null)
             {
                 return new ScanResponse
@@ -94,7 +92,6 @@ namespace Lexor.Services
                 };
             }
 
-            // find current attendance record
             var now = DateTime.UtcNow;
             var today = DateOnly.FromDateTime(now);
 
@@ -106,7 +103,6 @@ namespace Lexor.Services
 
             if (attendance == null)
             {
-                // entering -> create new record
                 attendance = new Attendance
                 {
                     EmployeeId = card.EmployeeId,

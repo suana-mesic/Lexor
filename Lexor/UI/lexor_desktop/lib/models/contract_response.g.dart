@@ -13,10 +13,6 @@ ContractTypeResponse _$ContractTypeResponseFromJson(
   name: json['name'] as String,
 );
 
-Map<String, dynamic> _$ContractTypeResponseToJson(
-  ContractTypeResponse instance,
-) => <String, dynamic>{'id': instance.id, 'name': instance.name};
-
 ContractResponse _$ContractResponseFromJson(Map<String, dynamic> json) =>
     ContractResponse(
       id: (json['id'] as num).toInt(),
@@ -33,16 +29,3 @@ ContractResponse _$ContractResponseFromJson(Map<String, dynamic> json) =>
       workHoursPerDay: (json['workHoursPerDay'] as num).toInt(),
       statusCode: (json['status'] as num).toInt(),
     );
-
-Map<String, dynamic> _$ContractResponseToJson(ContractResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'employeeId': instance.employeeId,
-      'contractTypeId': instance.contractTypeId,
-      'contractType': instance.contractType,
-      'startDate': instance.startDate.toIso8601String(),
-      'endDate': instance.endDate?.toIso8601String(),
-      'brutoSalary': instance.brutoSalary,
-      'workHoursPerDay': instance.workHoursPerDay,
-      'status': instance.statusCode,
-    };

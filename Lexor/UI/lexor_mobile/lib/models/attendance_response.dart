@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'attendance_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class AttendanceResponse {
   final int id;
   final DateTime date;

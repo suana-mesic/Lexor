@@ -152,7 +152,6 @@ namespace Lexor.Services
                     .Select(l => (int?)l.Employee.UserId)
                     .FirstOrDefaultAsync();
 
-                // employee is trying to access leaveID that is not his
                 if (currentUserId != ownerUserId)
                     throw new NotFoundException(EntityDisplayMessage.NotFound(typeof(Leave), id));
             }

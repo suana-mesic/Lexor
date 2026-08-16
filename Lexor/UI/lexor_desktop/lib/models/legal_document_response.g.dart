@@ -14,12 +14,3 @@ LegalDocumentResponse _$LegalDocumentResponseFromJson(
   categoryName: json['categoryName'] as String,
   uploadedAt: DateTime.parse(json['uploadedAt'] as String),
 );
-
-Map<String, dynamic> _$LegalDocumentResponseToJson(
-  LegalDocumentResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'name': instance.name,
-  'categoryName': instance.categoryName,
-  'uploadedAt': instance.uploadedAt.toIso8601String(),
-};

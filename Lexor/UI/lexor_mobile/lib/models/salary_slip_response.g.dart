@@ -13,22 +13,11 @@ SalarySlipUserResponse _$SalarySlipUserResponseFromJson(
   lastName: json['lastName'] as String,
 );
 
-Map<String, dynamic> _$SalarySlipUserResponseToJson(
-  SalarySlipUserResponse instance,
-) => <String, dynamic>{
-  'firstName': instance.firstName,
-  'lastName': instance.lastName,
-};
-
 SalarySlipEmployeeResponse _$SalarySlipEmployeeResponseFromJson(
   Map<String, dynamic> json,
 ) => SalarySlipEmployeeResponse(
   user: SalarySlipUserResponse.fromJson(json['user'] as Map<String, dynamic>),
 );
-
-Map<String, dynamic> _$SalarySlipEmployeeResponseToJson(
-  SalarySlipEmployeeResponse instance,
-) => <String, dynamic>{'user': instance.user};
 
 SalarySlipItemResponse _$SalarySlipItemResponseFromJson(
   Map<String, dynamic> json,
@@ -41,18 +30,6 @@ SalarySlipItemResponse _$SalarySlipItemResponseFromJson(
   multiplier: (json['multiplier'] as num?)?.toDouble(),
   amount: (json['amount'] as num).toDouble(),
 );
-
-Map<String, dynamic> _$SalarySlipItemResponseToJson(
-  SalarySlipItemResponse instance,
-) => <String, dynamic>{
-  'itemType': instance.itemType,
-  'name': instance.name,
-  'description': instance.description,
-  'quantity': instance.quantity,
-  'rate': instance.rate,
-  'multiplier': instance.multiplier,
-  'amount': instance.amount,
-};
 
 SalarySlipResponse _$SalarySlipResponseFromJson(Map<String, dynamic> json) =>
     SalarySlipResponse(
@@ -79,21 +56,3 @@ SalarySlipResponse _$SalarySlipResponseFromJson(Map<String, dynamic> json) =>
           )
           .toList(),
     );
-
-Map<String, dynamic> _$SalarySlipResponseToJson(SalarySlipResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'year': instance.year,
-      'month': instance.month,
-      'brutoSalary': instance.brutoSalary,
-      'adjustedBruto': instance.adjustedBruto,
-      'totalContributions': instance.totalContributions,
-      'taxBase': instance.taxBase,
-      'tax': instance.tax,
-      'netSalary': instance.netSalary,
-      'status': instance.status,
-      'generatedAt': instance.generatedAt.toIso8601String(),
-      'paidAt': instance.paidAt?.toIso8601String(),
-      'employee': instance.employee,
-      'items': instance.items,
-    };

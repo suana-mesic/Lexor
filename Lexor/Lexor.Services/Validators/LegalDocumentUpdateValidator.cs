@@ -7,7 +7,7 @@ namespace Lexor.Services.Validators
     {
         public LegalDocumentUpdateValidator()
         {
-            // Parcijalni update: pravila se primjenjuju samo na poslana (ne-null) polja.
+            // Partial update: rules apply only to the fields that were actually sent (non-null).
             When(x => x.Name != null, () =>
             {
                 RuleFor(x => x.Name)

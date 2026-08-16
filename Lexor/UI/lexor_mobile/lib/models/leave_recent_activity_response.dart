@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'leave_recent_activity_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeaveRecentActivityResponse {
   final LeaveTypeResponse leaveType;
   final DateTime dateFrom;
@@ -22,7 +22,7 @@ class LeaveRecentActivityResponse {
       _$LeaveRecentActivityResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class LeaveTypeResponse {
   final String name;
 

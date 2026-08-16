@@ -5,39 +5,60 @@ using Microsoft.EntityFrameworkCore;
 namespace Lexor.Services.Database
 {
     /// <summary>
-    /// Seeds demo business data (an admin account plus employees, contracts, RFID cards,
-    /// three years of attendance history and roughly a thousand leave records) on startup.
-    /// Reference tables (roles, departments, positions, leave types, ...) are seeded
-    /// separately via HasData in <see cref="LexorDbContext"/>. This runs once and is a
-    /// no-op when employees already exist, so it is safe to call on every application start.
+    /// Seeds demo business data (role accounts plus 30 employees, contracts, RFID cards, about
+    /// 19 months of attendance history and roughly a thousand leave records) on startup. Reference
+    /// tables (roles, departments, positions, leave types, ...) are seeded separately via HasData
+    /// in <see cref="LexorDbContext"/>. This runs once and is a no-op when employees already exist,
+    /// so it is safe to call on every application start.
     ///
-    /// The history is shaped for absence prediction with PER-EMPLOYEE seasonality:
-    ///  - each employee has their own vacation month (annual leave lands there every year),
-    ///  - each employee has their own sick-peak month (recurring sick leaves land there),
-    ///  - sick leaves are multi-day blocks (illness lasts), plus occasional random ones,
-    ///  - a small unexcused-absence noise (with Monday/Friday and streak effects) adds
-    ///    realistic unpredictability without overwhelming the seasonal patterns.
-    /// Three full yearly cycles make the seasonality learnable both for the per-day
-    /// classifier and for time-series (SSA) forecasting.
+    /// The attendance history feeds the fraud-detection classifier: about 10,000 records of which
+    /// exactly <see cref="FraudCount"/> are marked fraudulent (see <see cref="InjectFraud"/>).
+    /// Fraud is injected as manipulated arrival/departure times and repeated departure edits, kept
+    /// at or below contracted hours so payroll stays correct, and mixed with legitimate look-alikes
+    /// (overtime, flex arrivals, approved short days, single corrections) so it cannot be separated
+    /// by a single threshold.
     /// </summary>
     public static class DataSeeder
     {
-        // Three-year history window ending close to "today" so the app looks alive.
-        private static readonly DateOnly HistoryStart = new(2023, 7, 1);
+        // ~19-month history window ending close to "today" so the app looks alive. This yields
+        // roughly 10,000 attendance records across the 30 employees for the fraud classifier.
+        private static readonly DateOnly HistoryStart = new(2025, 1, 1);
         private static readonly DateOnly HistoryEnd = new(2026, 7, 31);
 
         private const int EmployeeCount = 30;
+
+        // Number of attendance records marked as fraudulent (labelled ground truth for training).
+        private const int FraudCount = 300;
 
         // Unexcused-absence model (deliberately small so seasonal patterns dominate).
         private const double MondayFridayEffect = 0.015;
         private const double StreakEffect = 0.25; // absent yesterday -> likelier absent today
 
-        // Monthly probabilities for the random (non-seasonal) leave noise. Tuned via
-        // simulation so the per-employee seasonal patterns stay dominant and a well-built
-        // classifier can reach F1 >= 0.8 on this data.
+        // Monthly probabilities for the random leave noise, so the leave history stays realistic
+        // and varied (annual/sick/paid/unpaid leaves spread across the window).
         private const double RandomSickChancePerMonth = 0.10;
         private const double OtherLeaveChancePerMonth = 0.40;
         private const double MiniVacationChancePerMonth = 0.12;
+
+        // Requests that never became time off, so the request history shows every state.
+        private const double RejectedRequestChancePerMonth = 0.06;
+        private const double CancelledRequestChancePerMonth = 0.05;
+
+        // Realistic HR texts for rejected and withdrawn requests.
+        private static readonly string[] RejectionReasons =
+        {
+            "Previše uposlenika iz odjela je odsutno u traženom periodu.",
+            "Zahtjev se preklapa s planiranim projektnim rokom.",
+            "Nedovoljno preostalih dana godišnjeg odmora.",
+            "U traženom periodu je planirano godišnje inventurisanje.",
+        };
+
+        private static readonly string[] CancellationReasons =
+        {
+            "Promjena privatnih planova.",
+            "Odsustvo mi više nije potrebno.",
+            "Prebacit ću odsustvo za kasniji termin.",
+        };
 
         // Overtime model: employees always work at least their contracted hours; on some days
         // they stay 1-3 hours longer (deliberate overtime blocks, never a stray few minutes).
@@ -166,22 +187,32 @@ namespace Lexor.Services.Database
                 };
                 employee.RfidCards.Add(card);
 
-                var leaveRanges = BuildLeaves(employee, creatorId, vacationMonth, sickPeakMonth, rng);
+                // Rejected/cancelled requests draw from a SEPARATE deterministic stream, so adding
+                // them never shifts the shared rng sequence behind attendance and fraud injection.
+                var requestNoiseRng = new Random(7919 * (i + 1));
+                var leaveRanges = BuildLeaves(employee, creatorId, vacationMonth, sickPeakMonth, rng, requestNoiseRng);
                 BuildAttendance(employee, card, leaveRanges, unexcusedBaseRate, workHoursPerDay, rng);
 
                 return employee;
             }
 
+            var employees = new List<Employee>();
             for (var i = 0; i < EmployeeCount; i++)
             {
                 var first = FirstNames[i];
                 var last = LastNames[i];
-                db.Employees.Add(BuildEmployee(
+                var employee = BuildEmployee(
                     i, first, last,
                     $"{Asciify(first)}.{Asciify(last)}@lexor.ba",
                     $"{Asciify(first)}.{Asciify(last)}",
-                    SeedAvatars.Base64[i]));
+                    SeedAvatars.Base64[i]);
+                employees.Add(employee);
+                db.Employees.Add(employee);
             }
+
+            // Mark exactly FraudCount attendance records as fraudulent, spread across all employees
+            // and the whole timeline (so the chronological train/test split has fraud in both halves).
+            InjectFraud(employees, rng);
 
             // ----- Company announcements (news) -----
             db.News.AddRange(
@@ -246,16 +277,23 @@ namespace Lexor.Services.Database
 
         // Walks month by month through the history window and generates this employee's leaves:
         // an annual-leave block in their personal vacation month, recurring multi-day sick
-        // blocks in their personal sick-peak month, plus random short leaves as noise.
+        // blocks in their personal sick-peak month, plus random short leaves as noise. A few
+        // rejected/cancelled requests (from requestNoiseRng) complete the request history.
         private static List<(DateOnly From, DateOnly To)> BuildLeaves(Employee employee, int adminId,
                                                                       int vacationMonth, int sickPeakMonth,
-                                                                      Random rng)
+                                                                      Random rng, Random requestNoiseRng)
         {
             var ranges = new List<(DateOnly From, DateOnly To)>();
 
             var month = new DateOnly(HistoryStart.Year, HistoryStart.Month, 1);
             while (month <= HistoryEnd)
             {
+                // Requests that never became time off (rejected by HR / withdrawn by the employee).
+                if (requestNoiseRng.NextDouble() < RejectedRequestChancePerMonth)
+                    AddNonTakenLeave(employee, adminId, requestNoiseRng, month, rejected: true);
+                if (requestNoiseRng.NextDouble() < CancelledRequestChancePerMonth)
+                    AddNonTakenLeave(employee, adminId, requestNoiseRng, month, rejected: false);
+
                 if (month.Month == vacationMonth && rng.NextDouble() < 0.90)
                     AddLeave(employee, ranges, adminId, rng, month, leaveTypeId: 1,
                              reason: "Godišnji odmor", minLen: 7, maxLen: 12);
@@ -334,6 +372,52 @@ namespace Lexor.Services.Database
             ranges.Add((from, to));
         }
 
+        // Adds a request that never resulted in time off: rejected by HR (with a reason) or
+        // cancelled by the employee. Deliberately NOT added to `ranges` — the employee still
+        // worked those days, so attendance stamps must not be suppressed by these requests.
+        private static void AddNonTakenLeave(Employee employee, int adminId, Random rng,
+                                             DateOnly month, bool rejected)
+        {
+            var length = rng.Next(1, 5);
+            var daysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
+            var from = new DateOnly(month.Year, month.Month, rng.Next(1, Math.Max(2, daysInMonth - length)));
+            var to = from.AddDays(length - 1);
+            if (from < HistoryStart || to > HistoryEnd)
+                return;
+
+            // The request was submitted well before its start date; the decision followed shortly.
+            var created = from.ToDateTime(TimeOnly.MinValue).AddDays(-rng.Next(5, 15));
+            var decidedAt = created.AddDays(rng.Next(1, 4));
+
+            var annual = rng.NextDouble() < 0.5;
+            var leave = new Leave
+            {
+                LeaveTypeId = annual ? 1 : 3,
+                DateFrom = from,
+                DateTo = to,
+                NumberOfDays = length,
+                Reason = annual ? "Godišnji odmor" : "Plaćeno odsustvo",
+                CreatedAt = created,
+            };
+
+            if (rejected)
+            {
+                leave.State = nameof(RejectedLeaveState);
+                leave.RejectedByAdminId = adminId;
+                leave.RejectedAt = decidedAt;
+                leave.RejectionReason = RejectionReasons[rng.Next(RejectionReasons.Length)];
+            }
+            else
+            {
+                leave.State = nameof(CancelledLeaveState);
+                leave.CancelledByUser = employee.User; // the employee withdrew their own request
+                leave.CancelledAt = decidedAt;
+                leave.CancellationReason = CancellationReasons[rng.Next(CancellationReasons.Length)];
+            }
+
+            employee.Leaves.Add(leave);
+        }
+
         private static bool Overlaps(List<(DateOnly From, DateOnly To)> ranges, DateOnly from, DateOnly to)
             => ranges.Any(r => from <= r.To && to >= r.From);
 
@@ -381,15 +465,40 @@ namespace Lexor.Services.Database
 
                 absentPreviousWorkday = false;
 
-                // Everyone works at LEAST their contracted hours. Most days they leave within ~20
-                // minutes of the contracted end (natural variance, below the 30-min overtime grace,
-                // so unpaid). On ~15% of days they put in a real overtime block of varied length
-                // (45 min to 3 h, in 5-minute steps) — never a flat round number, so it looks realistic.
-                var extraMinutes = rng.Next(0, 21); // 0-20 min: ordinary daily variance, not overtime
-                if (rng.NextDouble() < OvertimeChancePerDay)
-                    extraMinutes = rng.Next(9, 37) * 5; // 45-180 min overtime block
+                // Normal attendance: arrives 08:00-08:15 and works at least the contracted hours;
+                // on ~15% of days a real overtime block (45 min - 3 h). A minority of days are
+                // legitimate exceptions that deliberately RESEMBLE fraud without being fraud (flex
+                // late arrival, approved early departure, a single correction), so no single
+                // threshold cleanly separates fraud from normal work.
                 var enter = day.ToDateTime(new TimeOnly(8, rng.Next(0, 16)));
-                var left = enter.AddMinutes(workHoursPerDay * 60 + extraMinutes);
+                var shiftEnd = day.ToDateTime(new TimeOnly(8, 0)).AddHours(workHoursPerDay);
+                DateTime left;
+
+                var roll = rng.NextDouble();
+                if (roll < 0.03)
+                {
+                    // Approved flexible start: arrives 08:30-09:00 (looks like a late-arrival fraud).
+                    enter = day.ToDateTime(new TimeOnly(8, 30)).AddMinutes(rng.Next(0, 31));
+                    left = enter.AddMinutes(workHoursPerDay * 60 - rng.Next(0, 41));
+                }
+                else if (roll < 0.09)
+                {
+                    // Approved short day: leaves 20-70 min early (looks like an early-departure fraud).
+                    left = shiftEnd.AddMinutes(-rng.Next(20, 71));
+                }
+                else
+                {
+                    var extraMinutes = rng.Next(0, 21); // 0-20 min: ordinary variance, below overtime grace
+                    if (rng.NextDouble() < OvertimeChancePerDay)
+                        extraMinutes = rng.Next(9, 37) * 5; // 45-180 min real overtime block
+                    left = enter.AddMinutes(workHoursPerDay * 60 + extraMinutes);
+                }
+
+                // A few normal records carry one (or rarely two) legitimate corrections, so the
+                // departure-edit count on its own is not a giveaway either.
+                var editCount = rng.NextDouble() < 0.06 ? 1
+                              : rng.NextDouble() < 0.02 ? 2
+                              : 0;
 
                 employee.Attendances.Add(new Attendance
                 {
@@ -397,9 +506,84 @@ namespace Lexor.Services.Database
                     Date = day,
                     DateTimeEntered = enter,
                     DateTimeLeft = left,
+                    DepartureEditCount = editCount,
+                    IsFraud = false,
                     WorkedHours = Math.Round((decimal)(left - enter).TotalHours, 2)
                 });
             }
+        }
+
+        // Marks FraudCount attendance records as fraudulent by manipulating their times / edit-count
+        // in line with the risk indicators, while keeping worked hours at or below the contracted
+        // amount so payroll (fixed bruto + overtime only) stays correct. The records are chosen at
+        // random across the whole timeline, so the later chronological test split still contains fraud.
+        private static void InjectFraud(List<Employee> employees, Random rng)
+        {
+            var records = employees
+                .SelectMany(e => e.Attendances.Select(a => (Att: a, Hours: e.Contracts.First().WorkHoursPerDay)))
+                .Where(x => x.Att.DateTimeEntered.HasValue && x.Att.DateTimeLeft.HasValue)
+                .ToList();
+            if (records.Count == 0)
+                return;
+
+            var minDate = records.Min(x => x.Att.Date);
+            var maxDate = records.Max(x => x.Att.Date);
+
+            foreach (var (att, hours) in records.OrderBy(_ => rng.Next()).Take(FraudCount))
+                ApplyFraud(att, hours, minDate, maxDate, rng);
+        }
+
+        // Turns one record into a fraudulent one following a random archetype (late arrival, early
+        // departure, repeatedly edited departure, or a combination). Fraud in the last quarter of the
+        // timeline is made subtler so it overlaps more with normal behaviour — this is what makes the
+        // chronological test F1 land below the train F1.
+        private static void ApplyFraud(Attendance att, int workHoursPerDay, DateOnly minDate, DateOnly maxDate, Random rng)
+        {
+            var span = Math.Max(1, maxDate.DayNumber - minDate.DayNumber);
+            var t = (double)(att.Date.DayNumber - minDate.DayNumber) / span; // 0..1 along the timeline
+
+            var shiftStart = att.Date.ToDateTime(new TimeOnly(8, 0));
+            var shiftEnd = shiftStart.AddHours(workHoursPerDay);
+
+            // Start from a normal-looking day, then stack "red flags" on top.
+            var enter = shiftStart.AddMinutes(rng.Next(0, 11));
+            var left = shiftEnd.AddMinutes(rng.Next(-5, 6));
+            var editCount = 0;
+
+            // A subtle minority (more common in the later period) carries only ONE mild flag, so it
+            // looks like ordinary behaviour and the model misses some of it -> F1 stays below 1.0
+            // and the later chronological test split is harder than train.
+            var subtle = rng.NextDouble() < (t > 0.75 ? 0.30 : 0.12);
+
+            if (subtle)
+            {
+                switch (rng.Next(3))
+                {
+                    case 0: enter = shiftStart.AddMinutes(rng.Next(30, 46)); break; // mildly late
+                    case 1: left = shiftEnd.AddMinutes(-rng.Next(30, 46)); break;   // mildly early
+                    default: editCount = 2; break;                                  // just two edits
+                }
+            }
+            else
+            {
+                // Clear fraud = a COMBINATION of red flags at once: late arrival AND early departure
+                // AND several departure edits. Legitimate exceptions only ever have ONE of these, so
+                // the model learns to flag the combination, not any single indicator.
+                enter = shiftStart.AddMinutes(rng.Next(45, 100)); // clearly late
+                left = shiftEnd.AddMinutes(-rng.Next(45, 100));   // clearly early
+                editCount = rng.Next(2, 6);                       // repeatedly edited
+            }
+
+            // Never let manipulated hours exceed the contract, so no fraudulent overtime is ever paid.
+            var cap = enter.AddHours(workHoursPerDay);
+            if (left > cap) left = cap;
+            if (left <= enter) left = enter.AddHours(1);
+
+            att.DateTimeEntered = enter;
+            att.DateTimeLeft = left;
+            att.DepartureEditCount = editCount;
+            att.IsFraud = true;
+            att.WorkedHours = Math.Round((decimal)(left - enter).TotalHours, 2);
         }
 
         private static string RandomPhone(Random rng) => $"06{rng.Next(0, 4)}{rng.Next(100000, 999999)}";

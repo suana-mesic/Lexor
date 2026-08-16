@@ -231,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -268,7 +268,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -405,7 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
               ),
             ),
           ],
@@ -652,7 +652,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           gridBorderData: BorderSide(color: Colors.grey[200]!, width: 1),
           dataSets: [
             RadarDataSet(
-              fillColor: AppColors.primary.withOpacity(0.2),
+              fillColor: AppColors.primary.withValues(alpha: 0.2),
               borderColor: AppColors.primary,
               borderWidth: 2,
               entryRadius: 3,

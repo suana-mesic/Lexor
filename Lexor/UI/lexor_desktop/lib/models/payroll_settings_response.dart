@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'payroll_settings_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class PayrollSettingsResponse {
   int id;
   DateTime validFrom;

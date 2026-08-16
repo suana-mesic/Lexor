@@ -3,7 +3,7 @@ import 'package:lexor_shared/lexor_shared.dart';
 
 part 'contract_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ContractTypeResponse {
   final int id;
   final String name;
@@ -14,7 +14,7 @@ class ContractTypeResponse {
       _$ContractTypeResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ContractResponse {
   final int id;
   final int employeeId;

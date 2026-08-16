@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lexor_mobile/widgets/header_actions.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_mobile/models/leave_response.dart';
 import 'package:lexor_mobile/providers/leave_provider.dart';
 import 'package:lexor_mobile/screens/create_leave_request.dart';
 import 'package:lexor_mobile/widgets/error_view.dart';
@@ -239,7 +240,7 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
     );
   }
 
-  Widget _buildLeaveCard(item) {
+  Widget _buildLeaveCard(LeaveResponse item) {
     final dateFormat = DateFormat('dd.MM');
     final yearFormat = DateFormat('dd.MM.yyyy');
     final dateRange =
@@ -313,7 +314,7 @@ class _LeaveRequestsTabState extends State<LeaveRequestsTab> {
                   ),
                 );
 
-                if (result == 'reload' && context.mounted) {
+                if (result == 'reload' && mounted) {
                   Provider.of<LeaveProvider>(
                     context,
                     listen: false,

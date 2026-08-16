@@ -15,13 +15,3 @@ NotificationResponse _$NotificationResponseFromJson(
   isRead: json['isRead'] as bool,
   createdAt: DateTime.parse(json['createdAt'] as String),
 );
-
-Map<String, dynamic> _$NotificationResponseToJson(
-  NotificationResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'title': instance.title,
-  'body': instance.body,
-  'isRead': instance.isRead,
-  'createdAt': instance.createdAt.toIso8601String(),
-};

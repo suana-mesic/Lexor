@@ -17,25 +17,9 @@ ProfileUserResponse _$ProfileUserResponseFromJson(Map<String, dynamic> json) =>
       profileImageBase64: json['profileImageBase64'] as String?,
     );
 
-Map<String, dynamic> _$ProfileUserResponseToJson(
-  ProfileUserResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'firstName': instance.firstName,
-  'lastName': instance.lastName,
-  'username': instance.username,
-  'email': instance.email,
-  'phoneNumber': instance.phoneNumber,
-  'profileImageBase64': instance.profileImageBase64,
-};
-
 ProfileCountryResponse _$ProfileCountryResponseFromJson(
   Map<String, dynamic> json,
 ) => ProfileCountryResponse(name: json['name'] as String);
-
-Map<String, dynamic> _$ProfileCountryResponseToJson(
-  ProfileCountryResponse instance,
-) => <String, dynamic>{'name': instance.name};
 
 ProfileCityResponse _$ProfileCityResponseFromJson(Map<String, dynamic> json) =>
     ProfileCityResponse(
@@ -47,15 +31,8 @@ ProfileCityResponse _$ProfileCityResponseFromJson(Map<String, dynamic> json) =>
             ),
     );
 
-Map<String, dynamic> _$ProfileCityResponseToJson(
-  ProfileCityResponse instance,
-) => <String, dynamic>{'name': instance.name, 'country': instance.country};
-
 ProfileRefResponse _$ProfileRefResponseFromJson(Map<String, dynamic> json) =>
     ProfileRefResponse(name: json['name'] as String);
-
-Map<String, dynamic> _$ProfileRefResponseToJson(ProfileRefResponse instance) =>
-    <String, dynamic>{'name': instance.name};
 
 ProfileResponse _$ProfileResponseFromJson(
   Map<String, dynamic> json,
@@ -75,15 +52,3 @@ ProfileResponse _$ProfileResponseFromJson(
       : ProfileRefResponse.fromJson(json['position'] as Map<String, dynamic>),
   hireDate: DateTime.parse(json['hireDate'] as String),
 );
-
-Map<String, dynamic> _$ProfileResponseToJson(ProfileResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'user': instance.user,
-      'dateOfBirth': instance.dateOfBirth.toIso8601String(),
-      'address': instance.address,
-      'city': instance.city,
-      'department': instance.department,
-      'position': instance.position,
-      'hireDate': instance.hireDate.toIso8601String(),
-    };

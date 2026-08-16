@@ -27,7 +27,7 @@ class _ReferenceDataScreenState extends State<ReferenceDataScreen>
   late final TabController _tabController =
       TabController(length: _tabLabels.length, vsync: this);
 
-  // Po jedan provider po entitetu (kreiraju se jednom za ovaj ekran).
+  // One provider per entity (created once for this screen).
   final _cityProvider = CityProvider();
   final _countryProvider = CountryProvider();
   final _departmentProvider = DepartmentProvider();

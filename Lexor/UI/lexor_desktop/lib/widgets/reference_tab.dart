@@ -470,7 +470,7 @@ class _ReferenceTabState<T extends ReferenceItem>
   }
 }
 
-/// Dijalog za unos/izmjenu referentnog zapisa, generisan iz [RefField] definicija.
+/// Dialog for creating/editing a reference record, generated from [RefField] definitions.
 class _RefFormDialog extends StatefulWidget {
   final String title;
   final List<RefField> fields;

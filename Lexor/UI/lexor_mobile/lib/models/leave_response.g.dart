@@ -20,28 +20,9 @@ LeaveResponse _$LeaveResponseFromJson(Map<String, dynamic> json) =>
       allowedActions: json['allowedActions'] as List<dynamic>,
     );
 
-Map<String, dynamic> _$LeaveResponseToJson(LeaveResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'leaveType': instance.leaveType,
-      'dateFrom': instance.dateFrom.toIso8601String(),
-      'dateTo': instance.dateTo.toIso8601String(),
-      'numberOfDays': instance.numberOfDays,
-      'state': instance.state,
-      'reason': instance.reason,
-      'allowedActions': instance.allowedActions,
-    };
-
 LeaveTypeResponse _$LeaveTypeResponseFromJson(Map<String, dynamic> json) =>
     LeaveTypeResponse(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       isPaid: json['isPaid'] as bool,
     );
-
-Map<String, dynamic> _$LeaveTypeResponseToJson(LeaveTypeResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'isPaid': instance.isPaid,
-    };

@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
-import 'package:json_annotation/json_annotation.dart';
 
-@JsonSerializable()
+/// Sent on leave update; only the fields the user actually changed are included,
+/// so the hand-written toJson omits nulls instead of using code generation.
 class LeaveUpdateRequest {
   final int? leaveTypeId;
   final DateTime? dateFrom;

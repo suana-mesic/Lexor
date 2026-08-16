@@ -18,12 +18,3 @@ AttendanceResponse _$AttendanceResponseFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['dateTimeLeft'] as String),
       workedHours: (json['workedHours'] as num?)?.toDouble(),
     );
-
-Map<String, dynamic> _$AttendanceResponseToJson(AttendanceResponse instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'date': instance.date.toIso8601String(),
-      'dateTimeEntered': instance.dateTimeEntered?.toIso8601String(),
-      'dateTimeLeft': instance.dateTimeLeft?.toIso8601String(),
-      'workedHours': instance.workedHours,
-    };

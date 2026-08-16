@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'profile_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ProfileUserResponse {
   final int id;
   final String firstName;
@@ -26,7 +26,7 @@ class ProfileUserResponse {
       _$ProfileUserResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ProfileCountryResponse {
   final String name;
 
@@ -36,7 +36,7 @@ class ProfileCountryResponse {
       _$ProfileCountryResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ProfileCityResponse {
   final String name;
   final ProfileCountryResponse? country;
@@ -47,7 +47,7 @@ class ProfileCityResponse {
       _$ProfileCityResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ProfileRefResponse {
   final String name;
 
@@ -57,7 +57,7 @@ class ProfileRefResponse {
       _$ProfileRefResponseFromJson(json);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class ProfileResponse {
   final int id;
   final ProfileUserResponse user;

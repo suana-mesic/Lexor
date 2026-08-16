@@ -22,11 +22,11 @@ using Scalar.AspNetCore;
 using SmartComponents.LocalEmbeddings;
 using System.Text;
 using System.Threading.RateLimiting;
+using Lexor.Services.ML;
 
 Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExceptionFilter>();
@@ -59,6 +59,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticatedUserAccessor, AuthenticatedUserAccessor>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IFraudDetectionService, FraudDetectionService>();
 
 
 TypeAdapterConfig<RoleUpdateRequest, Role>.NewConfig().IgnoreNullValues(true);
@@ -282,10 +283,25 @@ using (var scope = app.Services.CreateScope())
         // Seed and index the legal-document corpus the HR chatbot answers from.
         var legalDocumentIndexer = services.GetRequiredService<ILegalDocumentIndexer>();
         await LegalDocumentSeeder.SeedAsync(db, legalDocumentIndexer);
+
+        // Train the attendance fraud-detection model and log train/test metrics at startup.
+        var fraudDetector = services.GetRequiredService<IFraudDetectionService>();
+        await fraudDetector.TrainAsync();
+        var fm = fraudDetector.Metrics;
+        if (fm != null)
+        {
+            app.Logger.LogInformation(
+                "[FRAUD] TRAIN  F1={F1:F3}  Acc={Acc:F3}  P={P:F3}  R={R:F3}  AUC={Auc:F3}  (n={N}, fraud={Fraud})",
+                fm.Train.F1Score, fm.Train.Accuracy, fm.Train.Precision, fm.Train.Recall,
+                fm.Train.AreaUnderRocCurve, fm.Train.SampleCount, fm.Train.FraudCount);
+            app.Logger.LogInformation(
+                "[FRAUD] TEST   F1={F1:F3}  Acc={Acc:F3}  P={P:F3}  R={R:F3}  AUC={Auc:F3}  (n={N}, fraud={Fraud})",
+                fm.Test.F1Score, fm.Test.Accuracy, fm.Test.Precision, fm.Test.Recall,
+                fm.Test.AreaUnderRocCurve, fm.Test.SampleCount, fm.Test.FraudCount);
+        }
     }
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

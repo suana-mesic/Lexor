@@ -5,7 +5,7 @@ import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 
-/// Gornja traka stranice — naslov lijevo, ime administratora i avatar desno.
+/// Top bar of the page — title on the left, administrator name and avatar on the right.
 class AppHeader extends StatelessWidget {
   final String title;
 

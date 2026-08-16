@@ -23,19 +23,3 @@ PayrollSettingsResponse _$PayrollSettingsResponseFromJson(
   unemploymentRate: (json['unemploymentRate'] as num).toDouble(),
   incomeTaxRate: (json['incomeTaxRate'] as num).toDouble(),
 );
-
-Map<String, dynamic> _$PayrollSettingsResponseToJson(
-  PayrollSettingsResponse instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'validFrom': instance.validFrom.toIso8601String(),
-  'validTo': instance.validTo?.toIso8601String(),
-  'workDaysDescription': instance.workDaysDescription,
-  'workDaysMask': instance.workDaysMask,
-  'overtimeMultiplier': instance.overtimeMultiplier,
-  'personalDeduction': instance.personalDeduction,
-  'pioMioRate': instance.pioMioRate,
-  'healthInsuranceRate': instance.healthInsuranceRate,
-  'unemploymentRate': instance.unemploymentRate,
-  'incomeTaxRate': instance.incomeTaxRate,
-};
