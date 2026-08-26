@@ -28,10 +28,8 @@ namespace Lexor.Subscriber
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _bus.PubSub.SubscribeAsync<SalarySlipStatusChanged>(
-                subscriptionId: "lexor-salaryslip-notifications",
-                onMessage: GetHandleAsync,
-                cancellationToken: stoppingToken);
+            await BusSubscription.SubscribeWithRetryAsync<SalarySlipStatusChanged>(
+                _bus, "lexor-salaryslip-notifications", GetHandleAsync, _logger, stoppingToken);
         }
 
         private async Task GetHandleAsync(SalarySlipStatusChanged message)

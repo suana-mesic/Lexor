@@ -25,13 +25,15 @@ services:
       context: .
       dockerfile: Lexor.WebAPI/Dockerfile
     container_name: lexor-api
-    # Wait for the databases/broker to report healthy, not just to exist — otherwise the
-    # first startup fails on a connection refused and the container restart-loops.
+    # The database must be ready before this container starts, because migrations run during
+    # startup. The broker only needs to exist: RabbitMQ can take a minute to boot, and both
+    # services retry their connection to it, so blocking on its health would only make a slow
+    # machine fail to come up at all.
     depends_on:
       lexor-db:
         condition: service_healthy
       lexor-rabbitmq:
-        condition: service_healthy
+        condition: service_started
     env_file:
       - ./Lexor.WebAPI/.env
     environment:
@@ -51,7 +53,7 @@ services:
       lexor-db:
         condition: service_healthy
       lexor-rabbitmq:
-        condition: service_healthy
+        condition: service_started
     env_file:
       - ./Lexor.Subscriber/.env
     environment:

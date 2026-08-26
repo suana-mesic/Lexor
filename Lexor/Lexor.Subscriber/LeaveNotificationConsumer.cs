@@ -21,7 +21,8 @@ namespace Lexor.Subscriber
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _bus.PubSub.SubscribeAsync<LeaveStatusChanged>(subscriptionId: "lexor-leave-notifications", onMessage: GetHandleAsync, cancellationToken: stoppingToken);
+            await BusSubscription.SubscribeWithRetryAsync<LeaveStatusChanged>(
+                _bus, "lexor-leave-notifications", GetHandleAsync, _logger, stoppingToken);
         }
 
         private async Task GetHandleAsync(LeaveStatusChanged message)

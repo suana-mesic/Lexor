@@ -21,10 +21,8 @@ namespace Lexor.Subscriber
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _bus.PubSub.SubscribeAsync<LegalDocumentUploaded>(
-                subscriptionId: "lexor-legal-document-index",
-                onMessage: HandleAsync,
-                cancellationToken: stoppingToken);
+            await BusSubscription.SubscribeWithRetryAsync<LegalDocumentUploaded>(
+                _bus, "lexor-legal-document-index", HandleAsync, _logger, stoppingToken);
         }
 
         private async Task HandleAsync(LegalDocumentUploaded message)

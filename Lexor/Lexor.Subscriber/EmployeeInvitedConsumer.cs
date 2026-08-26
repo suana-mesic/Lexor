@@ -20,11 +20,8 @@ namespace Lexor.Subscriber
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _bus.PubSub.SubscribeAsync<EmployeeInvited>(
-               subscriptionId: "lexor-employee-invited",
-               onMessage: HandleAsync,
-               cancellationToken: stoppingToken
-           );
+            await BusSubscription.SubscribeWithRetryAsync<EmployeeInvited>(
+                _bus, "lexor-employee-invited", HandleAsync, _logger, stoppingToken);
         }
 
         private async Task HandleAsync(EmployeeInvited message)

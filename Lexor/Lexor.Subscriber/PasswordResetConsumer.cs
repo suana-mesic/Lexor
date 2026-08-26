@@ -18,10 +18,8 @@ namespace Lexor.Subscriber
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _bus.PubSub.SubscribeAsync<PasswordResetRequested>(
-                subscriptionId: "lexor-password-reset",
-                onMessage: HandleAsync,
-                cancellationToken: stoppingToken);
+            await BusSubscription.SubscribeWithRetryAsync<PasswordResetRequested>(
+                _bus, "lexor-password-reset", HandleAsync, _logger, stoppingToken);
         }
 
         private async Task HandleAsync(PasswordResetRequested message)
