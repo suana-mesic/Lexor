@@ -1,9 +1,12 @@
 # Dokumentacija ML komponente — Detekcija prevara u evidenciji radnog vremena
 
-> Napomena o nazivu: predmet zahtijeva da se ovaj dokument nazove `recommender-dokumentacija.md`.
-> Umjesto sistema preporuke, implementiran je **drugi metod iz oblasti mašinskog učenja** —
-> **binarna klasifikacija** (detekcija prevara u evidenciji dolazaka/odlazaka), što je u skladu
-> sa zahtjevom 2.4 ("...ili implementirajte neki drugi metod iz oblasti ML").
+> Napomena o nazivu: umjesto sistema preporuke implementiran je **drugi metod iz oblasti
+> mašinskog učenja** — **binarna klasifikacija** (detekcija prevara u evidenciji dolazaka i
+> odlazaka), što je u skladu sa zahtjevom 2.4 ("...ili implementirajte neki drugi metod iz
+> oblasti ML"). Budući da sistem preporuke nije implementiran, dokument je nazvan prema svom
+> stvarnom sadržaju — `ml-dokumentacija.md` umjesto `recommender-dokumentacija.md` kako je
+> navedeno u tački 9.2 uputa. Ovo je jedini dokument sa opisom ML komponente koji tačka 9.2
+> traži.
 
 ## 1. Problem
 
@@ -74,19 +77,23 @@ Odstupanja od ličnog prosjeka su ključni atributi: čine detekciju **relativno
 
 ## 4. Podaci
 
-Model se trenira nad zapisima iz baze (tabela `Attendances`): **10.490 zapisa** evidencije za
+Model se trenira nad zapisima iz baze (tabela `Attendances`): **oko 10.500 zapisa** evidencije za
 30 uposlenika kroz ~19 mjeseci, od čega je **300 zapisa (~3%) označeno kao prevara**. Prevare su
 raznovrsne (kasni dolasci, raniji odlasci, višestruke izmjene odlaska i njihove kombinacije), a
 podaci sadrže i **legitimne dvojnike** (fleksibilni dolasci, odobreni kraći dani, stvarni
 prekovremeni, pojedinačne ispravke), zbog kojih se klase djelimično preklapaju — kao u stvarnosti.
+
+Evidencija je potpuna: svaki radni dan svakog uposlenika ima ili zapis prisustva ili odobreno
+odsustvo, a zapisa nema vikendom. Skup zato ne sadrži "rupe" koje bi model mogao pogrešno
+protumačiti, niti dane koji uopšte nisu radni.
 
 ## 5. Treniranje i evaluacija
 
 ### Hronološka podjela 80 : 20
 
 Zapisi se sortiraju **po datumu**: najstarijih 80% je trening skup, najnovijih 20% je test skup.
-Podjela je namjerno hronološka, a ne nasumična: podatak iz decembra 2026. ne smije učestvovati u
-treniranju modela koji predviđa za februar 2026., jer bi tako **budućnost "curila" u prošlost**
+Podjela je namjerno hronološka, a ne nasumična: zapis iz posljednjeg mjeseca ne smije učestvovati
+u treniranju modela koji predviđa za neki raniji mjesec, jer bi tako **budućnost "curila" u prošlost**
 (model bi na testu izgledao bolje nego što bi ikad bio u stvarnoj upotrebi, gdje budući podaci ne
 postoje). Test skup tako simulira stvarnu situaciju: model treniran na prošlosti, primijenjen na
 neviđenu budućnost.
@@ -102,13 +109,18 @@ klasa dobija ravnopravan uticaj na granicu odluke.
 
 | Metrika | Trening (80%) | Test (20%) |
 |---|---|---|
-| **F1** | **0.936** | **0.795** |
-| Tačnost (accuracy) | 0.996 | 0.992 |
-| Preciznost (precision) | 0.987 | 0.969 |
-| Odziv (recall) | 0.890 | 0.674 |
-| AUC | 0.995 | 0.984 |
-| Broj zapisa | 8.392 | 2.098 |
-| Broj prevara | 254 | 46 |
+| **F1** | **0.921** | **0.851** |
+| Tačnost (accuracy) | 0.996 | 0.993 |
+| Preciznost (precision) | 0.981 | 0.977 |
+| Odziv (recall) | 0.868 | 0.754 |
+| AUC | 0.993 | 0.991 |
+| Broj zapisa | 8.386 | 2.097 |
+| Broj prevara | 243 | 57 |
+
+> Demo podaci se generišu u odnosu na datum pokretanja (prozor od ~19 mjeseci koji završava
+> jučerašnjim danom), pa konkretne vrijednosti mogu odstupati za nekoliko stotinki između
+> pokretanja. Tabela prikazuje jedno mjerenje; aktuelne vrijednosti su uvijek vidljive na
+> ekranu "Detekcija prevara" u desktop aplikaciji.
 
 Značenje metrika (pozitivna klasa = prevara):
 - **Preciznost** — od zapisa koje je model označio, koliko ih stvarno jeste prevara (mjeri
@@ -120,9 +132,9 @@ Značenje metrika (pozitivna klasa = prevara):
 - **Tačnost** — udio svih ispravno klasifikovanih zapisa; na neuravnoteženim podacima je
   varljiva (i beskoristan model bi imao ~97%), pa se navodi samo kao dopunska mjera.
 
-Razlika trening → test (F1 0.936 → 0.795) je **očekivani i zdrav** pad generalizacije: test skup
-su hronološki najnoviji zapisi, u kojima su prevare suptilnije, pa odziv pada (0.89 → 0.67), dok
-preciznost ostaje visoka (0.97) — model i na neviđenim podacima gotovo ne diže lažne uzbune.
+Razlika trening → test (F1 0.921 → 0.851) je **očekivani i zdrav** pad generalizacije: test skup
+su hronološki najnoviji zapisi, u kojima su prevare suptilnije, pa odziv pada (0.87 → 0.75), dok
+preciznost ostaje visoka (0.98) — model i na neviđenim podacima gotovo ne diže lažne uzbune.
 
 ## 6. Prikaz rezultata
 

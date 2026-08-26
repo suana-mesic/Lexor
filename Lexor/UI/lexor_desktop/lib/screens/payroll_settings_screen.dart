@@ -21,14 +21,25 @@ class _PayrollSettingsScreenState extends State<PayrollSettingsScreen> {
   String? _error;
 
   final _formKey = GlobalKey<FormState>();
+
+  // Starting values of the "add new rates" form. Kept in one place so a fresh visit to the
+  // screen and the state right after a successful save look exactly the same.
+  static const _defaultWorkDays = 'Pon-Pet';
+  static const _defaultOvertime = '1.3';
+  static const _defaultDeduction = '300';
+  static const _defaultPio = '17';
+  static const _defaultHealth = '12.5';
+  static const _defaultUnemployment = '1.5';
+  static const _defaultTax = '10';
+
   DateTime? _validFrom;
-  String _workDays = 'Pon-Pet';
-  final _overtime = TextEditingController(text: '1.3');
-  final _deduction = TextEditingController(text: '300');
-  final _pio = TextEditingController(text: '17');
-  final _health = TextEditingController(text: '12.5');
-  final _unemployment = TextEditingController(text: '1.5');
-  final _tax = TextEditingController(text: '10');
+  String _workDays = _defaultWorkDays;
+  final _overtime = TextEditingController(text: _defaultOvertime);
+  final _deduction = TextEditingController(text: _defaultDeduction);
+  final _pio = TextEditingController(text: _defaultPio);
+  final _health = TextEditingController(text: _defaultHealth);
+  final _unemployment = TextEditingController(text: _defaultUnemployment);
+  final _tax = TextEditingController(text: _defaultTax);
   bool _saving = false;
   String? _formError;
 
@@ -225,6 +236,26 @@ class _PayrollSettingsScreenState extends State<PayrollSettingsScreen> {
     if (picked != null) setState(() => _validFrom = picked);
   }
 
+  /// Puts the entry form back to the state a fresh visit to the screen shows.
+  void _resetForm() {
+    // Clear the validation marks first: Form.reset() also blanks controller-backed fields,
+    // so the defaults have to be written back afterwards, not before.
+    _formKey.currentState?.reset();
+
+    _overtime.text = _defaultOvertime;
+    _deduction.text = _defaultDeduction;
+    _pio.text = _defaultPio;
+    _health.text = _defaultHealth;
+    _unemployment.text = _defaultUnemployment;
+    _tax.text = _defaultTax;
+
+    setState(() {
+      _workDays = _defaultWorkDays;
+      _validFrom = null;
+      _formError = null;
+    });
+  }
+
   Future<void> _save() async {
     final formOk = _formKey.currentState!.validate();
 
@@ -253,6 +284,9 @@ class _PayrollSettingsScreenState extends State<PayrollSettingsScreen> {
       });
 
       _snack('Nove stope sačuvane');
+      // The user stays on this screen, so the entry form goes back to its starting state
+      // instead of keeping the values that were just saved (guideline 6).
+      _resetForm();
       _loadCurrent();
     } catch (e) {
       setState(() => _formError = messageFor(e));

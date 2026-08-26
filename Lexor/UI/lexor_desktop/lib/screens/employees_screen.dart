@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_desktop/helpers/image_decode.dart';
 import 'package:lexor_desktop/models/employee_response.dart';
 import 'package:lexor_desktop/models/search_result.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
@@ -185,6 +186,26 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     if (parts.isEmpty || parts[0].isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  /// Profile photo next to the name (guideline 6). Falls back to initials for
+  /// employees who never uploaded one.
+  Widget _avatar(EmployeeResponse e) {
+    final thumb = e.user.profileThumbnailBase64;
+    if (thumb != null && thumb.isNotEmpty) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundImage: MemoryImage(cachedImageBytes(thumb)),
+      );
+    }
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: AppColors.primary,
+      child: Text(
+        _initials(e.user.fullName),
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+      ),
+    );
   }
 
   Future<void> _openAddDialog() async {
@@ -535,14 +556,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
         _tableCell(
           Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  _initials(e.user.fullName),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
+              _avatar(e),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(e.user.fullName, overflow: TextOverflow.ellipsis),

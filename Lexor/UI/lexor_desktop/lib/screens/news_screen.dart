@@ -18,12 +18,20 @@ class NewsScreen extends StatefulWidget {
 }
 
 class _NewsScreenState extends State<NewsScreen> {
+  final TextEditingController _searchCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => Provider.of<NewsProvider>(context, listen: false).fetch(),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _openDialog({NewsResponse? existing}) async {
@@ -86,12 +94,40 @@ class _NewsScreenState extends State<NewsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Obavijesti kompanije',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
+              const Spacer(),
+              // Capped rather than fixed width, so a narrow window shrinks the field instead
+              // of overflowing the row.
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 280),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Pretraga po naslovu',
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: provider.searchTerm.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              tooltip: 'Poništi pretragu',
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                provider.search('');
+                              },
+                            ),
+                    ),
+                    onSubmitted: provider.search,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: () => _openDialog(),
                 icon: const Icon(Icons.add),
@@ -130,7 +166,13 @@ class _NewsScreenState extends State<NewsScreen> {
       );
     }
     if (provider.news.isEmpty) {
-      return const Center(child: Text('Nema objavljenih obavijesti.'));
+      return Center(
+        child: Text(
+          provider.searchTerm.isEmpty
+              ? 'Nema objavljenih obavijesti.'
+              : 'Nema obavijesti za pretragu "${provider.searchTerm}".',
+        ),
+      );
     }
     return ListView.separated(
       itemCount: provider.news.length,

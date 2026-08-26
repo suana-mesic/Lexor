@@ -25,6 +25,10 @@ namespace Lexor.Model.Responses
             public string Email { get; set; } = string.Empty;
             public string? PhoneNumber { get; set; }
             public string? ProfileImageBase64 { get; set; }
+
+            // Small 96x96 avatar returned in list responses (the full image above is
+            // stripped there) so tables can show the photo without a heavy payload.
+            public string? ProfileThumbnailBase64 { get; set; }
             public bool IsCodeActivated { get; set; }
         }
 

@@ -21,8 +21,29 @@ class AttendanceTab extends StatefulWidget {
 class _AttendanceTabState extends State<AttendanceTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay = DateTime.now();
+  /// Working day with no scan and no leave. Amber matches the warning icon the day details
+  /// already use for this case, and keeps it distinct from the grey of a non-working day.
+  static final Color _noRecordColor = Colors.orange[200]!;
+
   bool _isNonWorkDay(DateTime day, PayrollSettingsProvider settings) =>
       !settings.isWorkDay(day);
+
+  /// Time the employee was actually off. Once a leave's end date passes, the worker moves it
+  /// from Approved to Completed — matching only Approved would hide every past leave, which is
+  /// most of them.
+  static bool _isTimeOff(LeaveResponse l) =>
+      l.state == LeaveStateType.approved.apiValue ||
+      l.state == LeaveStateType.completed.apiValue;
+
+  /// The leave covering [day], if any.
+  static LeaveResponse? _leaveOn(DateTime day, List<LeaveResponse> leaves) => leaves
+      .where(
+        (l) =>
+            (isSameDay(day, l.dateFrom) || day.isAfter(l.dateFrom)) &&
+            (isSameDay(day, l.dateTo) || day.isBefore(l.dateTo)) &&
+            _isTimeOff(l),
+      )
+      .firstOrNull;
 
   Color? _getDayColor(
     DateTime day,
@@ -30,16 +51,11 @@ class _AttendanceTabState extends State<AttendanceTab> {
     List<LeaveResponse> leaves,
     PayrollSettingsProvider settings,
   ) {
+    // A non-working day stays grey even when a leave spans it: the employee did not spend
+    // time off on a day they were not due to work.
     if (_isNonWorkDay(day, settings)) return Colors.grey[200];
 
-    final matchLeave = leaves
-        .where(
-          (l) =>
-              (isSameDay(day, l.dateFrom) || day.isAfter(l.dateFrom)) &&
-              (isSameDay(day, l.dateTo) || day.isBefore(l.dateTo)) &&
-              l.state == LeaveStateType.approved.apiValue,
-        )
-        .firstOrNull;
+    final matchLeave = _leaveOn(day, leaves);
 
     if (day.isAfter(DateTime.now())) {
       if (matchLeave != null) {
@@ -58,7 +74,9 @@ class _AttendanceTabState extends State<AttendanceTab> {
     );
 
     if (matchAttendance.isEmpty && matchLeave == null) {
-      return isSameDay(day, DateTime.now()) ? null : Colors.grey[200];
+      // A working day with neither a scan nor a leave is its own case. It used to share the
+      // grey of a non-working day, which contradicted the legend and the day details.
+      return isSameDay(day, DateTime.now()) ? null : _noRecordColor;
     }
     if (matchLeave != null) {
       return matchLeave.leaveType.isPaid
@@ -356,6 +374,8 @@ class _AttendanceTabState extends State<AttendanceTab> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          _legendItem(_noRecordColor, 'Bez evidencije'),
         ],
       ),
     );
@@ -390,14 +410,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
     final record = findMatch(day, attendances);
     final isWeekend = _isNonWorkDay(day, settings);
     final isFuture = day.isAfter(DateTime.now());
-    final matchLeave = leaves
-        .where(
-          (l) =>
-              (isSameDay(day, l.dateFrom) || day.isAfter(l.dateFrom)) &&
-              (isSameDay(day, l.dateTo) || day.isBefore(l.dateTo)) &&
-              l.state == LeaveStateType.approved.apiValue,
-        )
-        .firstOrNull;
+    final matchLeave = _leaveOn(day, leaves);
 
     String formatTime(DateTime? dt) {
       if (dt == null) return '--:--';
@@ -485,11 +498,13 @@ class _AttendanceTabState extends State<AttendanceTab> {
               Colors.grey,
               'Nema informacija za odabrani dan jer je u budućnosti.',
             )
+          // Reached only for a past working day with no approved leave and no record —
+          // non-working days and leave days are handled by the branches above.
           else if (record == null)
             buildInfoMessage(
               Icons.info_outline,
               Colors.orange,
-              'Nema informacija za odabrani dan jer ste odabrali neradni ili slobodan dan.',
+              'Nema evidencije za odabrani radni dan — kartica nije skenirana.',
             )
           else ...[
             _buildDetailRow(

@@ -3,6 +3,7 @@ using Lexor.Model.Exceptions;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
+using Lexor.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lexor.Services
@@ -46,7 +47,11 @@ namespace Lexor.Services
             if (request.Email != null) user.Email = request.Email;
             if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
             if (request.ProfileImageBase64 != null)
+            {
                 user.ProfileImageBase64 = request.ProfileImageBase64;
+                // Rebuild the list thumbnail from the new picture in the same save.
+                user.ProfileThumbnailBase64 = ImageThumbnail.Create(request.ProfileImageBase64);
+            }
 
             await _dbContext.SaveChangesAsync();
             return Map(user);

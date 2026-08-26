@@ -36,6 +36,9 @@ class LeaveResponse {
       ? '-'
       : '${employee!.user.firstName} ${employee!.user.lastName}';
 
+  /// Avatar for list views; null when there is no photo.
+  String? get employeeThumbnail => employee?.user.profileThumbnailBase64;
+
   factory LeaveResponse.fromJson(Map<String, dynamic> json) => LeaveResponse(
         id: json['id'] as int,
         employee: json['employee'] == null
@@ -74,16 +77,21 @@ class LeaveUser {
   final String firstName;
   final String lastName;
 
+  /// Small avatar sent with list responses; null when the person has no photo.
+  final String? profileThumbnailBase64;
+
   const LeaveUser({
     required this.id,
     required this.firstName,
     required this.lastName,
+    this.profileThumbnailBase64,
   });
 
   factory LeaveUser.fromJson(Map<String, dynamic> json) => LeaveUser(
         id: json['id'] as int? ?? 0,
         firstName: json['firstName'] as String? ?? '',
         lastName: json['lastName'] as String? ?? '',
+        profileThumbnailBase64: json['profileThumbnailBase64'] as String?,
       );
 }
 

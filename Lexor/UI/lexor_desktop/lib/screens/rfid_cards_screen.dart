@@ -6,6 +6,7 @@ import 'package:lexor_desktop/models/search_result.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/providers/rfid_card_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/person_avatar.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
 import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:lexor_desktop/providers/employee_provider.dart';
@@ -205,12 +206,6 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
     }
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts[0].isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
 
   // Fixed row heights so the table always shows a whole number of rows
   // (no partially-visible "peeking" row). Rows beyond what fits are reached via
@@ -479,13 +474,9 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
         _tableCell(
           Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  _initials(card.employeeFullName),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
+              PersonAvatar(
+                fullName: card.employeeFullName,
+                thumbnailBase64: card.employeeThumbnail,
               ),
               const SizedBox(width: 12),
               Expanded(

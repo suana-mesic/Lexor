@@ -27,4 +27,5 @@ UserResponse _$UserResponseFromJson(Map<String, dynamic> json) => UserResponse(
   id: (json['id'] as num).toInt(),
   firstName: json['firstName'] as String,
   lastName: json['lastName'] as String,
+  profileThumbnailBase64: json['profileThumbnailBase64'] as String?,
 );

@@ -33,6 +33,10 @@ namespace Lexor.Services.Database
 
         public string? ProfileImageBase64 { get; set; }
 
+        // Downscaled copy of ProfileImageBase64 (96x96 JPEG). List endpoints return this one
+        // so they stay small, while detail views return the full image above.
+        public string? ProfileThumbnailBase64 { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         [MaxLength(20)]

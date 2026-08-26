@@ -329,7 +329,7 @@ packages:
     source: hosted
     version: "6.14.0"
   jwt_decoder:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: jwt_decoder
       sha256: "54774aebf83f2923b99e6416b4ea915d47af3bde56884eb622de85feabbc559f"

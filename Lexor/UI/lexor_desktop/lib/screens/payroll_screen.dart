@@ -6,6 +6,7 @@ import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/providers/employee_provider.dart';
 import 'package:lexor_desktop/providers/salary_slip_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/person_avatar.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
 import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:lexor_shared/lexor_shared.dart';
@@ -102,11 +103,6 @@ class _PayrollScreenState extends State<PayrollScreen> {
   bool get _hasPending => _items.any((s) => s.status == SalarySlipStatus.pending.code);
   bool get _hasApproved => _items.any((s) => s.status == SalarySlipStatus.approved.code);
 
-  String _initials(String n) {
-    final p = n.trim().split(RegExp(r'\s+'));
-    if (p.isEmpty || p[0].isEmpty) return '?';
-    return (p.length == 1 ? p[0][0] : p[0][0] + p[1][0]).toUpperCase();
-  }
 
   Future<void> _load() async {
     if (_year == null || _month == null) return;
@@ -588,11 +584,9 @@ class _PayrollScreenState extends State<PayrollScreen> {
       children: [
         _cell(
           Row(children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primary,
-              child: Text(_initials(sl.employeeFullName),
-                  style: const TextStyle(color: Colors.white, fontSize: 12)),
+            PersonAvatar(
+              fullName: sl.employeeFullName,
+              thumbnailBase64: sl.employeeThumbnail,
             ),
             const SizedBox(width: 12),
             Expanded(child: Text(sl.employeeFullName, overflow: TextOverflow.ellipsis)),

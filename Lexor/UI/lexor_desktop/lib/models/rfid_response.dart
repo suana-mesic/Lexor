@@ -23,6 +23,9 @@ class RfidResponse {
   String get employeeFullName =>
       '${employee.user.firstName} ${employee.user.lastName}';
 
+  /// Avatar for list views; null when there is no photo.
+  String? get employeeThumbnail => employee.user.profileThumbnailBase64;
+
   factory RfidResponse.fromJson(Map<String, dynamic> json) =>
       _$RfidResponseFromJson(json);
 }
@@ -44,10 +47,14 @@ class UserResponse {
   final String firstName;
   final String lastName;
 
+  /// Small avatar sent with list responses; null when the person has no photo.
+  final String? profileThumbnailBase64;
+
   UserResponse({
     required this.id,
     required this.firstName,
     required this.lastName,
+    this.profileThumbnailBase64,
   });
 
   factory UserResponse.fromJson(Map<String, dynamic> json) =>

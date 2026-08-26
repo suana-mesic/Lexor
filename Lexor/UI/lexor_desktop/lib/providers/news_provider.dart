@@ -17,6 +17,9 @@ class NewsProvider extends ChangeNotifier {
   int page = 1;
   int totalCount = 0;
 
+  /// Active title search term; empty means "no filter".
+  String searchTerm = '';
+
   int get totalPages => totalCount <= 0 ? 1 : ((totalCount + pageSize - 1) ~/ pageSize);
   bool get hasPrev => page > 1;
   bool get hasNext => page < totalPages;
@@ -38,6 +41,7 @@ class NewsProvider extends ChangeNotifier {
           'page': '$page',
           'pageSize': '$pageSize',
           'includeTotalCount': 'true',
+          if (searchTerm.isNotEmpty) 'title': searchTerm,
         },
       );
       final res = await http.get(uri, headers: _headers());
@@ -57,6 +61,13 @@ class NewsProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Applies a title search. A new term always restarts from page 1, otherwise the
+  /// user could land on an empty page of a now-shorter result set.
+  Future<void> search(String term) async {
+    searchTerm = term.trim();
+    await fetch(goToPage: 1);
   }
 
   Future<void> nextPage() async {
@@ -127,6 +138,7 @@ class NewsProvider extends ChangeNotifier {
     error = null;
     page = 1;
     totalCount = 0;
+    searchTerm = '';
     notifyListeners();
   }
 }

@@ -35,8 +35,10 @@ namespace Lexor.Services
         public override async Task<PageResult<EmployeeResponse>> GetAllAsync(EmployeeSearchObject? search = null)
         {
             var result = await base.GetAllAsync(search);
-            // List endpoints must not return large base64 payloads (see guideline 8.2), so the
-            // list shows initials and the profile photo is loaded only in the details view.
+            // List endpoints must not return large base64 payloads (guideline 8.2), but list
+            // views must still show the entity's picture (guideline 6). So the full image is
+            // dropped here and the small thumbnail travels instead; the details view loads
+            // the full one.
             foreach (var e in result.Items)
                 e.User.ProfileImageBase64 = null;
             return result;
@@ -250,7 +252,11 @@ namespace Lexor.Services
             if (request.PhoneNumber != null) employee.User.PhoneNumber = request.PhoneNumber;
             if (request.Address != null) employee.Address = request.Address;
             if (request.ProfileImageBase64 != null)
+            {
                 employee.User.ProfileImageBase64 = request.ProfileImageBase64;
+                employee.User.ProfileThumbnailBase64 =
+                    ImageThumbnail.Create(request.ProfileImageBase64);
+            }
 
             ApplyUpdateAuditFields(employee);
             await _dbContext.SaveChangesAsync();

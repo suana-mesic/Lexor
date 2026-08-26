@@ -3,6 +3,7 @@ import 'package:lexor_desktop/helpers/role_labels.dart';
 import 'package:lexor_desktop/models/admin_user_response.dart';
 import 'package:lexor_desktop/providers/admin_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/person_avatar.dart';
 import 'package:provider/provider.dart';
 
 class UsersScreen extends StatefulWidget {
@@ -152,7 +153,7 @@ class _UsersScreenState extends State<UsersScreen> {
             decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
             items: [
               const DropdownMenuItem<String?>(value: null, child: Text('Sve uloge')),
-              for (final r in provider.roles)
+              for (final r in provider.roleOptions)
                 DropdownMenuItem<String?>(value: r.name, child: Text(roleLabel(r.name))),
             ],
             onChanged: (v) => setState(() => _roleFilter = v),
@@ -228,7 +229,19 @@ class _UsersScreenState extends State<UsersScreen> {
   DataRow _row(AdminUserResponse u) {
     return DataRow(
       cells: [
-        DataCell(Text(u.fullName)),
+        DataCell(
+          Row(
+            children: [
+              PersonAvatar(
+                fullName: u.fullName,
+                thumbnailBase64: u.profileThumbnailBase64,
+                radius: 14,
+              ),
+              const SizedBox(width: 10),
+              Text(u.fullName),
+            ],
+          ),
+        ),
         DataCell(Text(u.email)),
         DataCell(_roleChip(u.roleName)),
         DataCell(_statusBadge(u.isActive)),
@@ -310,7 +323,7 @@ class _ChangeRoleDialogState extends State<_ChangeRoleDialog> {
   void initState() {
     super.initState();
     // Preselect the user's current role if we can match it by name.
-    final current = widget.provider.roles
+    final current = widget.provider.roleOptions
         .where((r) => r.name == widget.user.roleName)
         .toList();
     if (current.isNotEmpty) _selectedRoleId = current.first.id;
@@ -330,7 +343,7 @@ class _ChangeRoleDialogState extends State<_ChangeRoleDialog> {
             border: OutlineInputBorder(),
           ),
           items: [
-            for (final r in widget.provider.roles)
+            for (final r in widget.provider.roleOptions)
               DropdownMenuItem<int>(value: r.id, child: Text(roleLabel(r.name))),
           ],
           onChanged: (v) => setState(() => _selectedRoleId = v),

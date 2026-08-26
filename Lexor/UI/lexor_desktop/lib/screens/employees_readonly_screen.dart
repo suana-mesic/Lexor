@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lexor_desktop/helpers/image_decode.dart';
 import 'package:lexor_desktop/models/employee_response.dart';
 import 'package:lexor_desktop/models/search_result.dart';
 import 'package:lexor_desktop/providers/employee_provider.dart';
@@ -77,6 +78,23 @@ class _EmployeesReadonlyScreenState extends State<EmployeesReadonlyScreen> {
     final p = n.trim().split(RegExp(r'\s+'));
     if (p.isEmpty || p[0].isEmpty) return '?';
     return (p.length == 1 ? p[0][0] : p[0][0] + p[1][0]).toUpperCase();
+  }
+
+  /// Profile photo next to the name (guideline 6), initials when there is none.
+  Widget _avatar(EmployeeResponse e) {
+    final thumb = e.user.profileThumbnailBase64;
+    if (thumb != null && thumb.isNotEmpty) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundImage: MemoryImage(cachedImageBytes(thumb)),
+      );
+    }
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: AppColors.primary,
+      child: Text(_initials(e.user.fullName),
+          style: const TextStyle(color: Colors.white, fontSize: 13)),
+    );
   }
 
   @override
@@ -173,12 +191,7 @@ class _EmployeesReadonlyScreenState extends State<EmployeesReadonlyScreen> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.primary,
-            child: Text(_initials(e.user.fullName),
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
-          ),
+          _avatar(e),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

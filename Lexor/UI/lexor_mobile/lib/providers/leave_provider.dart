@@ -62,9 +62,12 @@ class LeaveProvider extends ChangeNotifier {
       };
       if (stateFilter != null) query['state'] = stateFilter;
     } else {
+      // Calendar mode: one month, all of it. Paging makes no sense here, and the server's
+      // default page size (10) would silently drop leaves from a busy month.
       query = {
         'fromDate': DateFormat('yyyy-MM-dd').format(DateTime(year!, month!, 1)),
         'toDate': DateFormat('yyyy-MM-dd').format(DateTime(year, month + 1, 0)),
+        'pageSize': '100',
       };
     }
 
@@ -73,9 +76,16 @@ class LeaveProvider extends ChangeNotifier {
       final items = (data['items'] as List)
           .map((item) => LeaveResponse.fromJson(item))
           .toList();
-      if (items.length < _pageSize) hasMore = false;
-      leaves = [...leaves, ...items];
-      _page++;
+      final calendarMode = year != null || month != null;
+      if (calendarMode) {
+        // One month replaces the previous one; appending would keep leaves from every month
+        // the user has scrolled through and colour them onto the current view.
+        leaves = items;
+      } else {
+        if (items.length < _pageSize) hasMore = false;
+        leaves = [...leaves, ...items];
+        _page++;
+      }
     } catch (e) {
       error = messageFor(e);
     } finally {

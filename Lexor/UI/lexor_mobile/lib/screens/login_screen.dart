@@ -107,11 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           letterSpacing: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'HR sistem za uposlenike',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
                     ],
                   ),
                 ),

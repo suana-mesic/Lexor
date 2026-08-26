@@ -73,6 +73,7 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
             pendingSalary.MarkedAsApprovedByAdminId = _userAccessor.GetUserId();
 
             await _dbContext.SaveChangesAsync();
+            await PublishSalarySlipStatusAsync(pendingSalary);
 
             return _mapper.Map<SalarySlipResponse>(pendingSalary);
         }

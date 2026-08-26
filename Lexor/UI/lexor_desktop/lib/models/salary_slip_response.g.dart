@@ -10,6 +10,7 @@ SalarySlipUser _$SalarySlipUserFromJson(Map<String, dynamic> json) =>
     SalarySlipUser(
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
+      profileThumbnailBase64: json['profileThumbnailBase64'] as String?,
     );
 
 SalarySlipEmployee _$SalarySlipEmployeeFromJson(Map<String, dynamic> json) =>

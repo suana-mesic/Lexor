@@ -11,21 +11,33 @@ services:
       - "1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
+    # SQL Server needs ~20s before it accepts logins. Without this the API and worker start
+    # against a dead socket. $$ escapes the variable so compose leaves it for the shell.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 15s
+      retries: 20
+      start_period: 60s
 
   lexor-api:
     build:
       context: .
       dockerfile: Lexor.WebAPI/Dockerfile
     container_name: lexor-api
+    # Wait for the databases/broker to report healthy, not just to exist — otherwise the
+    # first startup fails on a connection refused and the container restart-loops.
     depends_on:
-      - lexor-db
-      - lexor-rabbitmq
+      lexor-db:
+        condition: service_healthy
+      lexor-rabbitmq:
+        condition: service_healthy
     env_file:
       - ./Lexor.WebAPI/.env
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=lexor-db,1433;Database=230022;User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True;"
-      RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=admin;password=admin"
+      RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=${RABBITMQ_USER};password=${RABBITMQ_PASSWORD}"
     ports:
       - "5170:8080"
     restart: unless-stopped
@@ -36,13 +48,15 @@ services:
       dockerfile: Lexor.Subscriber/Dockerfile
     container_name: lexor-worker
     depends_on:
-      - lexor-db
-      - lexor-rabbitmq
+      lexor-db:
+        condition: service_healthy
+      lexor-rabbitmq:
+        condition: service_healthy
     env_file:
       - ./Lexor.Subscriber/.env
     environment:
       ConnectionStrings__DefaultConnection: "Server=lexor-db,1433;Database=230022;User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True;"
-      RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=admin;password=admin"
+      RabbitMQ__ConnectionString: "host=lexor-rabbitmq;username=${RABBITMQ_USER};password=${RABBITMQ_PASSWORD}"
     restart: unless-stopped
 
   lexor-rabbitmq:
@@ -50,11 +64,22 @@ services:
     container_name: lexor-rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
       - "5672:5672"
       - "15672:15672"
+    # The broker answers on the port well before it is ready to declare exchanges, so the
+    # consumers must wait for this check rather than for the container merely being up.
+    # On a first run with an empty volume the broker builds its database and the diagnostics
+    # command itself is slow to answer, so both the per-check timeout and the grace period
+    # are generous — a check that times out must not be read as "broker is broken".
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 15s
+      retries: 20
+      start_period: 60s
 
 volumes:
   sqlserver_data:

@@ -11,5 +11,6 @@ namespace Lexor.Model.Enums
         RfidCardDeactivated = 7,
         General = 99,
         LeaveCancelled = 8,
+        SalarySlipApproved = 9,
     }
 }

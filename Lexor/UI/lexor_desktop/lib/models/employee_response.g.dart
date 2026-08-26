@@ -16,6 +16,7 @@ EmployeeUserResponse _$EmployeeUserResponseFromJson(
   email: json['email'] as String,
   phoneNumber: json['phoneNumber'] as String?,
   profileImageBase64: json['profileImageBase64'] as String?,
+  profileThumbnailBase64: json['profileThumbnailBase64'] as String?,
   isCodeActivated: json['isCodeActivated'] as bool,
 );
 

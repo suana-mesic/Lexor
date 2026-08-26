@@ -6,6 +6,7 @@ import 'package:lexor_desktop/providers/attendance_provider.dart';
 import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/person_avatar.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
 import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:lexor_shared/lexor_shared.dart';
@@ -416,7 +417,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return TableRow(
       children: [
         _tableCell(
-          Text(a.employeeFullName, overflow: TextOverflow.ellipsis),
+          Row(
+            children: [
+              PersonAvatar(
+                fullName: a.employeeFullName,
+                thumbnailBase64: a.employeeThumbnail,
+                radius: 14,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(a.employeeFullName, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
           isFirst: true,
         ),
         _tableCell(Text(_dateFormat.format(a.date))),

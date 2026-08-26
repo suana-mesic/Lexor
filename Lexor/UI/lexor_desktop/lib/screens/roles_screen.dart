@@ -13,12 +13,22 @@ class RolesScreen extends StatefulWidget {
 }
 
 class _RolesScreenState extends State<RolesScreen> {
+  final TextEditingController _searchCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => Provider.of<AdminProvider>(context, listen: false).fetchRoles(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = Provider.of<AdminProvider>(context, listen: false);
+      // Clear any term left over from a previous visit so the screen opens on the full list.
+      p.searchRoles('');
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _edit(AdminRoleResponse role) async {
@@ -57,12 +67,49 @@ class _RolesScreenState extends State<RolesScreen> {
             style: TextStyle(color: Colors.grey[600], fontSize: 13),
           ),
           const SizedBox(height: 20),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'Pretraga po nazivu uloge',
+                prefixIcon: const Icon(Icons.search, size: 18),
+                isDense: true,
+                border: const OutlineInputBorder(),
+                suffixIcon: provider.roleSearchTerm.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        tooltip: 'Poništi pretragu',
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          provider.searchRoles('');
+                        },
+                      ),
+              ),
+              onSubmitted: provider.searchRoles,
+            ),
+          ),
+          const SizedBox(height: 16),
           Expanded(
-            child: provider.roles.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : ListView(
-                    children: [for (final r in provider.roles) _roleCard(r)],
-                  ),
+            child: Builder(
+              builder: (_) {
+                if (provider.roles.isEmpty) {
+                  // An empty list with an active search means "no matches"; without one it
+                  // means the first load has not come back yet.
+                  return provider.roleSearchTerm.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : Center(
+                          child: Text(
+                            'Nema uloga za pretragu "${provider.roleSearchTerm}".',
+                          ),
+                        );
+                }
+                return ListView(
+                  children: [for (final r in provider.roles) _roleCard(r)],
+                );
+              },
+            ),
           ),
         ],
       ),

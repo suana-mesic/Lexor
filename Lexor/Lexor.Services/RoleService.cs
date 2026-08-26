@@ -20,7 +20,12 @@ namespace Lexor.Services
             {
                 if (!string.IsNullOrWhiteSpace(search.Name))
                 {
-                    query = query.Where(c => c.Name.ToLower().Contains(search.Name.ToLower()));
+                    // Name holds the system identifier ("HRManager") while Description holds the
+                    // Bosnian label the user actually sees ("HR menadžer - ..."). Searching both
+                    // means typing what is on screen finds the role, and so does the code name.
+                    var term = search.Name.ToLower();
+                    query = query.Where(c => c.Name.ToLower().Contains(term)
+                                          || (c.Description != null && c.Description.ToLower().Contains(term)));
                 }
 
                 query = search.ActivityStatus switch

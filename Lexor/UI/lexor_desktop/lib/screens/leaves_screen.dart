@@ -6,6 +6,7 @@ import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/providers/leave_provider.dart';
 import 'package:lexor_desktop/theme/app_colors.dart';
+import 'package:lexor_desktop/widgets/person_avatar.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
 import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:lexor_shared/lexor_shared.dart';
@@ -104,12 +105,6 @@ class _LeavesScreenState extends State<LeavesScreen> {
     _load();
   }
 
-  String _initials(String fullName) {
-    final parts = fullName.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts[0].isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -374,13 +369,9 @@ class _LeavesScreenState extends State<LeavesScreen> {
         _tableCell(
           Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  _initials(l.employeeFullName),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
+              PersonAvatar(
+                fullName: l.employeeFullName,
+                thumbnailBase64: l.employeeThumbnail,
               ),
               const SizedBox(width: 12),
               Expanded(

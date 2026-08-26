@@ -9,12 +9,13 @@ Sastoji se od REST API-ja, pomoćnog worker servisa, desktop administrativne apl
 - **Prisustvo (RFID)**, **zahtjevi za odsustvo** (state machine: `Pending → Approved/Rejected → Completed/Cancelled`) i **obračun plata** (`Pending → Approved → Paid`).
 - **PDF izvještaji** (QuestPDF) u desktop aplikaciji.
 - **AI chatbot** nad pravnim dokumentima (RAG: lokalni embeddingi + Groq LLM).
-- **ML predikcija odsustva** (FastTree klasifikacija) — vidi [recommender-dokumentacija.md](recommender-dokumentacija.md).
+- **ML detekcija prevara** u evidenciji radnog vremena (binarna klasifikacija, logistička regresija) — vidi [ml-dokumentacija.md](ml-dokumentacija.md).
+- **Obavijesti kompanije** i **notifikacije** uposleniku (status odsustva, odobrena i isplaćena platna lista).
 - **Aktivacija naloga e-mailom, reset lozinke, zaštita od brute-force napada i rate limiting.**
 
 ## Tehnologije
 
-- **Backend:** .NET 9, ASP.NET Core, EF Core 9, SQL Server, RabbitMQ (EasyNetQ), ML.NET, MailKit.
+- **Backend:** .NET 9, ASP.NET Core, EF Core 9, SQL Server, RabbitMQ (EasyNetQ), ML.NET, MailKit, QuestPDF, ImageSharp.
 - **Desktop i mobilna aplikacija:** Flutter.
 - **Infrastruktura:** Docker / docker-compose.
 
@@ -23,7 +24,7 @@ Sastoji se od REST API-ja, pomoćnog worker servisa, desktop administrativne apl
 | Servis | Uloga |
 |---|---|
 | `Lexor.WebAPI` | Glavni REST API (desktop + mobilni klijent). Objavljuje poruke na RabbitMQ. |
-| `Lexor.Subscriber` | Pomoćni worker (zaseban kontejner) — sluša RabbitMQ i šalje e-mailove, indeksira dokumente, obrađuje notifikacije. |
+| `Lexor.Subscriber` | Pomoćni worker (zaseban kontejner) — sluša RabbitMQ: šalje aktivacijske e-mailove i kodove za reset lozinke, kreira notifikacije o statusu odsustva i platnih lista, indeksira pravne dokumente i automatski zatvara istekla odsustva. |
 | `lexor-db` | SQL Server baza. |
 | `lexor-rabbitmq` | RabbitMQ posrednik poruka. |
 
@@ -45,7 +46,9 @@ cp Lexor/Lexor.WebAPI/.env.example Lexor/Lexor.WebAPI/.env
 cp Lexor/Lexor.Subscriber/.env.example Lexor/Lexor.Subscriber/.env
 ```
 
-Popuni najmanje: `DB_SA_PASSWORD`, `JwtToken__SecretKey`, `Groq__ApiKey` i SMTP podatke (`Smtp__*`) u `Lexor.Subscriber/.env`.
+Popuni najmanje: `DB_SA_PASSWORD`, `RABBITMQ_USER`/`RABBITMQ_PASSWORD` (korijenski `.env`), `JwtToken__SecretKey`, `Groq__ApiKey` i SMTP podatke (`Smtp__*`) u `Lexor.Subscriber/.env`.
+
+Korijenski `Lexor/.env` koristi docker-compose za `${...}` zamjene, a `Lexor.WebAPI/.env` i `Lexor.Subscriber/.env` se koriste kada servisi rade izvan Dockera.
 
 > Pri predaji je `.env` zamijenjen `.env-tajne.zip` arhivom (šifra: `fit`).
 
@@ -114,7 +117,13 @@ Sve lozinke su `Test123!`.
 
 > Dva računovodstvena naloga postoje zbog segregacije dužnosti (maker-checker): istu platu ne mogu odobriti i isplatiti ista osoba — jedan odobrava, drugi isplaćuje.
 
-Desktop aplikacija razdvaja ovlasti po roli: HR menadžer upravlja uposlenicima, odsustvima, izvještajima i predikcijom; Računovodstvo radi obračun plata; Administrator je rezervisan za buduće sistemske funkcije. Uposlenici pristupaju isključivo mobilnoj aplikaciji.
+Desktop aplikacija razdvaja ovlasti po roli:
+
+- **HR menadžer** — uposlenici, evidencija prisustva, zahtjevi za odsustvo, detekcija prevara, izvještaji, obavijesti.
+- **Računovodstvo** — obračun plata, postavke obračuna, izvještaji, pregled uposlenika bez prava izmjene.
+- **Administrator** — korisnički nalozi i uloge, RFID kartice, referentni podaci, pravni dokumenti, obavijesti.
+
+Uposlenici pristupaju isključivo mobilnoj aplikaciji.
 
 Primjeri uposlenika: `amina.hodzic@lexor.ba`, `emir.kovacevic@lexor.ba`, `lejla.begic@lexor.ba`, `tarik.delic@lexor.ba` — svi sa lozinkom `Test123!`.
 

@@ -23,7 +23,7 @@ namespace Lexor.Services
             query = query.Where(n => n.Employee.UserId == currentUserId);
 
             if (search?.IsRead.HasValue == true)
-                query.Where(n => n.IsRead == search.IsRead);
+                query = query.Where(n => n.IsRead == search.IsRead);
             return query;
         }
         public async Task<int> GetUnreadCountAsync()

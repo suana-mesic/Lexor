@@ -4,6 +4,7 @@ using Lexor.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lexor.Services.Migrations
 {
     [DbContext(typeof(LexorDbContext))]
-    partial class LexorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824231151_UpdateHrRoleDescription")]
+    partial class UpdateHrRoleDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -949,7 +952,7 @@ namespace Lexor.Services.Migrations
                         {
                             Id = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Uposlenik - pristup mobilnoj aplikaciji",
+                            Description = "Pristup mobilnoj aplikaciji",
                             IsActive = true,
                             Name = "Employee"
                         },

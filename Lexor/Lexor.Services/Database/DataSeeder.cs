@@ -20,19 +20,26 @@ namespace Lexor.Services.Database
     /// </summary>
     public static class DataSeeder
     {
-        // ~19-month history window ending close to "today" so the app looks alive. This yields
-        // roughly 10,000 attendance records across the 30 employees for the fraud classifier.
-        private static readonly DateOnly HistoryStart = new(2025, 1, 1);
-        private static readonly DateOnly HistoryEnd = new(2026, 7, 31);
+        // ~19-month history window ending yesterday. Anchored to the current date rather than a
+        // fixed one so the current month is never empty (the mobile calendar opens on it) and so
+        // payroll, which is seeded relative to today, never covers a month without attendance.
+        private static readonly DateOnly HistoryEnd =
+            DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-1);
+
+        // Start of the month 18 months back, so the window length — and with it the number of
+        // attendance records the fraud classifier trains on — stays stable whenever it is seeded.
+        private static readonly DateOnly HistoryStart =
+            new DateOnly(HistoryEnd.Year, HistoryEnd.Month, 1).AddMonths(-18);
 
         private const int EmployeeCount = 30;
 
         // Number of attendance records marked as fraudulent (labelled ground truth for training).
         private const int FraudCount = 300;
 
-        // Unexcused-absence model (deliberately small so seasonal patterns dominate).
-        private const double MondayFridayEffect = 0.015;
-        private const double StreakEffect = 0.25; // absent yesterday -> likelier absent today
+        // Mon-Fri, matching the seeded payroll settings (WorkDaysMask = 31). Attendance is
+        // stamped on these days and leaves must begin and end on one of them.
+        private static bool IsWorkDay(DateOnly day) =>
+            day.DayOfWeek != DayOfWeek.Saturday && day.DayOfWeek != DayOfWeek.Sunday;
 
         // Monthly probabilities for the random leave noise, so the leave history stays realistic
         // and varied (annual/sick/paid/unpaid leaves spread across the window).
@@ -99,6 +106,26 @@ namespace Lexor.Services.Database
             "43747722", "73D11F22", "13AD8421", "F32B2E22"
         };
 
+        /// <summary>
+        /// Fills in the list thumbnail for users that already have a profile picture but no
+        /// thumbnail yet — databases created before the thumbnail column existed. Matches no
+        /// rows once it has run, so it costs a single indexed count on every later startup.
+        /// </summary>
+        public static async Task BackfillProfileThumbnailsAsync(LexorDbContext db)
+        {
+            var pending = await db.Users
+                .Where(u => u.ProfileImageBase64 != null && u.ProfileThumbnailBase64 == null)
+                .ToListAsync();
+
+            if (pending.Count == 0)
+                return;
+
+            foreach (var user in pending)
+                user.ProfileThumbnailBase64 = ImageThumbnail.Create(user.ProfileImageBase64);
+
+            await db.SaveChangesAsync();
+        }
+
         public static async Task SeedAsync(LexorDbContext db, ICryptoService crypto)
         {
             // Business data is generated only for a fresh database; reference data lives in HasData.
@@ -135,14 +162,19 @@ namespace Lexor.Services.Database
                 var user = BuildUser(crypto, first, last, email, RandomPhone(rng), "Test123!");
                 user.Username = username;
                 if (avatarBase64 != null)
+                {
                     user.ProfileImageBase64 = avatarBase64;
+                    user.ProfileThumbnailBase64 = ImageThumbnail.Create(avatarBase64);
+                }
                 user.UserRoles.Add(new UserRole { RoleId = 2, DateAssigned = HistoryStart.ToDateTime(TimeOnly.MinValue) });
 
                 // Personal seasonality profile. The formulas spread months evenly across
                 // employees and can never make both peaks land on the same month.
                 var vacationMonth = 1 + (i * 5) % 12;
                 var sickPeakMonth = 1 + (i * 7 + 3) % 12;
-                var unexcusedBaseRate = 0.004 + rng.NextDouble() * 0.008; // 0.4-1.2%
+                // Kept purely to preserve the deterministic random sequence that the rest
+                // of the seed depends on; the unexcused-absence model it fed is gone.
+                _ = rng.NextDouble();
 
                 // Hired before the history window so every employee has full 3-year history.
                 var hire = new DateTime(rng.Next(2019, 2023), rng.Next(1, 13), rng.Next(1, 28));
@@ -191,7 +223,7 @@ namespace Lexor.Services.Database
                 // them never shifts the shared rng sequence behind attendance and fraud injection.
                 var requestNoiseRng = new Random(7919 * (i + 1));
                 var leaveRanges = BuildLeaves(employee, creatorId, vacationMonth, sickPeakMonth, rng, requestNoiseRng);
-                BuildAttendance(employee, card, leaveRanges, unexcusedBaseRate, workHoursPerDay, rng);
+                BuildAttendance(employee, card, leaveRanges, workHoursPerDay, rng);
 
                 return employee;
             }
@@ -345,9 +377,14 @@ namespace Lexor.Services.Database
             {
                 var startDay = rng.Next(1, Math.Max(2, daysInMonth - length));
                 from = new DateOnly(month.Year, month.Month, startDay);
-                placed = !Overlaps(ranges, from, from.AddDays(length - 1))
+                var candidateTo = from.AddDays(length - 1);
+                placed = !Overlaps(ranges, from, candidateTo)
                          && from >= HistoryStart
-                         && from.AddDays(length - 1) <= HistoryEnd;
+                         && candidateTo <= HistoryEnd
+                         // Nobody books time off starting or ending on a weekend — it would show
+                         // as a leave day on a day that is not a working day anyway.
+                         && IsWorkDay(from)
+                         && IsWorkDay(candidateTo);
             }
 
             if (!placed)
@@ -383,6 +420,10 @@ namespace Lexor.Services.Database
             var from = new DateOnly(month.Year, month.Month, rng.Next(1, Math.Max(2, daysInMonth - length)));
             var to = from.AddDays(length - 1);
             if (from < HistoryStart || to > HistoryEnd)
+                return;
+
+            // Same rule as for approved leaves: a request never starts or ends on a weekend.
+            if (!IsWorkDay(from) || !IsWorkDay(to))
                 return;
 
             // The request was submitted well before its start date; the decision followed shortly.
@@ -432,38 +473,20 @@ namespace Lexor.Services.Database
                 .Replace("ž", "z")
                 .Replace("đ", "dj");
 
-        // Creates an attendance stamp for every working day in the window, except days covered
-        // by a leave or hit by an unexcused absence (small noise with weekday/streak effects).
+        // Creates an attendance stamp for every working day in the window that is not covered by
+        // an approved leave. Every other working day gets a record, so a gap in the calendar
+        // always means an actual leave rather than missing demo data.
         private static void BuildAttendance(Employee employee, RfidCard card,
                                             List<(DateOnly From, DateOnly To)> leaves,
-                                            double baseRate, int workHoursPerDay, Random rng)
+                                            int workHoursPerDay, Random rng)
         {
-            var absentPreviousWorkday = false;
-
             for (var day = HistoryStart; day <= HistoryEnd; day = day.AddDays(1))
             {
-                if (day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
+                if (!IsWorkDay(day))
                     continue;
 
                 if (leaves.Any(r => day >= r.From && day <= r.To))
-                {
-                    absentPreviousWorkday = false; // an approved leave resets the unexcused streak
                     continue;
-                }
-
-                var probability = baseRate;
-                if (day.DayOfWeek is DayOfWeek.Monday or DayOfWeek.Friday)
-                    probability += MondayFridayEffect;
-                if (absentPreviousWorkday)
-                    probability += StreakEffect; // sickness tends to last more than one day
-
-                if (rng.NextDouble() < probability)
-                {
-                    absentPreviousWorkday = true; // unexcused absence: no attendance stamp
-                    continue;
-                }
-
-                absentPreviousWorkday = false;
 
                 // Normal attendance: arrives 08:00-08:15 and works at least the contracted hours;
                 // on ~15% of days a real overtime block (45 min - 3 h). A minority of days are

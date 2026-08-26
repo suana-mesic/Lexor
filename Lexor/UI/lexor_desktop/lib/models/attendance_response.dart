@@ -8,10 +8,14 @@ class AttendanceUserResponse {
   final String firstName;
   final String lastName;
 
+  /// Small avatar sent with list responses; null when the person has no photo.
+  final String? profileThumbnailBase64;
+
   AttendanceUserResponse({
     required this.id,
     required this.firstName,
     required this.lastName,
+    this.profileThumbnailBase64,
   });
 
   factory AttendanceUserResponse.fromJson(Map<String, dynamic> json) =>
@@ -66,6 +70,9 @@ class AttendanceResponse {
   String get employeeFullName => employee?.user == null
       ? '-'
       : '${employee!.user!.firstName} ${employee!.user!.lastName}';
+
+  /// Avatar for list views; null when there is no photo.
+  String? get employeeThumbnail => employee?.user?.profileThumbnailBase64;
 
   String get departmentName => employee?.department?.name ?? '-';
 

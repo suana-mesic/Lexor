@@ -3,6 +3,7 @@ using Lexor.Model.Exceptions;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
+using Lexor.Services.Helpers;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -155,7 +156,8 @@ namespace Lexor.Services
             var systemPrompt =
              "Ti si asistent za ljudske resurse. Odgovaraj isključivo na osnovu priloženih " +
              "izvoda iz internih dokumenata kompanije. Ako odgovor nije u njima, reci da ne znaš " +
-             "i predloži da se obrate HR odjelu. Odgovaraj kratko i jasno, na bosanskom jeziku.";
+             "i predloži da se obrate HR odjelu. Odgovaraj kratko i jasno, na bosanskom jeziku. " +
+             "Piši običnim tekstom bez markdown oznaka — ne koristi **, *, _ ni # za formatiranje.";
 
 
             var payload = new
@@ -196,8 +198,9 @@ namespace Lexor.Services
 
             return string.IsNullOrWhiteSpace(content)
                    ? "Nažalost, nije bilo moguće generisati odgovor."
-                   : content.Trim();
+                   : MarkdownText.ToPlainText(content);
         }
+
 
         private async Task<int?> GetCurrentEmployeeIdAsync()
         {
@@ -235,7 +238,12 @@ namespace Lexor.Services
             var items = rows.Select(m => new ChatMessageResponse
             {
                 Role = (int)m.Role,
-                Content = m.Content,
+                // Answers are stripped before they are stored, but rows saved before that was
+                // added still carry markdown — clean them on the way out too, so an old
+                // conversation does not show stray asterisks.
+                Content = m.Role == ChatMessageRole.Assistant
+                    ? MarkdownText.ToPlainText(m.Content)
+                    : m.Content,
                 Timestamp = m.Timestamp,
                 Sources = string.IsNullOrEmpty(m.Citations)
                     ? new List<string>()

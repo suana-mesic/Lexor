@@ -56,6 +56,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICryptoService, CryptoService>();
 builder.Services.AddScoped<IAccessManager, AccessManager>();
 builder.Services.AddHttpContextAccessor();
+// Backing store for IMemoryCache (payroll settings are cached at the service level).
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IAuthenticatedUserAccessor, AuthenticatedUserAccessor>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -277,6 +279,8 @@ using (var scope = app.Services.CreateScope())
 
         var crypto = services.GetRequiredService<ICryptoService>();
         await DataSeeder.SeedAsync(db, crypto);
+        // Databases seeded before the thumbnail column existed get their avatars filled in here.
+        await DataSeeder.BackfillProfileThumbnailsAsync(db);
         // Seed a payroll history using the real calculation (respects contracts and settings).
         var salarySlipService = services.GetRequiredService<ISalarySlipService>();
         await PayrollSeeder.SeedAsync(salarySlipService, db);

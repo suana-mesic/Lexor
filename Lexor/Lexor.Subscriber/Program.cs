@@ -18,6 +18,7 @@ builder.Services.AddSingleton<IBus>(_ =>
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 
 builder.Services.AddHostedService<LeaveNotificationConsumer>();
+builder.Services.AddHostedService<SalarySlipNotificationConsumer>();
 builder.Services.AddHostedService<LeaveCompletionWorker>();
 builder.Services.AddHostedService<EmployeeInvitedConsumer>();
 builder.Services.AddHostedService<LegalDocumentIndexConsumer>();

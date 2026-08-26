@@ -225,13 +225,6 @@ namespace Lexor.Services.Database
                 .WithMany(e => e.Notifications)
                 .HasForeignKey(n => n.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // ===== AuditLog =====
-            modelBuilder.Entity<AuditLog>()
-                .HasOne(al => al.AdminUser)
-                .WithMany()
-                .HasForeignKey(al => al.AdminUserId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

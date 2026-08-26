@@ -1,4 +1,5 @@
 ﻿using Lexor.Model.Exceptions;
+using EasyNetQ;
 using FluentValidation;
 using FluentValidation.Results;
 using Lexor.Model.Constants;
@@ -28,6 +29,8 @@ namespace Lexor.Services
         private readonly IValidator<SalarySlipApproveSingleRequest> _salarySlipApproveSingleValidator;
         private readonly IAuthenticatedUserAccessor _userAccessor;
         private readonly BaseSalarySlipState _salarySlipState;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<SalarySlipService> _logger;
         public SalarySlipService(
             LexorDbContext dbContext,
             IMapper mapper,
@@ -40,8 +43,11 @@ namespace Lexor.Services
             IValidator<SalarySlipApproveSingleRequest> salarySlipApproveSingleValidator,
             IAuthenticatedUserAccessor userAccessor,
             ILogger<SalarySlipService> logger,
+            IServiceProvider serviceProvider,
             BaseSalarySlipState salarySlipState) : base(dbContext, mapper)
         {
+            _serviceProvider = serviceProvider;
+            _logger = logger;
             _salarySlipCalculationValidator = salarySlipCalculationValidator;
             _salarySlipSingleRecalcValidator = salarySlipRecalcValidator;
             _salarySlipAllRecalcValidator = salarySlipAllRecalcValidator;
@@ -51,6 +57,41 @@ namespace Lexor.Services
             _salarySlipApproveSingleValidator = salarySlipApproveSingleValidator;
             _userAccessor = userAccessor;
             _salarySlipState = salarySlipState;
+        }
+
+        /// <summary>
+        /// Announces a state change for every payslip touched by a bulk action, so each employee
+        /// gets their own notification. Bulk updates run as a single SQL statement, so the rows
+        /// have to be read before the update — that is what <paramref name="affected"/> carries.
+        /// Never throws: a broker problem must not undo an already-committed payroll change.
+        /// </summary>
+        private async Task PublishBulkStatusAsync(
+            IReadOnlyCollection<(int Id, int EmployeeId)> affected, string newState, int month, int year)
+        {
+            if (affected.Count == 0) return;
+
+            try
+            {
+                var bus = _serviceProvider.GetService(typeof(EasyNetQ.IBus)) as EasyNetQ.IBus;
+                if (bus == null) return;
+
+                var period = $"{SalarySlipCalculation.GetMonthName(month)} {year}";
+
+                foreach (var (id, employeeId) in affected)
+                {
+                    await bus.PubSub.PublishAsync(new Lexor.Model.SalarySlipStatusChanged
+                    {
+                        SalarySlipId = id,
+                        EmployeeId = employeeId,
+                        NewState = newState,
+                        Period = period
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri objavi SalarySlipStatusChanged poruka za grupnu akciju.");
+            }
         }
 
         protected override IQueryable<SalarySlip> ApplyFilters(IQueryable<SalarySlip> query, SalarySlipCalculationSearchObject? search)
@@ -126,6 +167,15 @@ namespace Lexor.Services
             // and then send the updates back to the database — that means a lot of queries and a lot of memory.
             // This way we send just one query, use almost no memory, and we don't need SaveChangesAsync.
 
+            // Read the rows first: the bulk UPDATE below cannot tell us which employees it hit,
+            // and each of them needs their own notification afterwards.
+            var affected = await _dbContext.Set<SalarySlip>()
+                .Where(ss => ss.Month == request.Month
+                          && ss.Year == request.Year
+                          && ss.State == pendingStateName)
+                .Select(ss => new { ss.Id, ss.EmployeeId })
+                .ToListAsync();
+
             var updatedCount = await _dbContext.Set<SalarySlip>()
                 .Where(ss => ss.Month == request.Month
                           && ss.Year == request.Year
@@ -138,6 +188,15 @@ namespace Lexor.Services
             if (updatedCount == 0)
                 throw new NotFoundException(
                     $"Ne postoje plate za mjesec {SalarySlipCalculation.GetMonthName(request.Month)} i godinu {request.Year} u statusu čekanja na odobrenje.");
+
+            // The seeder runs without a signed-in user; it backfills years of payroll history and
+            // must not flood every employee with notifications about it.
+            if (currentUserId != null)
+            {
+                await PublishBulkStatusAsync(
+                    affected.Select(a => (a.Id, a.EmployeeId)).ToList(),
+                    approvedStateName, request.Month, request.Year);
+            }
 
             return updatedCount;
         }
@@ -204,6 +263,14 @@ namespace Lexor.Services
                         "Ne možete isplatiti plate koje ste sami odobrili. Isplatu mora izvršiti druga osoba (princip četvoro očiju).");
             }
 
+            // Same as above: capture who is affected before the single bulk UPDATE erases the filter.
+            var affected = await _dbContext.Set<SalarySlip>()
+                .Where(ss => ss.Month == request.Month
+                          && ss.Year == request.Year
+                          && ss.State == approvedStateName)
+                .Select(ss => new { ss.Id, ss.EmployeeId })
+                .ToListAsync();
+
             var updatedCount = await _dbContext.Set<SalarySlip>()
                 .Where(ss => ss.Month == request.Month
                           && ss.Year == request.Year
@@ -212,6 +279,13 @@ namespace Lexor.Services
                     .SetProperty(s => s.State, paidStateName)
                     .SetProperty(s => s.PaidAt, now)
                     .SetProperty(s => s.MarkedAsPaidByAdminId, currentUserId));
+
+            if (currentUserId != null)
+            {
+                await PublishBulkStatusAsync(
+                    affected.Select(a => (a.Id, a.EmployeeId)).ToList(),
+                    paidStateName, request.Month, request.Year);
+            }
 
             return updatedCount;
         }

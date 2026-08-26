@@ -5,7 +5,6 @@ WORKDIR /src
 # Copy only the .csproj files first so "restore" can be cached separately
 COPY Lexor.WebAPI/Lexor.WebAPI.csproj Lexor.WebAPI/
 COPY Lexor.Services/Lexor.Services.csproj Lexor.Services/
-COPY Lexor.Common.Services/Lexor.Common.Services.csproj Lexor.Common.Services/
 COPY Lexor.Model/Lexor.Model.csproj Lexor.Model/
 RUN dotnet restore Lexor.WebAPI/Lexor.WebAPI.csproj
 

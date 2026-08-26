@@ -1,5 +1,7 @@
-﻿using Lexor.Model.Exceptions;
+﻿using EasyNetQ;
+using Lexor.Model.Exceptions;
 using Lexor.Model.Enums;
+using Microsoft.Extensions.Logging;
 using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Services.Database;
@@ -45,6 +47,31 @@ namespace Lexor.Services.StateMachine.SalarySlipStateMachine
             throw new BusinessException("Nije moguće označiti platu kao odobrenu u trenutnom stanju.");
         }
 
+
+        /// <summary>
+        /// Announces a payslip state change so the worker can notify the employee.
+        /// Never throws: a broker hiccup must not roll back an already-saved payroll change.
+        /// </summary>
+        protected async Task PublishSalarySlipStatusAsync(SalarySlip entity)
+        {
+            try
+            {
+                var bus = _serviceProvider.GetService<EasyNetQ.IBus>();
+                if (bus == null) return;
+                await bus.PubSub.PublishAsync(new Lexor.Model.SalarySlipStatusChanged
+                {
+                    SalarySlipId = entity.Id,
+                    EmployeeId = entity.EmployeeId,
+                    NewState = entity.State!,
+                    Period = $"{SalarySlipCalculation.GetMonthName(entity.Month)} {entity.Year}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger<BaseSalarySlipState>>()?
+                    .LogError(ex, "Greška pri objavi SalarySlipStatusChanged poruke.");
+            }
+        }
 
         public BaseSalarySlipState GetSalarySlipState(string stateName)
         {

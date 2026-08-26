@@ -40,6 +40,9 @@ class AttendanceProvider extends ChangeNotifier {
         query: {
           'fromDate': DateFormat('yyyy-MM-dd').format(fromDate),
           'toDate': DateFormat('yyyy-MM-dd').format(toDate),
+          // The calendar needs the whole month at once, not a page of it — without this the
+          // server's default page size (10) silently cuts the month short.
+          'pageSize': '31',
         },
       );
       final items = data['items'] as List;

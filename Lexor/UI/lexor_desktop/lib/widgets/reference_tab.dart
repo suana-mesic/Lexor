@@ -90,6 +90,10 @@ class _ReferenceTabState<T extends ReferenceItem>
   static const int _pageSize = 10;
   final ScrollController _hScroll = ScrollController();
 
+  // Search by name — every reference SearchObject on the server exposes a `Name` filter.
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchTerm = '';
+
   List<T> get _items => _result?.items ?? [];
   int get _totalCount => _result?.totalCount ?? 0;
   int get _totalPages =>
@@ -108,7 +112,16 @@ class _ReferenceTabState<T extends ReferenceItem>
   @override
   void dispose() {
     _hScroll.dispose();
+    _searchCtrl.dispose();
     super.dispose();
+  }
+
+  // A new search always restarts from the first page, otherwise the user could land
+  // on an empty page 3 of a result set that now has a single page.
+  Future<void> _applySearch(String term) async {
+    _searchTerm = term.trim();
+    _page = 1;
+    await _load();
   }
 
   Future<void> _load() async {
@@ -122,6 +135,7 @@ class _ReferenceTabState<T extends ReferenceItem>
         'pageSize': _pageSize,
         'includeTotalCount': true,
         'sortBy': 'Name',
+        if (_searchTerm.isNotEmpty) 'name': _searchTerm,
       });
     } catch (e) {
       _error = messageFor(e);
@@ -247,12 +261,40 @@ class _ReferenceTabState<T extends ReferenceItem>
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             widget.title,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
+          const Spacer(),
+          // Capped rather than fixed width, so a narrow window shrinks the field instead of
+          // overflowing the row.
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 260),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Pretraga po nazivu',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _searchTerm.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          tooltip: 'Poništi pretragu',
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _applySearch('');
+                          },
+                        ),
+                ),
+                onSubmitted: _applySearch,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           ElevatedButton.icon(
             onPressed: () => _openForm(null),
             style: ElevatedButton.styleFrom(
@@ -276,8 +318,13 @@ class _ReferenceTabState<T extends ReferenceItem>
       return _buildError();
     }
     if (_items.isEmpty) {
-      return const Center(
-        child: Text('Nema zapisa.', style: TextStyle(color: Colors.grey)),
+      return Center(
+        child: Text(
+          _searchTerm.isEmpty
+              ? 'Nema zapisa.'
+              : 'Nema zapisa za pretragu "$_searchTerm".',
+          style: const TextStyle(color: Colors.grey),
+        ),
       );
     }
     // On a narrow screen don't squeeze the columns — guarantee a minimum width and give

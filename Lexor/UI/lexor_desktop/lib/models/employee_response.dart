@@ -12,6 +12,9 @@ class EmployeeUserResponse {
   final String email;
   final String? phoneNumber;
   final String? profileImageBase64;
+
+  /// Small avatar sent in list responses; the full image above is null there.
+  final String? profileThumbnailBase64;
   final bool isCodeActivated;
 
   EmployeeUserResponse({
@@ -22,6 +25,7 @@ class EmployeeUserResponse {
     required this.email,
     this.phoneNumber,
     this.profileImageBase64,
+    this.profileThumbnailBase64,
     required this.isCodeActivated,
   });
 

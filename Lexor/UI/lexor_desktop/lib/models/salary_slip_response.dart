@@ -6,7 +6,15 @@ part 'salary_slip_response.g.dart';
 class SalarySlipUser {
   final String firstName;
   final String lastName;
-  SalarySlipUser({required this.firstName, required this.lastName});
+
+  /// Small avatar sent with list responses; null when the person has no photo.
+  final String? profileThumbnailBase64;
+
+  SalarySlipUser({
+    required this.firstName,
+    required this.lastName,
+    this.profileThumbnailBase64,
+  });
   factory SalarySlipUser.fromJson(Map<String, dynamic> json) =>
       _$SalarySlipUserFromJson(json);
 }
@@ -60,6 +68,9 @@ class SalarySlipResponse {
 
   String get employeeFullName =>
       '${employee.user.firstName} ${employee.user.lastName}';
+
+  /// Avatar for list views; null when there is no photo.
+  String? get employeeThumbnail => employee.user.profileThumbnailBase64;
 
   factory SalarySlipResponse.fromJson(Map<String, dynamic> json) =>
       _$SalarySlipResponseFromJson(json);
