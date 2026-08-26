@@ -1,6 +1,5 @@
 using Lexor.Model.Constants;
 using Lexor.Model.Responses;
-using Lexor.Model.SearchObjects;
 using Lexor.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,22 +25,6 @@ namespace Lexor.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<List<EmployeeOptionResponse>> Get()
-        {
-            var page = await _service.GetAllAsync(new EmployeeSearchObject
-            {
-                Page = 1,
-                PageSize = 10000,
-                IncludeTotalCount = false,
-            });
-
-            return page.Items
-                .Select(e => new EmployeeOptionResponse
-                {
-                    Id = e.Id,
-                    FullName = $"{e.User.FirstName} {e.User.LastName}".Trim(),
-                })
-                .ToList();
-        }
+        public async Task<List<EmployeeOptionResponse>> Get() => await _service.GetOptionsAsync();
     }
 }

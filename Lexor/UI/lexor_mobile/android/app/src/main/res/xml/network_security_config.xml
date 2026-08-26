@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The API is served over plain HTTP on purpose (the submission guidelines recommend avoiding
+  self-signed HTTPS certificates, which expire and break the review). Android blocks cleartext
+  by default from API 28 on, so it is re-enabled here - but only for the two hosts the app can
+  actually reach: 10.0.2.2 is the development machine as seen from the Android emulator, and
+  localhost covers a device port-forwarded with `adb reverse`. Everything else stays HTTPS-only.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

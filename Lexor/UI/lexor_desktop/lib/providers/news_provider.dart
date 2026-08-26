@@ -84,11 +84,14 @@ class NewsProvider extends ChangeNotifier {
     required String title,
     required String content,
     String? imageBase64,
+    bool removeImage = false,
   }) async {
     final body = jsonEncode({
       'title': title,
       'content': content,
       'imageBase64': imageBase64,
+      // A null imageBase64 means "keep the current picture", so clearing it needs its own flag.
+      'removeImage': removeImage,
     });
     try {
       final res = id == null

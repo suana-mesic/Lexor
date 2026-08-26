@@ -5,6 +5,7 @@ using Lexor.Model.Requests;
 using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
+using Lexor.Services.Helpers;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,17 @@ namespace Lexor.Services
         public NewsService(LexorDbContext dbContext, IMapper mapper, IValidator<NewsInsertRequest> insertValidator, IValidator<NewsUpdateRequest> updateValidator, IAuthenticatedUserAccessor userAccessor)
             : base(dbContext, mapper, insertValidator, updateValidator, userAccessor)
         {
+        }
+
+        public override async Task<PageResult<NewsResponse>> GetAllAsync(NewsSearchObject? search = null)
+        {
+            var result = await base.GetAllAsync(search);
+            // List endpoints must not return large base64 payloads (guideline 8.2), but list
+            // views must still show the picture (guideline 6). The full image is dropped here
+            // and the banner-sized copy travels instead; the details view loads the full one.
+            foreach (var n in result.Items)
+                n.ImageBase64 = null;
+            return result;
         }
 
         protected override IQueryable<News> ApplyFilters(IQueryable<News> query, NewsSearchObject? search)
@@ -30,7 +42,26 @@ namespace Lexor.Services
         {
             var entity = base.MapInsertRequestToEntity(request);
             entity.PublishedByUserId = _userAccessor.GetUserId();
+            entity.ThumbnailBase64 = ImageThumbnail.CreateBanner(request.ImageBase64);
             return entity;
+        }
+
+        // A null image on update means "leave the picture alone" (the mapper ignores nulls), so
+        // the thumbnail is only rebuilt when a new picture actually arrives. Clearing the
+        // picture needs its own flag, since a null cannot express the difference.
+        protected override void MapUpdateRequestToEntity(NewsUpdateRequest request, News entity)
+        {
+            base.MapUpdateRequestToEntity(request, entity);
+
+            if (request.RemoveImage)
+            {
+                entity.ImageBase64 = null;
+                entity.ThumbnailBase64 = null;
+            }
+            else if (request.ImageBase64 != null)
+            {
+                entity.ThumbnailBase64 = ImageThumbnail.CreateBanner(request.ImageBase64);
+            }
         }
 
         public override async Task<NewsResponse> UpdateAsync(int id, NewsUpdateRequest request)

@@ -20,6 +20,10 @@ namespace Lexor.Services.Database
 
         public string? ImageBase64 { get; set; }
 
+        // Width-bounded copy of ImageBase64. List endpoints return this one instead of the full
+        // picture (guideline 8.2) while still showing an image in the list (guideline 6).
+        public string? ThumbnailBase64 { get; set; }
+
         public DateTime PublishedAt { get; set; } = DateTime.UtcNow;
 
         // Author of the announcement. Nullable so pre-existing rows stay valid; a null author

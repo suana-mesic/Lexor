@@ -199,8 +199,7 @@ class _NewsScreenState extends State<NewsScreen> {
         child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (n.imageBase64 != null && n.imageBase64!.isNotEmpty)
-            _thumb(n.imageBase64!),
+          if (n.displayImage != null) _thumb(n.displayImage!),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -297,11 +296,11 @@ class _NewsScreenState extends State<NewsScreen> {
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 const SizedBox(height: 12),
-                if (n.imageBase64 != null && n.imageBase64!.isNotEmpty) ...[
+                if (n.displayImage != null) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
-                      cachedImageBytes(n.imageBase64!),
+                      cachedImageBytes(n.displayImage!),
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
@@ -337,7 +336,19 @@ class _NewsDialog extends StatefulWidget {
 class _NewsDialogState extends State<_NewsDialog> {
   late final TextEditingController _title;
   late final TextEditingController _content;
-  String? _imageBase64;
+
+  /// What the preview shows. For an announcement being edited this starts as the picture the
+  /// list carries (a thumbnail), which must never be sent back as the new full-size image.
+  String? _previewImage;
+
+  /// The freshly picked picture, or null when the user cleared it. Only meaningful together
+  /// with [_imageTouched].
+  String? _pickedImage;
+
+  /// Whether the user changed the picture at all during this edit. Left false, the save leaves
+  /// the stored picture exactly as it was.
+  bool _imageTouched = false;
+
   bool _saving = false;
   String? _formError;
 
@@ -346,7 +357,7 @@ class _NewsDialogState extends State<_NewsDialog> {
     super.initState();
     _title = TextEditingController(text: widget.existing?.title ?? '');
     _content = TextEditingController(text: widget.existing?.content ?? '');
-    _imageBase64 = widget.existing?.imageBase64;
+    _previewImage = widget.existing?.displayImage;
   }
 
   @override
@@ -363,7 +374,12 @@ class _NewsDialogState extends State<_NewsDialog> {
     );
     final bytes = result?.files.single.bytes;
     if (bytes != null) {
-      setState(() => _imageBase64 = base64Encode(bytes));
+      final encoded = base64Encode(bytes);
+      setState(() {
+        _pickedImage = encoded;
+        _previewImage = encoded;
+        _imageTouched = true;
+      });
     }
   }
 
@@ -382,7 +398,8 @@ class _NewsDialogState extends State<_NewsDialog> {
       id: widget.existing?.id,
       title: title,
       content: content,
-      imageBase64: _imageBase64,
+      imageBase64: _imageTouched ? _pickedImage : null,
+      removeImage: _imageTouched && _pickedImage == null,
     );
     if (!mounted) return;
     if (err == null) {
@@ -430,22 +447,26 @@ class _NewsDialogState extends State<_NewsDialog> {
                   OutlinedButton.icon(
                     onPressed: _pickImage,
                     icon: const Icon(Icons.image_outlined),
-                    label: Text(_imageBase64 == null ? 'Dodaj sliku' : 'Promijeni sliku'),
+                    label: Text(_previewImage == null ? 'Dodaj sliku' : 'Promijeni sliku'),
                   ),
                   const SizedBox(width: 12),
-                  if (_imageBase64 != null)
+                  if (_previewImage != null)
                     TextButton(
-                      onPressed: () => setState(() => _imageBase64 = null),
+                      onPressed: () => setState(() {
+                        _pickedImage = null;
+                        _previewImage = null;
+                        _imageTouched = true;
+                      }),
                       child: const Text('Ukloni'),
                     ),
                 ],
               ),
-              if (_imageBase64 != null) ...[
+              if (_previewImage != null) ...[
                 const SizedBox(height: 12),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.memory(
-                    cachedImageBytes(_imageBase64!),
+                    cachedImageBytes(_previewImage!),
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Lexor.Model.Requests;
+using Lexor.Services.Helpers;
 
 namespace Lexor.Services.Validators
 {
@@ -14,6 +15,8 @@ namespace Lexor.Services.Validators
             RuleFor(x => x.Content)
                 .NotEmpty().WithMessage("Sadržaj je obavezan.")
                 .MaximumLength(4000).WithMessage("Sadržaj može imati najviše 4000 znakova.");
+
+            RuleFor(x => x.ImageBase64).ValidImage("Slika obavijesti");
         }
     }
 }

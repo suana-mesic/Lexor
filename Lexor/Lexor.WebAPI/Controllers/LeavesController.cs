@@ -26,8 +26,13 @@ namespace Lexor.WebAPI.Controllers
         public override Task<ActionResult<LeaveResponse>> Update(int id, [FromBody] LeaveUpdateRequest request)
             => base.Update(id, request);
 
+        // Both sides may cancel: the employee who requested the leave, and the HR manager who
+        // administers it. Administrator is deliberately not here - multiple [Authorize]
+        // attributes are ANDed, so a role missing from the controller-level attribute above
+        // could never pass anyway, and leave administration belongs to HR, not to the account
+        // administrator (who has no leaves screen).
         [HttpPut("cancel/{id}")]
-        [Authorize(Roles = $"{RoleNames.Employee},{RoleNames.Administrator}")]
+        [Authorize(Roles = $"{RoleNames.Employee},{RoleNames.HrManager}")]
         public async Task<ActionResult<LeaveResponse>> Cancel(int id, [FromBody] LeaveCancelRequest? request)
         {
             var result = await _service.CancelAsync(id, request?.CancellationReason);

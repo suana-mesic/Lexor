@@ -11,5 +11,8 @@ namespace Lexor.Services
         // Self-service: the currently authenticated employee's own profile.
         public Task<EmployeeResponse> GetMyProfileAsync();
         public Task<EmployeeResponse> UpdateMyProfileAsync(ProfileUpdateRequest request);
+
+        // Id + name only, for dropdown/autocomplete pickers.
+        public Task<List<EmployeeOptionResponse>> GetOptionsAsync();
     }
 }

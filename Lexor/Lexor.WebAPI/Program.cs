@@ -279,7 +279,8 @@ using (var scope = app.Services.CreateScope())
 
         var crypto = services.GetRequiredService<ICryptoService>();
         await DataSeeder.SeedAsync(db, crypto);
-        // Databases seeded before the thumbnail column existed get their avatars filled in here.
+        // Databases seeded before the thumbnail columns existed get their avatars and
+        // announcement banners filled in here.
         await DataSeeder.BackfillProfileThumbnailsAsync(db);
         // Seed a payroll history using the real calculation (respects contracts and settings).
         var salarySlipService = services.GetRequiredService<ISalarySlipService>();

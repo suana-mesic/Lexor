@@ -2,7 +2,11 @@ class NewsItem {
   final int id;
   final String title;
   final String content;
+  /// Full-size picture. Only the details endpoint returns it; on list responses it is null.
   final String? imageBase64;
+
+  /// Width-bounded copy the list carries instead of the full picture.
+  final String? thumbnailBase64;
   final DateTime publishedAt;
 
   NewsItem({
@@ -10,14 +14,26 @@ class NewsItem {
     required this.title,
     required this.content,
     this.imageBase64,
+    this.thumbnailBase64,
     required this.publishedAt,
   });
+
+  /// Whichever picture this instance actually has — the full one when it came from the
+  /// details endpoint, otherwise the thumbnail. Null when the announcement has no picture.
+  String? get displayImage {
+    final full = imageBase64;
+    if (full != null && full.isNotEmpty) return full;
+    final thumb = thumbnailBase64;
+    if (thumb != null && thumb.isNotEmpty) return thumb;
+    return null;
+  }
 
   factory NewsItem.fromJson(Map<String, dynamic> json) => NewsItem(
     id: json['id'] as int,
     title: json['title'] as String? ?? '',
     content: json['content'] as String? ?? '',
     imageBase64: json['imageBase64'] as String?,
+    thumbnailBase64: json['thumbnailBase64'] as String?,
     publishedAt: _asUtc(json['publishedAt'] as String),
   );
 }

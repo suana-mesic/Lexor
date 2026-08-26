@@ -1,7 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Flutter only adds this permission to the debug and profile manifests, so a release
+         build without it cannot reach the API at all. It has to be declared here. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="lexor_mobile"
         android:name="${applicationName}"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

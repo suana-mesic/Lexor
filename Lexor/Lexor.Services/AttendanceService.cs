@@ -7,6 +7,7 @@ using Lexor.Model.Responses;
 using Lexor.Model.SearchObjects;
 using Lexor.Services.Database;
 using Lexor.Services.Helpers;
+using Lexor.Services.StateMachine.LeaveStateMachine;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
@@ -209,6 +210,114 @@ namespace Lexor.Services
                     .Include(a => a.Employee.Department);
             }
             return query;
+        }
+
+        /// <summary>
+        /// Attendance totals per employee for one month: days present, days on approved leave,
+        /// working days with no record at all, hours worked and average arrival time.
+        /// Aggregated in three queries regardless of how many employees or records exist -
+        /// no per-employee round trip.
+        /// </summary>
+        public async Task<AttendanceReportResponse> GetMonthlyReportAsync(int year, int month)
+        {
+            if (month < 1 || month > 12)
+                throw new BusinessException("Mjesec mora biti između 1 i 12.");
+
+            var firstDay = new DateOnly(year, month, 1);
+            var lastDay = firstDay.AddMonths(1).AddDays(-1);
+
+            var settings = await _dbContext.PayrollSettings
+                .OrderByDescending(x => x.ValidFrom)
+                .FirstAsync();
+
+            var workingDays = Enumerable
+                .Range(0, lastDay.Day)
+                .Select(offset => firstDay.AddDays(offset))
+                .Where(d => settings.IsWorkDay(d.DayOfWeek))
+                .ToList();
+
+            var employees = await _dbContext.Employees
+                .Select(e => new
+                {
+                    e.Id,
+                    FullName = e.User.FirstName + " " + e.User.LastName,
+                    DepartmentName = e.Department.Name,
+                })
+                .ToListAsync();
+
+            // One grouped pass over the month's attendance instead of a query per employee.
+            var attendance = await _dbContext.Attendances
+                .Where(a => a.Date >= firstDay && a.Date <= lastDay)
+                .GroupBy(a => a.EmployeeId)
+                .Select(g => new
+                {
+                    EmployeeId = g.Key,
+                    PresentDays = g.Count(),
+                    TotalHours = g.Sum(a => a.WorkedHours ?? 0m),
+                    CorrectedRecords = g.Count(a => a.IsCorrected),
+                    // Averaged in the database; null when no row has a check-in time.
+                    AverageArrival = g
+                        .Where(a => a.DateTimeEntered != null)
+                        .Average(a => (double?)(a.DateTimeEntered!.Value.Hour * 60
+                                              + a.DateTimeEntered.Value.Minute)),
+                })
+                .ToDictionaryAsync(x => x.EmployeeId);
+
+            // Approved and completed leaves overlapping the month. Only the ranges are loaded;
+            // counting which working days they cover is cheap arithmetic in memory.
+            var approved = nameof(ApprovedLeaveState);
+            var completed = nameof(CompletedLeaveState);
+            var leaveRanges = await _dbContext.Set<Leave>()
+                .Where(l => (l.State == approved || l.State == completed)
+                         && l.DateFrom <= lastDay && l.DateTo >= firstDay)
+                .Select(l => new { l.EmployeeId, l.DateFrom, l.DateTo })
+                .ToListAsync();
+
+            var leaveDaysByEmployee = leaveRanges
+                .GroupBy(l => l.EmployeeId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => workingDays.Count(d => g.Any(l => l.DateFrom <= d && l.DateTo >= d)));
+
+            var rows = employees
+                .Select(e =>
+                {
+                    attendance.TryGetValue(e.Id, out var a);
+                    leaveDaysByEmployee.TryGetValue(e.Id, out var leaveDays);
+                    var presentDays = a?.PresentDays ?? 0;
+                    var totalHours = a?.TotalHours ?? 0m;
+
+                    return new AttendanceReportRow
+                    {
+                        EmployeeId = e.Id,
+                        FullName = e.FullName,
+                        DepartmentName = e.DepartmentName ?? "Nepoznat odjel",
+                        PresentDays = presentDays,
+                        LeaveDays = leaveDays,
+                        // Never negative: a record on a non-working day would otherwise push
+                        // present + leave past the number of working days in the month.
+                        MissingDays = Math.Max(0, workingDays.Count - presentDays - leaveDays),
+                        TotalHours = Math.Round(totalHours, 2),
+                        AverageHours = presentDays > 0
+                            ? Math.Round(totalHours / presentDays, 2)
+                            : 0m,
+                        AverageArrivalMinutes = a?.AverageArrival is double avg
+                            ? (int)Math.Round(avg)
+                            : null,
+                        CorrectedRecords = a?.CorrectedRecords ?? 0,
+                    };
+                })
+                .OrderBy(r => r.DepartmentName)
+                .ThenBy(r => r.FullName)
+                .ToList();
+
+            return new AttendanceReportResponse
+            {
+                Year = year,
+                Month = month,
+                WorkingDays = workingDays.Count,
+                Rows = rows,
+            };
         }
 
         public async Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync()

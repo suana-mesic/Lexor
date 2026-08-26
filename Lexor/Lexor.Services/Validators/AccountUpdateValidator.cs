@@ -1,5 +1,6 @@
 using FluentValidation;
 using Lexor.Model.Requests;
+using Lexor.Services.Helpers;
 
 namespace Lexor.Services.Validators
 {
@@ -21,6 +22,8 @@ namespace Lexor.Services.Validators
                 .Matches(@"^(\+387|0)(\s*\d){8,9}$")
                 .WithMessage("Unesite validan broj telefona (npr. 062 123 456 ili +387 62 123 456).")
                 .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
+
+            RuleFor(x => x.ProfileImageBase64).ValidImage("Profilna slika");
         }
     }
 }

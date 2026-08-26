@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lexor_desktop/models/salary_slip_response.dart';
 import 'package:lexor_desktop/models/search_result.dart';
+import 'package:lexor_desktop/helpers/pdf_download.dart';
+import 'package:lexor_desktop/providers/auth_provider.dart';
 import 'package:lexor_desktop/providers/base_provider.dart';
 import 'package:lexor_desktop/providers/employee_provider.dart';
 import 'package:lexor_desktop/providers/salary_slip_provider.dart';
@@ -10,9 +12,11 @@ import 'package:lexor_desktop/widgets/person_avatar.dart';
 import 'package:lexor_desktop/widgets/app_notify.dart';
 import 'package:lexor_desktop/widgets/pagination_bar.dart';
 import 'package:lexor_shared/lexor_shared.dart';
+import 'package:provider/provider.dart';
 
-/// Admin reporting module: lists PAID salary slips for a chosen year/month and
-/// offers two PDF reports — a per-employee payslip and a monthly summary.
+/// Admin reporting module. For accounting it lists PAID salary slips for a chosen year/month
+/// and offers a per-employee payslip and a monthly payroll summary as PDF; for HR it adds the
+/// monthly attendance report. Which reports are shown follows the signed-in user's role.
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
@@ -37,6 +41,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
   int? _employeeId; // null = all employees
   List<RefOption> _employees = const [];
 
+  /// HR gets the attendance report; accounting does not (the endpoint rejects them), so the
+  /// card is only built for the role that can actually use it.
+  late final bool _isHr;
+
+  /// The attendance report has its own period so choosing one does not disturb the payroll
+  /// selection the user may already have made above.
+  int? _attendanceYear;
+  int? _attendanceMonth;
+  bool _downloadingAttendance = false;
+
   static const double _kHeaderRowHeight = 48;
   static const double _kDataRowHeight = 64;
   final NumberFormat _money = NumberFormat('#,##0.00');
@@ -54,6 +68,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _year = now.year;
       _month = now.month - 1;
     }
+    _attendanceYear = _year;
+    _attendanceMonth = _month;
+    _isHr = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).roles.contains('HRManager');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _generated = true;
       _loadEmployees();
@@ -152,6 +172,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
+  Future<void> _downloadAttendanceReport() async {
+    if (_attendanceYear == null || _attendanceMonth == null) {
+      showSnack(context, 'Odaberite godinu i mjesec.', error: true);
+      return;
+    }
+    setState(() => _downloadingAttendance = true);
+    try {
+      final path = await downloadPdf(
+        '/Attendances/report/pdf?year=$_attendanceYear&month=$_attendanceMonth',
+        'izvjestaj-prisustva-$_attendanceYear-'
+            '${_attendanceMonth.toString().padLeft(2, '0')}.pdf',
+      );
+      if (!mounted || path == null) return; // null = save dialog cancelled
+      showSnack(context, 'Sačuvano: $path');
+    } catch (e) {
+      if (mounted) showSnack(context, messageFor(e), error: true);
+    } finally {
+      if (mounted) setState(() => _downloadingAttendance = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -160,8 +201,113 @@ class _ReportsScreenState extends State<ReportsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _generateCard(),
+          if (_isHr) ...[
+            const SizedBox(height: 20),
+            _attendanceReportCard(),
+          ],
           const SizedBox(height: 20),
           Expanded(child: _tableCard()),
+        ],
+      ),
+    );
+  }
+
+  /// Monthly attendance report (HR only): days present, days on approved leave, working days
+  /// with no record at all, and hours worked - per employee, grouped by department.
+  Widget _attendanceReportCard() {
+    final now = DateTime.now();
+    final years = [for (var y = now.year; y >= now.year - 3; y--) y];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Izvještaj evidencije radnog vremena',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Po uposleniku i odjelu: dani prisustva, odobrena odsustva, '
+            'dani bez evidencije i odrađeni sati.',
+            style: TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SizedBox(
+                width: 140,
+                child: _labeled(
+                  'Godina',
+                  DropdownButtonFormField<int>(
+                    initialValue: _attendanceYear,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    items: [
+                      for (final y in years)
+                        DropdownMenuItem(value: y, child: Text('$y')),
+                    ],
+                    onChanged: (v) => setState(() => _attendanceYear = v),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 180,
+                child: _labeled(
+                  'Mjesec',
+                  DropdownButtonFormField<int>(
+                    initialValue: _attendanceMonth,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    items: [
+                      for (var m = 1; m <= 12; m++)
+                        DropdownMenuItem(
+                          value: m,
+                          child: Text(bosnianMonthName(m)),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _attendanceMonth = v),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              OutlinedButton.icon(
+                onPressed: _downloadingAttendance
+                    ? null
+                    : _downloadAttendanceReport,
+                icon: _downloadingAttendance
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.download, size: 18),
+                label: const Text('Preuzmi PDF'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

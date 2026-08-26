@@ -1,5 +1,6 @@
 using FluentValidation;
 using Lexor.Model.Requests;
+using Lexor.Services.Helpers;
 
 namespace Lexor.Services.Validators
 {
@@ -30,7 +31,7 @@ namespace Lexor.Services.Validators
                 .MaximumLength(200).WithMessage("Adresa ne može imati više od 200 karaktera.")
                 .When(x => x.Address != null);
 
-
+            RuleFor(x => x.ProfileImageBase64).ValidImage("Profilna slika");
         }
     }
 }

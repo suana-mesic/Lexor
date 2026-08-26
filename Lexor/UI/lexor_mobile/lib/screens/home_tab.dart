@@ -131,8 +131,7 @@ class HomeTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (n.imageBase64 != null && n.imageBase64!.isNotEmpty)
-              _newsImage(n.imageBase64!),
+            if (n.displayImage != null) _newsImage(n.displayImage!),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -199,8 +198,7 @@ class HomeTab extends StatelessWidget {
                   onPressed: () => Navigator.pop(sheetContext),
                 ),
               ),
-              if (n.imageBase64 != null && n.imageBase64!.isNotEmpty)
-                _newsImage(n.imageBase64!),
+              if (n.displayImage != null) _newsImage(n.displayImage!),
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(

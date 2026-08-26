@@ -8,5 +8,8 @@ namespace Lexor.Services
     {
         Task<ScanResponse> ScanAsync(ScanRequest request);
         Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync();
+
+        // Per-employee attendance totals for one month, for the HR report.
+        Task<AttendanceReportResponse> GetMonthlyReportAsync(int year, int month);
     }
 }

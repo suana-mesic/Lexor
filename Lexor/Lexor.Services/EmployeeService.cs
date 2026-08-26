@@ -20,6 +20,9 @@ namespace Lexor.Services
     {
         const string chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ23456789"; // without similar (0/O, 1/I/L)
 
+        // Upper bound for the dropdown projection, so it can never become an unbounded dump.
+        private const int MaxOptions = 500;
+
         private readonly IValidator<ProfileUpdateRequest> _profileValidator;
         private readonly IBus _bus;
         private readonly ILogger<EmployeeService> _logger;
@@ -211,6 +214,25 @@ namespace Lexor.Services
                 username = $"{baseName}{++suffix}";
 
             return username;
+        }
+
+        /// <summary>
+        /// Id + display name of every active employee, for dropdown pickers. Projected in the
+        /// database so no photo or other personal column is ever loaded, and capped so the
+        /// endpoint can never be turned into an unbounded dump of the employee table.
+        /// </summary>
+        public async Task<List<EmployeeOptionResponse>> GetOptionsAsync()
+        {
+            return await _dbContext.Set<Employee>()
+                .OrderBy(e => e.User.FirstName)
+                .ThenBy(e => e.User.LastName)
+                .Select(e => new EmployeeOptionResponse
+                {
+                    Id = e.Id,
+                    FullName = e.User.FirstName + " " + e.User.LastName,
+                })
+                .Take(MaxOptions)
+                .ToListAsync();
         }
 
         public async Task<EmployeeResponse> GetMyProfileAsync()

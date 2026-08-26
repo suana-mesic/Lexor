@@ -107,21 +107,28 @@ namespace Lexor.Services.Database
         };
 
         /// <summary>
-        /// Fills in the list thumbnail for users that already have a profile picture but no
-        /// thumbnail yet — databases created before the thumbnail column existed. Matches no
-        /// rows once it has run, so it costs a single indexed count on every later startup.
+        /// Fills in the list thumbnail for users and announcements that already have a picture
+        /// but no thumbnail yet — databases created before the thumbnail columns existed.
+        /// Matches no rows once it has run, so it costs two indexed counts on every later startup.
         /// </summary>
         public static async Task BackfillProfileThumbnailsAsync(LexorDbContext db)
         {
-            var pending = await db.Users
+            var pendingUsers = await db.Users
                 .Where(u => u.ProfileImageBase64 != null && u.ProfileThumbnailBase64 == null)
                 .ToListAsync();
 
-            if (pending.Count == 0)
-                return;
-
-            foreach (var user in pending)
+            foreach (var user in pendingUsers)
                 user.ProfileThumbnailBase64 = ImageThumbnail.Create(user.ProfileImageBase64);
+
+            var pendingNews = await db.News
+                .Where(n => n.ImageBase64 != null && n.ThumbnailBase64 == null)
+                .ToListAsync();
+
+            foreach (var news in pendingNews)
+                news.ThumbnailBase64 = ImageThumbnail.CreateBanner(news.ImageBase64);
+
+            if (pendingUsers.Count == 0 && pendingNews.Count == 0)
+                return;
 
             await db.SaveChangesAsync();
         }

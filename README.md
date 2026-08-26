@@ -10,7 +10,7 @@ worker servisa, desktop administrativne aplikacije i mobilne aplikacije za uposl
 
 - **Uposlenici, ugovori, odjeli, pozicije** — CRUD i referentni podaci.
 - **Prisustvo (RFID)**, **zahtjevi za odsustvo** (state machine: `Pending → Approved/Rejected → Completed/Cancelled`) i **obračun plata** (`Pending → Approved → Paid`).
-- **PDF izvještaji** (QuestPDF) u desktop aplikaciji.
+- **PDF izvještaji** (QuestPDF) u desktop aplikaciji — zbirni izvještaj plata i platna lista pojedinca (računovodstvo) te mjesečni izvještaj evidencije radnog vremena (HR).
 - **AI chatbot** nad pravnim dokumentima (RAG: lokalni embeddingi + Groq LLM).
 - **ML detekcija prevara** u evidenciji radnog vremena (binarna klasifikacija, logistička regresija) — vidi [ml-dokumentacija.md](ml-dokumentacija.md).
 - **Obavijesti kompanije** i **notifikacije** uposleniku (status odsustva, odobrena i isplaćena platna lista).
