@@ -219,6 +219,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final years = [for (var y = now.year; y >= now.year - 3; y--) y];
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -239,8 +240,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
             style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
           const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.end,
             children: [
               SizedBox(
                 width: 140,
@@ -261,7 +264,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
               SizedBox(
                 width: 180,
                 child: _labeled(
@@ -284,7 +286,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
               OutlinedButton.icon(
                 onPressed: _downloadingAttendance
                     ? null
