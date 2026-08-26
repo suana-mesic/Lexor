@@ -1,39 +1,30 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# lexor_shared
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+Lokalni Dart paket sa kodom koji dijele **lexor_desktop** i **lexor_mobile**. Nije namijenjen
+objavljivanju na pub.dev — obje aplikacije ga povezuju putanjom (`path: ../lexor_shared`), pa
+se jedna definicija koristi na oba mjesta umjesto da se duplira.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+## Sadržaj
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+| Fajl | Uloga |
+|---|---|
+| `api_error.dart` | Parsiranje standardizovane poruke o grešci koju API vraća, sa razumljivim tekstom za korisnika. |
+| `api_exception.dart` | Izuzetak koji nose HTTP pozivi kada odgovor nije uspješan. |
+| `auth_service.dart` | Čitanje korisničkih uloga iz JWT tokena. |
+| `contract_status.dart` | Status ugovora izveden iz datuma (ugovor nema kolonu u bazi). |
+| `leave_state_type.dart` | Stanja zahtjeva za odsustvo (`Pending → Approved/Rejected → Completed/Cancelled`). |
+| `salary_slip_status.dart` | Stanja platne liste (`Pending → Approved → Paid`). |
+| `salary_slip_item_type.dart` | Tipovi stavki na platnoj listi (doprinosi, porez, prekovremeni). |
+| `bosnian_months.dart` | Nazivi mjeseci na bosanskom, za prikaz perioda. |
 
-## Features
+## Upotreba
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+Sve je izloženo kroz jedan import:
 
 ```dart
-const like = 'sample';
+import 'package:lexor_shared/lexor_shared.dart';
 ```
 
-## Additional information
+Kada se doda novi fajl u `lib/src/`, treba ga izvesti u `lib/lexor_shared.dart`.
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Opis cijelog sistema nalazi se u [README-u u korijenu repozitorija](../../../README.md).

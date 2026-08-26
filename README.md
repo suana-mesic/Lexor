@@ -49,7 +49,13 @@ cp Lexor/Lexor.WebAPI/.env.example Lexor/Lexor.WebAPI/.env
 cp Lexor/Lexor.Subscriber/.env.example Lexor/Lexor.Subscriber/.env
 ```
 
-Popuni najmanje: `DB_SA_PASSWORD`, `RABBITMQ_USER`/`RABBITMQ_PASSWORD` (korijenski `.env`), `JwtToken__SecretKey`, `Groq__ApiKey` i SMTP podatke (`Smtp__*`) u `Lexor.Subscriber/.env`.
+Popuni najmanje:
+
+| Datoteka | Ključevi |
+|---|---|
+| `Lexor/.env` | `DB_SA_PASSWORD`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD` |
+| `Lexor/Lexor.WebAPI/.env` | `JwtToken__SecretKey`, `Groq__ApiKey` |
+| `Lexor/Lexor.Subscriber/.env` | SMTP podaci (`Smtp__*`) |
 
 Korijenski `Lexor/.env` koristi docker-compose za `${...}` zamjene, a `Lexor.WebAPI/.env` i `Lexor.Subscriber/.env` se koriste kada servisi rade izvan Dockera.
 
@@ -92,7 +98,8 @@ docker compose up -d --build
 ```
 
 Ovim se dižu sva 4 servisa. API na startu automatski primjenjuje migracije i puni bazu demo podacima
-(30 uposlenika, ~3 godine historije prisustva). API je dostupan na `http://localhost:5170`.
+(30 uposlenika i oko 10.500 zapisa prisustva kroz posljednjih 19 mjeseci, uz obračune plata,
+zahtjeve za odsustvo i pravne dokumente). API je dostupan na `http://localhost:5170`.
 
 Zaustavljanje:
 
@@ -161,4 +168,9 @@ Primjeri uposlenika: `amina.hodzic@lexor.ba`, `emir.kovacevic@lexor.ba`, `lejla.
 ```bash
 dotnet test Lexor/Lexor.Tests
 ```
-Integracijski test provjerava rate limiting na login endpointu (11. zahtjev u minuti vraća HTTP 429).
+
+| Skup | Šta pokriva |
+|---|---|
+| `RateLimitingTests` | Integracijski test nad pravim API-jem: 11. pokušaj prijave u minuti vraća HTTP 429. |
+| `ImageValidationTests` | Provjera uploada slika po sadržaju bajtova — PDF, EXE i krnja slika se odbijaju, stvarni JPG/PNG prolazi, poštuje se ograničenje veličine. |
+| `MarkdownTextTests` | Uklanjanje markdown formatiranja iz odgovora chatbota, uz čuvanje zvjezdica koje nisu formatiranje. |

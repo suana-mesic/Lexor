@@ -109,18 +109,20 @@ klasa dobija ravnopravan uticaj na granicu odluke.
 
 | Metrika | Trening (80%) | Test (20%) |
 |---|---|---|
-| **F1** | **0.921** | **0.851** |
-| Tačnost (accuracy) | 0.996 | 0.993 |
-| Preciznost (precision) | 0.981 | 0.977 |
-| Odziv (recall) | 0.868 | 0.754 |
-| AUC | 0.993 | 0.991 |
-| Broj zapisa | 8.386 | 2.097 |
-| Broj prevara | 243 | 57 |
+| **F1** | **0.940** | **0.836** |
+| Tačnost (accuracy) | 0.997 | 0.991 |
+| Preciznost (precision) | 0.986 | 0.979 |
+| Odziv (recall) | 0.899 | 0.730 |
+| AUC | 0.995 | 0.986 |
+| Broj zapisa | 8.332 | 2.083 |
+| Broj prevara | 237 | 63 |
 
-> Demo podaci se generišu u odnosu na datum pokretanja (prozor od ~19 mjeseci koji završava
-> jučerašnjim danom), pa konkretne vrijednosti mogu odstupati za nekoliko stotinki između
-> pokretanja. Tabela prikazuje jedno mjerenje; aktuelne vrijednosti su uvijek vidljive na
-> ekranu "Detekcija prevara" u desktop aplikaciji.
+> Demo podaci se generišu u odnosu na datum kada je baza prvi put zasijana — prozor od ~19
+> mjeseci koji završava jučerašnjim danom. Zato dvije baze zasijane u različito vrijeme daju
+> različite skupove, a time i metrike koje se razlikuju za nekoliko stotinki (na razvojnoj bazi
+> ovog projekta izmjereno je npr. F1 0.921 / 0.851). Tabela iznad prikazuje mjerenje na **svježe
+> kreiranoj bazi**, dakle ono što se dobije pri prvom pokretanju iz repozitorija. Aktuelne
+> vrijednosti su uvijek vidljive na ekranu „Detekcija prevara" u desktop aplikaciji.
 
 Značenje metrika (pozitivna klasa = prevara):
 - **Preciznost** — od zapisa koje je model označio, koliko ih stvarno jeste prevara (mjeri
@@ -132,8 +134,8 @@ Značenje metrika (pozitivna klasa = prevara):
 - **Tačnost** — udio svih ispravno klasifikovanih zapisa; na neuravnoteženim podacima je
   varljiva (i beskoristan model bi imao ~97%), pa se navodi samo kao dopunska mjera.
 
-Razlika trening → test (F1 0.921 → 0.851) je **očekivani i zdrav** pad generalizacije: test skup
-su hronološki najnoviji zapisi, u kojima su prevare suptilnije, pa odziv pada (0.87 → 0.75), dok
+Razlika trening → test (F1 0.940 → 0.836) je **očekivani i zdrav** pad generalizacije: test skup
+su hronološki najnoviji zapisi, u kojima su prevare suptilnije, pa odziv pada (0.90 → 0.73), dok
 preciznost ostaje visoka (0.98) — model i na neviđenim podacima gotovo ne diže lažne uzbune.
 
 ## 6. Prikaz rezultata
