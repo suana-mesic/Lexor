@@ -1,7 +1,10 @@
-# Lexor — HR sistem za upravljanje uposlenicima
+# Lexor — sistem za evidenciju radnog vremena, obračun plata i informisanje o radničkim pravima
 
-Lexor je sistem za upravljanje ljudskim resursima (HR) razvijen za predmet **Razvoj softvera II** (FIT Mostar).
-Sastoji se od REST API-ja, pomoćnog worker servisa, desktop administrativne aplikacije i mobilne aplikacije za uposlenike.
+Lexor objedinjuje evidenciju prisustva zasnovanu na RFID tehnologiji, obračun plata prema propisima
+Federacije BiH, digitalni tok zahtjeva za odsustvo, detekciju prevara u evidenciji metodom mašinskog
+učenja i chatbot koji uposlenike informiše o njihovim pravima iz radnog zakonodavstva.
+Razvijen je za predmet **Razvoj softvera II** (FIT Mostar) i sastoji se od REST API-ja, pomoćnog
+worker servisa, desktop administrativne aplikacije i mobilne aplikacije za uposlenike.
 
 ## Funkcionalnosti
 
