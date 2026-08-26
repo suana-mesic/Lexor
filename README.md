@@ -53,7 +53,9 @@ Popuni najmanje: `DB_SA_PASSWORD`, `RABBITMQ_USER`/`RABBITMQ_PASSWORD` (korijens
 
 Korijenski `Lexor/.env` koristi docker-compose za `${...}` zamjene, a `Lexor.WebAPI/.env` i `Lexor.Subscriber/.env` se koriste kada servisi rade izvan Dockera.
 
-> Pri predaji je `.env` zamijenjen `.env-tajne.zip` arhivom (šifra: `fit`).
+> Pri predaji je svaki `.env` zamijenjen arhivom `.env-tajne.zip` u istom folderu. Raspakujte je
+> na mjestu i dobit ćete `.env` sa svim potrebnim vrijednostima — šifra arhive predata je putem
+> DL sistema. Nakon toga se aplikacija pokreće bez ikakvih dodatnih izmjena.
 
 ---
 
