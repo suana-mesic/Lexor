@@ -53,9 +53,31 @@ Popuni najmanje: `DB_SA_PASSWORD`, `RABBITMQ_USER`/`RABBITMQ_PASSWORD` (korijens
 
 Korijenski `Lexor/.env` koristi docker-compose za `${...}` zamjene, a `Lexor.WebAPI/.env` i `Lexor.Subscriber/.env` se koriste kada servisi rade izvan Dockera.
 
-> Pri predaji je svaki `.env` zamijenjen arhivom `.env-tajne.zip` u istom folderu. Raspakujte je
-> na mjestu i dobit ćete `.env` sa svim potrebnim vrijednostima — šifra arhive predata je putem
-> DL sistema. Nakon toga se aplikacija pokreće bez ikakvih dodatnih izmjena.
+> **Pri predaji** je svaki `.env` zamijenjen arhivom `.env-tajne.zip` u istom folderu. Šifra
+> arhive predata je putem DL sistema. Postoje tri arhive i svaka sadrži jedan `.env`:
+>
+> | Arhiva | `.env` mora završiti ovdje |
+> |---|---|
+> | `Lexor/.env-tajne.zip` | `Lexor/.env` |
+> | `Lexor/Lexor.WebAPI/.env-tajne.zip` | `Lexor/Lexor.WebAPI/.env` |
+> | `Lexor/Lexor.Subscriber/.env-tajne.zip` | `Lexor/Lexor.Subscriber/.env` |
+>
+> Svaki `.env` mora stajati **uz `.env.example` u istom folderu**. Najbrže je raspakovati sve
+> tri odjednom — PowerShell iz foldera `Lexor/`, `tar` je ugrađen u Windows:
+>
+> ```powershell
+> foreach ($d in @('.', 'Lexor.WebAPI', 'Lexor.Subscriber')) {
+>   tar -xf "$d\.env-tajne.zip" -C $d --passphrase 'SIFRA-IZ-DL-SISTEMA'
+> }
+> ```
+>
+> Na Linuxu i macOS-u isto radi sa `unzip -P 'SIFRA' "$d/.env-tajne.zip" -d "$d"`.
+>
+> Ako umjesto toga koristite Explorer i opciju „Extract All", ona pravi podfolder `.env-tajne\`
+> i `.env` smjesti u njega — tada ga pomjerite jedan nivo gore. Kada `.env` nije na pravom
+> mjestu, `docker compose` javlja `env file ... .env not found`.
+>
+> Nakon toga se aplikacija pokreće bez ikakvih dodatnih izmjena.
 
 ---
 
